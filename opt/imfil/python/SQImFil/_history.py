@@ -58,7 +58,11 @@ def many_point_hist_update(hist, diff_hist, inplace=True):
 
     if not inplace:
         hist = hist.copy()
-    hist.good_points.extend(diff_hist.good_points)
+    if type(diff_hist.good_points) == list:
+        hist.good_points.extend(diff_hist.good_points)
+    else:
+        for i in range(diff_hist.good_points.shape[1]):
+            hist.good_points.append(diff_hist.good_points[:,i])
     hist.good_values.extend(diff_hist.good_values)
     hist.failed_points.extend(diff_hist.failed_points)
     return hist

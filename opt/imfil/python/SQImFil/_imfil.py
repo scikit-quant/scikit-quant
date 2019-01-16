@@ -425,7 +425,7 @@ def imfil_core(x0, f, budget, core_data, bounds):
             else:
                 failc = 0
         else:
-            #   Take a few quasi-Newton iterates. This is the inner iteration.
+            # Take a few quasi-Newton iterates. This is the inner iteration.
             failc = 0
 
             # itc = inner iteration counter
@@ -453,7 +453,7 @@ def imfil_core(x0, f, budget, core_data, bounds):
 
                 # Update xold, xc, and x. At this point the model Hessian and gc
                 # are evaluated at xc. xc and gc only get updated right here.
-                xold = x.copy(); xc = x.copy(); gc = sgrad; x = xp
+                xold = x.copy(); xc = x.copy(); gc = sgrad; x = xp.copy()
 
                 # If stencil_wins is on, then take the best point you have.
                 # You'll update x, but not xc.
@@ -986,7 +986,7 @@ def poll_stencil(x, f, dx, fc, bounds, core_data, h, complete_history):
     pold = 0
     dx1 = None
     xp1 = None
-    xp  = numpy.matrix(zeros(dx.shape))
+    xp  = zeros(dx.shape)
 
     # One-sided differences may need to flip the direction if the positive
     # perturbation is not feasible.
@@ -1012,11 +1012,9 @@ def poll_stencil(x, f, dx, fc, bounds, core_data, h, complete_history):
     except TypeErrorError:
         pass
 
-    xp = xp1.copy(); dx = dx1.copy()
-
     # Query the complete_history structure to see if you've evaluated f
     # at any of these points before.
-    oldresults, newpoints = scan_history(complete_history, xp, fp, dx)
+    oldresults, newpoints = scan_history(complete_history, xp1, fp, dx1)
 
     # Copy over pre-existing values.
     iflago = zeros((vsize, 1))
@@ -1024,8 +1022,6 @@ def poll_stencil(x, f, dx, fc, bounds, core_data, h, complete_history):
         fp[:,idx] = vals[0]
         iflago[idx] = vals[1]
 
-    # xp = xpout; dx = dxout; fp = fpout;
-    #
     # Evaluate f, in parallel if possible. Flag the failed points.
     fp1 = []
     iflag = []
