@@ -228,8 +228,8 @@ def optimize(f, x0, budget, bounds, optin=None, **optkwds):
             complete_history.failed_points = db * failed_points + flow
 
     # Unscale the function and gradients.
+    histout[:,1] = histout[:,1]*imfil_fscale
     histout[:,2] = histout[:,2]*imfil_fscale
-    histout[:,3] = histout[:,3]*imfil_fscale
 
     # Turn opt_par into an array (are a matrix) and scale minimum.
     result = Result(fval*val_scale, numpy.squeeze(numpy.asarray(opt_par)))
@@ -569,20 +569,12 @@ def f_internal(x, h, core_data):
         fx, iff, icf, tol = objfunc(zargs, h)
     elif func_type == 100:
         fx = objfunc(zargs)
-        mz, nz = z.shape
-        iff = zeros(nz); icf = nz*ones(nz); tol = 0
     elif func_type == 110:
         fx = objfunc(zargs, h)
-        mz, nz = z.shape
-        iff = zeros(nz); icf = nz*ones(nz); tol = 0
     elif func_type == 101:
         fx, tol = objfunc(zargs)
-        mz, nz = z.shape
-        iff = zeros(nz); icf = nz*ones(nz); tol = 0
     elif func_type == 111:
         fx, tol = objfunc(zargs, h)
-        mz, nz = z.shape
-        iff = zeros(nz); icf = nz*ones(nz); tol = 0
     elif func_type == 1000:
         fx, iff, icf = objfunc(zargs, exarg)
         tol = 0
@@ -595,10 +587,15 @@ def f_internal(x, h, core_data):
         fx, iff, icf, tol = objfunc(zargs, h, exarg)
     elif func_type == 1100:
         fx = objfunc(zargs, exarg)
-        mz, nz = z.shape
-        iff = zeros(nz); icf = nz*ones(nz); tol = 0
     else:
         raise SystemError('internal error in imfil.m: f_internal')
+
+    if options.simple_function:
+        mz, nz = z.shape
+        if nz != 1:
+           iff = zeros(nz); icf = nz*ones(nz); tol = 0
+        else:
+           iff, icf, tol = 0, 1, 0
 
     # If this is the first time you evalute f and if imfil_fscale < 0,
     # we change imfil_fscale to the correct relative scaling factor. This
