@@ -14,7 +14,7 @@ import collections, copy, math, numpy, operator, random, logging
 
 __all__ = ['optimize', 'log']
 
-log = logging.getLogger('imfil')
+log = logging.getLogger('SQImFil')
 
 
 #-----
