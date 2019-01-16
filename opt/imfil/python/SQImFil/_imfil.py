@@ -444,7 +444,7 @@ def imfil_core(x0, f, budget, core_data, bounds):
                                     iteration_data, hess, fcount)
 
                 # Stop the entire iteration if you've hit the target.
-                if fval < imfil_target :
+                if fval < imfil_target:
                     stop_now = 1
                     x = xp
                     stepn = numpy.linalg.norm(xold-x, ord=numpy.inf)
@@ -491,7 +491,7 @@ def imfil_core(x0, f, budget, core_data, bounds):
                 # Otherwise, update the history array and keep going.
                 else:
                     stepn = numpy.linalg.norm(xc-x, ord=numpy.inf)
-                    append_history(histout, fcount, fval, npgrad, stepn, -1, x)
+                    append_history(histout, fcount, fval, npgrad, stepn, iarm, x)
 
                 # Update xold. It will not be the same as xc (the point for the most
                 # recent stencil derivative point) if you are exiting the quasi-Newton
