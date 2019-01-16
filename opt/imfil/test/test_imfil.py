@@ -48,11 +48,11 @@ class TestIMFIL:
 
         for func in [f_easy_simple, f_easy]:#, f_easy_parallel]:
             if func == f_easy_simple:
-                optset = SQImFil.optset(simple_function=True)
+                optset = SQImFil.optset(simple_function=True, scale_depth=7)
             elif func == f_easy_parallel:
-                optset = SQImFil.optset(parallel=True)
+                optset = SQImFil.optset(parallel=True, scale_depth=7)
             else:
-                optset = SQImFil.optset()
+                optset = SQImFil.optset(scale_depth=7)
             res, histout, complete_history = SQImFil.optimize(func, x0, budget, bounds, optset)
             assert type(res.optpar) == np.ndarray
             # this problem is symmetric, so values may have switched; for
