@@ -137,6 +137,15 @@ def minimize(f, x0, bounds, budget=10000, optin=None, **optkwds):
 
     global imfil_fscale
 
+    # TODO: get rid of matrix use
+    # Make sure x0 is a single-column matrix
+    if not isinstance(x0, numpy.matrix):
+        x0 = numpy.matrix(x0).T
+
+    # Make sure bounds are a 2-column martrix
+    if not isinstance(bounds, numpy.matrix):
+        bounds = numpy.matrix(bounds)
+
     objfunc = f
     qbounds = bounds
     dbounds = bounds[:,1] - bounds[:,0]

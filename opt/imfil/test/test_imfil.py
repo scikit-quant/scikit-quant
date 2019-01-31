@@ -41,7 +41,7 @@ class TestIMFIL:
                 res.append(f_easy(ax[i])[0])
             return (res, [0]*len(res), [1]*len(res))
 
-        bounds = np.matrix([[-1, 1], [-1, 1]], dtype=float)
+        bounds = np.array([[-1, 1], [-1, 1]], dtype=float)
         budget = 40
         x0 = np.array([0.5, 0.5])
 
@@ -86,7 +86,7 @@ class TestIMFIL:
             return (fv, 0, 1)
 
         import numpy as np
-        bounds = np.matrix([[-1, 1], [-1, 1], [0, 1]], dtype=float)
+        bounds = np.array([[-1, 1], [-1, 1], [0, 1]], dtype=float)
         budget = 40
         optset = SQImFil.optset(scale_depth=7, complete_history=0)
 
