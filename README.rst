@@ -6,7 +6,7 @@ quantum computing software packages.
 Our first focus in on classical optimizers, making the state-of-the art from
 the Applied Math community available in Python for use in quantum computing.
 
-Website: http://scikit-learn.org
+Website: http://scikit-quant.org
 
 
 Installation
