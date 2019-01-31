@@ -30,7 +30,7 @@ def find_version(*file_paths):
 setup(
     name='scikit-quant',
     version=find_version('skquant', '_version.py'),
-    description='Cling-based Python-C++ bindings',
+    description='Integrator for Python-based quantum computing software',
     long_description=long_description,
 
     url='http://scikit-quant.org',
