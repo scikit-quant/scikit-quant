@@ -51,6 +51,7 @@ setup(
         'Topic :: Scientific/Engineering :: Chemistry',
         'Topic :: Scientific/Engineering :: Mathematics',
         'Topic :: Scientific/Engineering :: Physics',
+        'Topic :: Software Development',
 
         'License :: Other/Proprietary License',
 

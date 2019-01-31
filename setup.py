@@ -45,7 +45,13 @@ setup(
 
         'Intended Audience :: Science/Research',
         'Intended Audience :: Developers',
+        'Intended Audience :: Developers',
+        'Intended Audience :: Science/Research',
 
+        'Topic :: Scientific/Engineering',
+        'Topic :: Scientific/Engineering :: Chemistry',
+        'Topic :: Scientific/Engineering :: Mathematics',
+        'Topic :: Scientific/Engineering :: Physics',
         'Topic :: Software Development',
 
         'License :: OSI Approved :: BSD License',
