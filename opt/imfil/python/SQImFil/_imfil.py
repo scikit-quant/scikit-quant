@@ -563,48 +563,27 @@ def f_internal(x, h, core_data):
         z[:,ix] = numpy.multiply(dbounds, x[:,ix])+qbounds[:,0]
     zargs = numpy.squeeze(numpy.asarray(z.T))
 
-    func_type = options.noise_aware + 10*options.scale_aware + \
-          100*options.simple_function + 1000*options.extra_argument
+    call_args = [zargs,]
+    if options.scale_aware:
+        call_args.append(h)
+    if options.extra_argument:
+        call_args.append(exarg)
 
-    if func_type == 0:
-        fx, iff, icf = objfunc(zargs)
-        tol = 0
-    elif func_type == 10:
-        fx, iff, icf = objfunc(zargs, h)
-        tol = 0
-    elif func_type == 1:
-        fx, iff, icf, tol = objfunc(zargs)
-    elif func_type == 11:
-        fx, iff, icf, tol = objfunc(zargs, h)
-    elif func_type == 100:
-        fx = objfunc(zargs)
-    elif func_type == 110:
-        fx = objfunc(zargs, h)
-    elif func_type == 101:
-        fx, tol = objfunc(zargs)
-    elif func_type == 111:
-        fx, tol = objfunc(zargs, h)
-    elif func_type == 1000:
-        fx, iff, icf = objfunc(zargs, exarg)
-        tol = 0
-    elif func_type == 1010:
-        fx, iff, icf = objfunc(zargs, h, exarg)
-        tol = 0
-    elif func_type == 1001:
-        fx, iff, icf, tol = objfunc(zargs, exarg)
-    elif func_type == 1011:
-        fx, iff, icf, tol = objfunc(zargs, h, exarg)
-    elif func_type == 1100:
-        fx = objfunc(zargs, exarg)
+    res = objfunc(*call_args)
+    fx, iff, icf, tol = 0., 0, 1, 0.
+    if type(res) == tuple:
+        fx = res[0]
+        if 1 < len(res):
+            iff = res[1]
+        if 2 < len(res):
+            icf = res[2]
+        if 3 < len(res):
+            tol = res[3]
     else:
-        raise SystemError('internal error in imfil.m: f_internal')
-
-    if options.simple_function:
+        fx = res
         mz, nz = z.shape
         if nz != 1:
-           iff = zeros(nz); icf = nz*ones(nz); tol = 0
-        else:
-           iff, icf, tol = 0, 1, 0
+           iff = zeros(nz); icf = nz*ones(nz)
 
     # If this is the first time you evalute f and if imfil_fscale < 0,
     # we change imfil_fscale to the correct relative scaling factor. This
