@@ -52,7 +52,7 @@ class TestIMFIL:
                 optset = SQImFil.optset(parallel=True, scale_depth=7)
             else:
                 optset = SQImFil.optset(scale_depth=7)
-            res, histout, complete_history = SQImFil.minimize(func, x0, budget, bounds, optset)
+            res, histout, complete_history = SQImFil.minimize(func, x0, bounds, budget, optset)
             for i in range(histout.shape[0]):
                 for j in range(histout.shape[1]):
                     print "%2.4f" % (float(histout[i,j])),
@@ -68,7 +68,7 @@ class TestIMFIL:
         # TODO: figure out why the parallel version performs a bit better
         optset = SQImFil.optset(parallel=True)
         res, histout, complete_history = \
-             SQImFil.minimize(f_easy_parallel, x0, budget, bounds, optset)
+             SQImFil.minimize(f_easy_parallel, x0, bounds, budget, optset)
         assert type(res.optpar) == np.ndarray
         assert np.round(sum(res.optpar)-sum((0.00281554, 0.00281554)), 5) == 0
 
@@ -91,19 +91,19 @@ class TestIMFIL:
         optset = SQImFil.optset(scale_depth=7, complete_history=0)
 
         x0 = np.array([0., 0., 0.])
-        res, histout = SQImFil.minimize(f_easy, x0, budget, bounds, optset)
+        res, histout = SQImFil.minimize(f_easy, x0, bounds, budget, optset)
         assert np.round(res.optval, 5) == -0.12422
 
         x0 = np.array([-1.0, -1.0, 0.011198])
-        res, histout = SQImFil.minimize(f_easy, x0, budget, bounds, optset)
+        res, histout = SQImFil.minimize(f_easy, x0, bounds, budget, optset)
         assert np.round(res.optval, 5) == -0.18258
 
         x0 = np.array([-1.0, 0.222183, 0.037152])
-        res, histout = SQImFil.minimize(f_easy, x0, budget, bounds, optset)
+        res, histout = SQImFil.minimize(f_easy, x0, bounds, budget, optset)
         assert np.round(res.optval, 5) == -0.10459
 
         x0 = np.array([-0.8305, 0., 0.314])
-        res, histout = SQImFil.minimize(f_easy, x0, budget, bounds, optset)
+        res, histout = SQImFil.minimize(f_easy, x0, bounds, budget, optset)
         assert np.round(res.optval, 5) == -0.18259
 
         xmin = np.array([-1.0, -1.0, 0.0])

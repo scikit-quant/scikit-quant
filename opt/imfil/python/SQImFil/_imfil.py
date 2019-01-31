@@ -47,7 +47,7 @@ class StencilData(object):
 
 
 #-----
-def minimize(f, x0, budget, bounds, optin=None, **optkwds):
+def minimize(f, x0, bounds, budget=10000, optin=None, **optkwds):
     """
   Minimization of noisy functions subject to explicit bound
   constraints + hidden constraints
