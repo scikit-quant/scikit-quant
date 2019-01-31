@@ -36,8 +36,8 @@ setup(
 
     url='http://scikit-quant.org/',
 
-    author='Wim Lavrijsen',
-    author_email='WLavrijsen@lbl.gov',
+    maintainer='Wim Lavrijsen',
+    maintainer_email='WLavrijsen@lbl.gov',
 
     license='other',
 

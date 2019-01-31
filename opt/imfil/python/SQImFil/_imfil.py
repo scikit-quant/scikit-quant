@@ -12,7 +12,7 @@ from ._history import CompleteHistory, append_history, single_point_hist_update,
 from ._exec_functions import gauss_newton, qn_update
 import collections, copy, math, numpy, operator, random, logging
 
-__all__ = ['optimize', 'log']
+__all__ = ['minimize', 'log']
 
 log = logging.getLogger('SQImFil')
 
@@ -47,7 +47,7 @@ class StencilData(object):
 
 
 #-----
-def optimize(f, x0, budget, bounds, optin=None, **optkwds):
+def minimize(f, x0, budget, bounds, optin=None, **optkwds):
     """
   Minimization of noisy functions subject to explicit bound
   constraints + hidden constraints
