@@ -31,7 +31,7 @@ def find_version(*file_paths):
 setup(
     name='SQSnobFit',
     version=find_version('python', 'SQSnobFit', '_version.py'),
-    description='ImFil - Implicit Filtering',
+    description='SnobFit - Stable Noisy Optimization by Branch and FIT',
     long_description=long_description,
 
     url='http://scikit-quant.org/',
