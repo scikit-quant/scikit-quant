@@ -2,7 +2,7 @@ import py, os, sys
 from pytest import raises
 import numpy as np
 
-sys.path = [os.path.join(os.pardir, 'python')] + sys.path
+sys.path = [os.pardir] + sys.path
 
 
 class TestOPTIMIZERS:
@@ -31,3 +31,8 @@ class TestOPTIMIZERS:
         assert np.round(histout[9,5:7].sum()-sum((-6.81757191e-03, 8.80742809e-03)), 8) == 0
 
         assert raises(RuntimeError, minimize, f_easy_simple, x0, bounds, budget, method='does not exist')
+
+        res, histout, complete_history = \
+             minimize(f_easy_simple, x0, bounds, budget, method='snobfit')
+        assert type(res.optpar) == np.ndarray
+        assert np.round(sum(res.optpar)-sum((-0.00112, -0.00078)), 8) == 0
