@@ -89,6 +89,7 @@ from ._snoblp    import snoblp
 from ._snobnan   import snobnan
 from ._snobpoint import snobpoint
 from ._snobqfit  import snobqfit
+from ._snobsplit import snobsplit
 from ._snobupdt  import snobupdt
 from ._snob5     import snob5
 import logging, math, numpy
@@ -147,11 +148,14 @@ def fill_request(request, func, nparams):
 
 
 #-----
-def minimize(f, x0, bounds, budget, optin=None, **optkwds):
+def minimize(f, x0, bounds, budget, optin={}, **optkwds):
     # The user-facing API is the equivalent of snobdriver, providing the loop
     # over the "internal" snobfit function.
     if budget <= 0:
         budget = 100000
+
+    if len(x0.shape) == 1:
+        x0 = x0.reshape(1, len(x0))
 
     minfcall = 10;      # minimum number of function values before
                         # considering stopping
@@ -161,12 +165,17 @@ def minimize(f, x0, bounds, budget, optin=None, **optkwds):
     dx = (bounds[:,1]-bounds[:,0])*1E-5
 
     # setup parameters (TODO: use optin/optkwds)
-    config = {"bounds": bounds, "nreq": len(x0)+6, "p": .5}
+    config = {"bounds": bounds, "nreq": len(bounds[:,0])+6, "p": .1}
+    config.update(optin)
+    config.update(optkwds)
+
     nparams = len(bounds)
 
-    # initial call with empty list of input points (establishes initial request)
+    # initial call with list of just x0 as input point(s) (establishes initial request)
     request, xbest, fbest = snobfit(
         numpy.array([]).reshape(0, len(bounds)), numpy.array([]).reshape(0,2), config, dx)
+
+    #request, xbest, fbest = snobfit(x0, numpy.array([]).reshape(0,2), config, dx)
     if optin and 'verbose' in optin:
         print(request)
 
@@ -231,22 +240,22 @@ def snobfit(x, f, config, dx = None):
 
     if dx is not None:  # a new job is started
         if numpy.any(dx<=0):
-          raise ValueError('dx should contain only positive entries')
+            raise ValueError('dx should contain only positive entries')
         if dx.shape[0] > 1:
-          dx = dx.T
+            dx = dx.T
         if x.size > 0:
-            numpy.min(numpy.app(x, [u1]))   # vertically concatenate u1 to x, grab minimum row
-            numpy.max(numpy.app(x, [v1]))   # vertically concatenate v1 to x, grab maximum row
+            u = numpy.minimum(x, u1)
+            v = numpy.maximum(x, v1)
         else:
-            u = u1
-            v = v1
+            u = u1[:]
+            v = v1[:]
 
         x, f, np, t = snobinput(x, f)   # throw out duplicates among the points
                                         # and compute mean function value and
                                         # deviation
         if x.size > 0:
             xl, xu, x, f, nsplit, small = snobsplit(x, f, u, v, None, u, v)
-            d = inf * ones((1, len(x)))
+            d = numpy.inf*numpy.ones((1, len(x)))
         else:
             xl = numpy.array([])
             xu = numpy.array([])
@@ -290,8 +299,8 @@ def snobfit(x, f, config, dx = None):
 
             x1 = snob5(x, u1, v1, dx, nreq)
             request = numpy.concatenate((x1, numpy.nan*numpy.ones((nreq,1)), 5*numpy.ones((nreq,1))), 1)
-            if x.size > 0:
-                (fbest, jbest) = min_(f[:,1])
+            if x.size > 0 and f.size > 0:
+                fbest, jbest = min_(f[:,0])
                 xbest = x[jbest]
             else:
                 xbest = numpy.nan*numpy.ones((1,n))
@@ -517,7 +526,7 @@ def snobfit(x, f, config, dx = None):
                     break
             m = 0
 
-    if len(request.shape) < nreq:
+    if len(request) < nreq:
         x1 = snob5(numpy.concatenate((x, request[:,:n])), u1, v1, dx, nreq - len(request))
         nx = len(x)
         for j in range(len(x1)):

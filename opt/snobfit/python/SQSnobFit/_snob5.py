@@ -60,7 +60,7 @@ def snob5(x, u, v, dx, nreq):
     xnew = numpy.outer(numpy.ones(nx1), u) + rand(nx1,n)*numpy.outer(numpy.ones(nx1), v-u)
     if nx:
         for j in range(nx1):
-            xnew[j,:] = snobround(xnew[j,:],u,v,dx)
+            xnew[j,:] = snobround(xnew[j,:], u, v, dx)
             d[j] = numpy.min(numpy.sum((x-numpy.ones((nx,1))*xnew[j,:])**2, 1))
 
         ind = find(d == 0)

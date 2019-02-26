@@ -152,11 +152,11 @@ def snobupdt(xl, xu, x, f, nsplit, small, near, d, np, t, xnew, fnew, fnan, u, v
             fnew = numpy.append(fnew, numpy.zeros((len(fnew), f.shape[1]-fnew.shape[1])), axis=1)
         f = numpy.vstack((f, fnew))
     if np.size > 0:
-        np = numpy.vstack((np, npnew))
+        np = numpy.append(np, npnew)
     else:
         np = npnew.copy()
     if t.size > 0:
-        t = numpy.vstack((t, tnew))
+        t = numpy.append(t, tnew)
     else:
         t = tnew.copy()
     if not nxold:
@@ -165,9 +165,11 @@ def snobupdt(xl, xu, x, f, nsplit, small, near, d, np, t, xnew, fnew, fnan, u, v
         par = numpy.zeros((nxnew,))
         for j in range(nxnew):
             xx = numpy.ones((nxold,1))*xnew[j]
-            ind = find(numpy.sum(numpy.logical_and(numpy.less_equal(xl, xx), numpy.less_equal(xx, xu)), 1) == n)
-            minsmall, ismall = min_(small[ind])
-            par[j] = ind[ismall]
+            ind = find(numpy.sum( \
+                numpy.logical_and(numpy.less_equal(xl, xx), numpy.less_equal(xx, xu)), 1) == n)
+            if ind.size > 0:
+                minsmall, ismall = min_(small[ind])
+                par[j] = ind[ismall]
 
         par1, ww, cdfx, dof = rsort(par)
         inew = numpy.concatenate((inew, par1), 0)
