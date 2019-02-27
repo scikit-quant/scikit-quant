@@ -81,7 +81,7 @@ or make them available to be passed in?
  fbest         current best function value (i.e. function value at xbest)
 """
 
-from ._common import Result, Stats
+from SQCommon import Result, Stats
 from ._gen_utils import diag, rsort, max_, min_, find, extend, rand, sort
 from ._snobinput import snobinput
 from ._snoblocf  import snoblocf, snobround

@@ -65,7 +65,7 @@ setup(
     ],
 
     setup_requires=['wheel'],
-    install_requires=['numpy'],
+    install_requires=['numpy', 'SQCommon'],
 
     keywords='quantum computing optimization',
 

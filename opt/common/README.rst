@@ -1,0 +1,8 @@
+.. -*- mode: rst -*-
+
+SQCommon - Common API for skquant.opt minimizers
+================================================
+
+Common classes for a consistent API on top of the minimizers collected in
+skquant.opt. These included result representation, input checking, collection of
+run statistics, etc.

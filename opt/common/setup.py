@@ -29,20 +29,20 @@ def find_version(*file_paths):
     raise RuntimeError("Unable to find version string.")
 
 setup(
-    name='SQSnobFit',
-    version=find_version('python', 'SQSnobFit', '_version.py'),
-    description='SnobFit - Stable Noisy Optimization by Branch and FIT',
+    name='SQCommon',
+    version=find_version('python', 'SQCommon', '_version.py'),
+    description='SQCommon - Common Optimizer API',
     long_description=long_description,
 
     url='http://scikit-quant.org/',
 
-    maintainer='Wim Lavrijsen',
-    maintainer_email='WLavrijsen@lbl.gov',
+    author='Wim Lavrijsen',
+    author_email='WLavrijsen@lbl.gov',
 
-    license='other',
+    license='LBNL BSD',
 
     classifiers=[
-        'Development Status :: 5 - Production/Stable',
+        'Development Status :: 3 - Alpha',
 
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
@@ -65,10 +65,10 @@ setup(
     ],
 
     setup_requires=['wheel'],
-    install_requires=['numpy', 'SQCommon'],
+    install_requires=[],
 
     keywords='quantum computing optimization',
 
     package_dir={'': 'python'},
-    packages=find_packages('python', include=['SQSnobFit']),
+    packages=find_packages('python', include=['SQCommon']),
 )

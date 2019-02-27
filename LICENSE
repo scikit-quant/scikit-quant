@@ -1,0 +1,9 @@
+The sciki-quant repository contains several packages that are individually
+licensed. All of them are free to use for academic users. The rewrites of
+ImFil (opt/imfil)and SnobFit (opt/snobfit) may require additional approval
+from their original authors for non-academic uses. For this reason, these
+packages are released separately on PyPI.
+
+The released scikit-quant package on PyPI is itself covered by LBNL BSD.
+
+Copyright (c) 2019, The Regents of the University of California

@@ -3,7 +3,7 @@ from __future__ import print_function
 #
 # Modified and redistributed with permission.
 
-from ._common import Result, Stats
+from SQCommon import Result, Stats
 from ._optset import optset
 from ._util import error_check, check_first_eval, isok
 from ._linalg import eye, ones, zeros, kk_proj, f_to_vals
