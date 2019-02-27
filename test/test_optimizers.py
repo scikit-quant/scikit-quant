@@ -35,4 +35,9 @@ class TestOPTIMIZERS:
         res, histout, complete_history = \
              minimize(f_easy_simple, x0, bounds, budget, method='snobfit')
         assert type(res.optpar) == np.ndarray
-        assert np.round(sum(res.optpar)-sum((-0.00112, -0.00078)), 8) == 0
+        assert np.round(sum(res.optpar)-sum((-0.0001, -0.00018)), 8) == 0
+
+        res, histout, complete_history = \
+             minimize(f_easy_simple, x0, bounds, budget, method='bobyqa')
+        assert type(res.optpar) == np.ndarray
+        assert np.round(sum(res.optpar), 5) == 0

@@ -168,7 +168,8 @@ def minimize(f, x0, bounds, budget, optin={}, **optkwds):
 
     # setup parameters (TODO: use optin/optkwds)
     config = {"bounds": bounds, "nreq": len(bounds[:,0])+6, "p": .1}
-    config.update(optin)
+    if optin is not None:
+        config.update(optin)
     config.update(optkwds)
 
     nparams = len(bounds)
