@@ -89,18 +89,18 @@ def snoblocf(j, x, f, near, dx, u, v):
     sigma = numpy.sqrt(numpy.sum((A.dot(g)-b.T)**2)/(K-n))
     pl = numpy.maximum(-d,u-x0)
     pu = numpy.minimum(d,v-x0)
-    p = numpy.zeros((1, n))
+    p = numpy.zeros((n,))
     for i in range(n):
-        p[0,i] = snobqmin(sigma*D[i], g[i], pl[i], pu[i])
+        p[i] = snobqmin(sigma*D[i], g[i], pl[i], pu[i])
 
     y = snobround(x0+p, u, v, dx)
     nc = 0
 
-    while (numpy.min( (numpy.abs(x - numpy.outer(numpy.ones(len(x)), y) ) -
-        numpy.outer(numpy.ones(len(x)), dx)).max(1) ) < 0) and nc < 5:
-          p = pl + (pu-pl)*rand(1,n)
-          y = snobround(x0+p, u, v, dx)
-          nc = nc + 1
+    while (numpy.min(numpy.maximum(numpy.abs(x - numpy.outer(numpy.ones(len(x)), y) -
+            numpy.outer(numpy.ones(len(x)), dx)), 1)) < 0) and nc < 5:
+        p = pl + (pu-pl)*rand(1, n)
+        y = snobround(x0+p, u, v, dx)
+        nc = nc + 1
 
     p = y - x0
     err = p.dot(diag(D).dot(p.T)) + df0

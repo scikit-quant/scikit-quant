@@ -432,8 +432,8 @@ def snobfit(x, f, config, dx = None):
                     if numpy.sum(y1 == y[l0]) < n:
                         D = f[l0,1]/dx**2
                         #Possibly problem area!
-                        f1 = f[l0,0] + g[l0].dot((y1 - x[l0]).T) + sigma[l0].dot( \
-                            (y1 - x[l0]).dot(diag(D).dot((y1-x(l0)).T) + f[l0,1]))
+                        f1 = f[l0,0] + g[l0].dot((y1 - x[l0]).T) + sigma[l0]*( \
+                            (y1 - x[l0]).dot(diag(D).dot((y1-x[l0]).T) + f[l0,1]))
                     else:
                         f1 = f[l0,2]
                     request = numpy.vstack((request, numpy.concatenate((y1, numpy.array((f1, 2))), 0)))
@@ -468,7 +468,7 @@ def snobfit(x, f, config, dx = None):
                     if numpy.sum(y1==y[l0]) < n:
                         D = f[l0,1]/(dx**2)
                         f1 = f[l0,0] + g[l0].dot((y1 - x[l0]).T) + \
-                        sigma[l0].dot(((y1 - x[l0]).dot(diag(D).dot((y1 - x[l0]).T))) + f[l0,1])
+                        sigma[l0]*(((y1 - x[l0]).dot(diag(D).dot((y1 - x[l0]).T))) + f[l0,1])
                     else:
                         f1 = f[l0,2]
 
@@ -537,7 +537,7 @@ def snobfit(x, f, config, dx = None):
                 i = i[i1]
 
             D = f[i,1]/(dx**2)
-            f1 = f[i,0] + (x1[j] - x[i]).dot(g[i].T) + sigma[i].dot((x1[j] - x[i]).dot(diag(D).dot((x1[j] - x[i]).T))) + f[i,1]
+            f1 = f[i,0] + (x1[j] - x[i]).dot(g[i].T) + sigma[i]*((x1[j] - x[i]).dot(diag(D).dot((x1[j] - x[i]).T))) + f[i,1]
             request = numpy.vstack((request, numpy.concatenate((x1[j], numpy.array((f1, 5))), 0)))
 
     if len(request) < nreq:
