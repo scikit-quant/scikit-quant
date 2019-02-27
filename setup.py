@@ -10,6 +10,10 @@ requirements = []
 requirements.append('SQImFil>=0.2')
 requirements.append('SQSnobFit>=0.1')
 
+# external optimizers
+requirements.append('Py-BOBYQA>=1.1')
+
+
 here = os.path.abspath(os.path.dirname(__file__))
 with codecs.open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()

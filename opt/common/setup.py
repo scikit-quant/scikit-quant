@@ -65,7 +65,7 @@ setup(
     ],
 
     setup_requires=['wheel'],
-    install_requires=['nunpy'],
+    install_requires=['numpy'],
 
     keywords='quantum computing optimization',
 
