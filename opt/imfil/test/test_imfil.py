@@ -57,7 +57,6 @@ class TestIMFIL:
                 for j in range(histout.shape[1]):
                     print "%2.4f" % (float(histout[i,j])),
                 print
-            print res.optpar
             assert type(res.optpar) == np.ndarray
             # this problem is symmetric, so values may have switched; for
             # simplicity, just check the sum
@@ -113,9 +112,3 @@ class TestIMFIL:
         assert np.round(sum(res.optpar-xmin), 8) == 0
         assert f_easy(res.optpar)[0] == f_easy(xmin)[0]
         assert round(res.optval-f_easy(res.optpar)[0], 8) == 0
-
-
-if __name__ == "__main__": 
-    a = TestIMFIL()
-    a.test01_simple_example()
-    a.test02_simple_example()
