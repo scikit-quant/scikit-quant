@@ -3,7 +3,7 @@ from __future__ import print_function
 #
 # Modified and redistributed with permission.
 
-from SQCommon import Result, Stats
+from SQCommon import Result, ObjectiveFunction
 from ._optset import optset
 from ._util import error_check, check_first_eval, isok
 from ._linalg import eye, ones, zeros, kk_proj, f_to_vals
@@ -146,7 +146,6 @@ def minimize(f, x0, bounds, budget=10000, optin=None, **optkwds):
     if not isinstance(bounds, numpy.matrix):
         bounds = numpy.matrix(bounds)
 
-    objfunc = f
     qbounds = bounds
     dbounds = bounds[:,1] - bounds[:,0]
 
@@ -163,6 +162,8 @@ def minimize(f, x0, bounds, budget=10000, optin=None, **optkwds):
         options = optset(**dict(optin, **optkwds))
     else:
         options = optset(optin, **optkwds)
+
+    objfunc = ObjectiveFunction(f, options)
 
     n = len(x0)
 
@@ -244,7 +245,7 @@ def minimize(f, x0, bounds, budget=10000, optin=None, **optkwds):
     result = Result(fval*val_scale, numpy.squeeze(numpy.asarray(opt_par)))
 
     if options.complete_history:
-        return result, histout, complete_history
+        return result, histout, objfunc.get_history()
     return result, histout
 
 

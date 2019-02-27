@@ -13,3 +13,6 @@ class TestCOMMON:
         """Test existence and semantics of the common API"""
 
         import SQCommon
+
+        assert SQCommon.Result
+        assert SQCommon.Stats

@@ -10,5 +10,6 @@ if log.level == logging.NOTSET:
 
 __all__ = ['Result', 'Stats']
 
+from ._objective import ObjectiveFunction
 from ._result import Result
 from ._stats import Stats

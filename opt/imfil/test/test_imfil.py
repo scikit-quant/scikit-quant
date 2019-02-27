@@ -46,8 +46,8 @@ class TestIMFIL:
         x0 = np.array([0.5, 0.5])
 
         for func in [f_easy_simple, f_easy]:#, f_easy_parallel]:
-            if func == f_easy_simple:
-                optset = SQImFil.optset(simple_function=True, scale_depth=7)
+            if func == f_easy:
+                optset = SQImFil.optset(simple_function=False, scale_depth=7)
             elif func == f_easy_parallel:
                 optset = SQImFil.optset(parallel=True, scale_depth=7)
             else:

@@ -81,7 +81,7 @@ or make them available to be passed in?
  fbest         current best function value (i.e. function value at xbest)
 """
 
-from SQCommon import Result, Stats
+from SQCommon import Result, ObjectiveFunction
 from ._gen_utils import diag, rsort, max_, min_, find, extend, rand, sort
 from ._snobinput import snobinput
 from ._snoblocf  import snoblocf, snobround
@@ -157,6 +157,8 @@ def minimize(f, x0, bounds, budget, optin={}, **optkwds):
     if len(x0.shape) == 1:
         x0 = x0.reshape(1, len(x0))
 
+    objfunc = ObjectiveFunction(f)
+
     minfcall = 10;      # minimum number of function values before
                         # considering stopping
     nstop = 10           # number of times no improvement is tolerated
@@ -180,7 +182,7 @@ def minimize(f, x0, bounds, budget, optin={}, **optkwds):
         print(request)
 
     # calculate the requested points and set uncertainties
-    x, vals = fill_request(request, f, nparams)
+    x, vals = fill_request(request, objfunc, nparams)
 
     ncall0 = len(vals)                 # initial budget used
     fbestn, jbest = min_(vals[:,0])    # best function value
@@ -198,7 +200,7 @@ def minimize(f, x0, bounds, budget, optin={}, **optkwds):
             print(request)
 
         # computation of the function values at the suggested points
-        x, vals = fill_request(request, f, nparams)
+        x, vals = fill_request(request, objfunc, nparams)
 
         # update function call counter
         ncall0 = ncall0 + len(vals)
@@ -218,7 +220,8 @@ def minimize(f, x0, bounds, budget, optin={}, **optkwds):
         if nstop0 >= nstop and ncall0 >= minfcall:
             break
 
-    return Result(fbest, xbest), None, None
+    full_history = objfunc.get_history()
+    return Result(fbest, xbest), full_history, full_history
 
 
 def snobfit(x, f, config, dx = None):
