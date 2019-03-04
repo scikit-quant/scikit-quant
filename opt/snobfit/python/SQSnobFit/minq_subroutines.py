@@ -31,7 +31,9 @@ from __future__ import print_function
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from ._gen_utils import diag, find
-import copy, numpy
+import copy, numpy, logging
+
+log = logging.getLogger('SQSnobFit')
 
 
 #-----
@@ -291,10 +293,21 @@ def ldlup(L, d, j, g):
             print('leave ldlup at 4')
 
     else:
+        """
+        % work around expensive sparse L(K,K)=LKK
+        L=[L(1:j,:); LKI,L(K,j),LKK];
+        pi=w'*q;
+        p=[LII'\(pi*v-LKI'*q);-pi;q];
+        """
+        # TODO: there is something missing in this mapping (extension of matrices), for now skip
+        # this update and let upstream deal with it.
+        """
         pi_ = numpy.outer(w.T, q)
-        p = numpy.concatenate((numpy.linalg.solve(L[I,I].T, (pi_*v - L[K,I].T.dot(q))), - pi_, q))
+        p = numpy.concatenate((numpy.linalg.solve(L[I[:,None],I].T, (pi_*v - L[K[:,None],I].T.dot(q))), - pi_, q))
         if test:
             print('indef2 =', (p.T.dot(A.dot(p)))/(numpy.abs(p).T.dot(numpy.abs(A).dot(numpy.abs(p)))))
             print('leave ldlup at 5')
+        """
+        log.debug('DEBUG: skipping update step in ldlup')
 
     return L, d, p
