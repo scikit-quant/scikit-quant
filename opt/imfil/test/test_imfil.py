@@ -45,13 +45,14 @@ class TestIMFIL:
         budget = 40
         x0 = np.array([0.5, 0.5])
 
+        opt_common = {'scale_depth' : 7, 'complete_history' : True}
         for func in [f_easy_simple, f_easy]:#, f_easy_parallel]:
             if func == f_easy:
-                optset = SQImFil.optset(simple_function=False, scale_depth=7)
+                optset = SQImFil.optset(simple_function=False, **opt_common)
             elif func == f_easy_parallel:
-                optset = SQImFil.optset(parallel=True, scale_depth=7)
+                optset = SQImFil.optset(parallel=True, **opt_common)
             else:
-                optset = SQImFil.optset(scale_depth=7)
+                optset = SQImFil.optset(**opt_common)
             res, histout, complete_history = SQImFil.minimize(func, x0, bounds, budget, optset)
             for i in range(histout.shape[0]):
                 for j in range(histout.shape[1]):
@@ -65,7 +66,7 @@ class TestIMFIL:
             assert np.round(histout[9,5:7].sum()-sum((-6.81757191e-03, 8.80742809e-03)), 8) == 0
 
         # TODO: figure out why the parallel version performs a bit better
-        optset = SQImFil.optset(parallel=True)
+        optset = SQImFil.optset(parallel=True, **opt_common)
         res, histout, complete_history = \
              SQImFil.minimize(f_easy_parallel, x0, bounds, budget, optset)
         assert type(res.optpar) == np.ndarray
