@@ -18,8 +18,8 @@ Installation
 Usage
 -----
 
+Basic example::
 
-   ```python
    # create a numpy array of bounds, one (low, high) for each parameter
    bounds = np.array([[-1, 1], [-1, 1]], dtype=float)
 
@@ -32,4 +32,3 @@ Usage
    # method can be ImFil, SnobFit, Orbit, or Bobyqa
    result, history = \
        minimize(objective_function, x0, bounds, budget, method='imfil')
-   ```
