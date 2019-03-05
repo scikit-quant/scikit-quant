@@ -507,7 +507,7 @@ def snobfit(x, f, config, dx = None):
 
     first = True
     while (sreq < nreq) and ind.size > 0:   # and find(small[ind] <= (minsmall + m1)).any():
-        for m in range(m1+1):
+        for m in range(int(m1+1)):
             if first:
                 first = False
                 continue
