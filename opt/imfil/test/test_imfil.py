@@ -54,10 +54,6 @@ class TestIMFIL:
             else:
                 optset = SQImFil.optset(**opt_common)
             res, histout, complete_history = SQImFil.minimize(func, x0, bounds, budget, optset)
-            for i in range(histout.shape[0]):
-                for j in range(histout.shape[1]):
-                    print "%2.4f" % (float(histout[i,j])),
-                print
             assert type(res.optpar) == np.ndarray
             # this problem is symmetric, so values may have switched; for
             # simplicity, just check the sum
