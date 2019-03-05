@@ -14,7 +14,12 @@ def minimize(func, x0, bounds, budget=10000, method='imfil', options=None, **opt
     elif 'snobfit' in method_ :
         import SQSnobFit as optimizer
     elif 'bobyqa' in method_:
-        import _pybobyqa as optimizer
+        import skquant.opt._pybobyqa as optimizer
+    elif 'orbit' in method_:
+        import sys
+        if sys.version_info[0] != 3:
+            raise RuntimeError("ORBIT is only supported on Python3 because of rpy2")
+        import skquant.opt._norbitR as optimizer
 
     if optimizer is not None:
         return optimizer.minimize(func, x0, bounds, budget, options, **optkwds)

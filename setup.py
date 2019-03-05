@@ -7,12 +7,15 @@ add_pkg = []
 requirements = []
 
 # optimizers sub-package requirements
-requirements.append('SQImFil>=0.2')
-requirements.append('SQSnobFit>=0.1')
+requirements.append('SQImFil>=0.3')
+requirements.append('SQSnobFit>=0.2')
 
 # external optimizers
 requirements.append('Py-BOBYQA>=1.1')
 
+# rpy2 dependency for ORBIT
+if sys.version_info[0] == 3:
+    requirements.append('rpy2')
 
 here = os.path.abspath(os.path.dirname(__file__))
 with codecs.open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:

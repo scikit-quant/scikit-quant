@@ -47,3 +47,12 @@ class TestOPTIMIZERS:
              minimize(f_easy_simple, x0, bounds, budget, method='bobyqa')
         assert type(result.optpar) == np.ndarray
         assert np.round(sum(result.optpar), 5) == 0
+
+        # ORBIT
+        if sys.version_info[0] == 3:
+            randstate = 1
+            np.random.seed(randstate)
+            result, history = \
+                 minimize(f_easy_simple, x0, bounds, budget, method='orbit')
+            assert type(result.optpar) == np.ndarray
+            assert np.round(sum(result.optpar)-sum((0.00076624, 0.00060909)), 7) == 0
