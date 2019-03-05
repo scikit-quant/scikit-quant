@@ -26,7 +26,7 @@ def optset(optin=None, **optkwds):
   armijo_reduction: Reduction factor for the linesearch. The default is .5.
  
   complete_history: 1 or 'on' to store complete history of all calls to f. 0
-         or 'off' otherwise. The default is 'on'. Do not turn this off unless
+         or 'off' otherwise. The default is 'off'. Do not turn this off unless
          you are having severe problems with storage.
 
   fscale: Sets a "typical value of f", used to improve the quality of the
@@ -278,7 +278,7 @@ def _create_defaults():
             #
             'armijo_reduction' : .5,    # Step size reduction factor for Armijo rule.
             #
-            'complete_history' : 1,     # Store complete history.
+            'complete_history' : 0,     # Store complete history.
             #
             'custom_scales' : [],       # vector of custom scales
             #
