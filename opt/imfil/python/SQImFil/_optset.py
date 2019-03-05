@@ -1,7 +1,9 @@
 from __future__ import print_function
-import string
+import copy, string
 
 __all__ = ['optset']
+
+STANDALONE = True
 
 def optset(optin=None, **optkwds):
     """ 
@@ -256,9 +258,10 @@ def optset(optin=None, **optkwds):
 
     if not optin:
     # Start from default structure
-        optin = _create_defaults()
+        optout = _create_defaults()
+    else:
+        optout = copy.copy(optin)
 
-    optout = optin
     for name, val in optkwds.items():
         optout = _optset_one(name, val, optout)
 
@@ -337,6 +340,8 @@ def _create_defaults():
             #
             'smooth_problem' : 0,       # Don't use imfil for smooth problems if you can
                                         # avoid it.
+            #
+            'standalone': STANDALONE,   # Use orginal interface if standalone, scikit-quant iface if not
             #
             'stencil' : 0,              # Central difference stencil.
             #

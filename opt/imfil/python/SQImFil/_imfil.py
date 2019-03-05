@@ -216,7 +216,7 @@ def minimize(f, x0, bounds, budget=10000, optin=None, **optkwds):
         val_scale = math.sqrt(imfil_fscale)
 
     # Unscale the complete history
-    if options.complete_history:
+    if options.standalone and options.complete_history:
         ng, mg = len(complete_history.good_points), 2
         good_points = zeros((mg, ng))
         for i in range(ng):
@@ -244,9 +244,11 @@ def minimize(f, x0, bounds, budget=10000, optin=None, **optkwds):
     # Turn opt_par into an array (are a matrix) and scale minimum.
     result = Result(fval*val_scale, numpy.squeeze(numpy.asarray(opt_par)))
 
-    if options.complete_history:
-        return result, histout, objfunc.get_history()
-    return result, histout
+    if options.standalone:
+        if options.complete_history:
+            return result, histout, complete_history
+        return result, histout
+    return result, objfunc.get_history()
 
 
 #-----

@@ -17,7 +17,7 @@ C.T. Kelley, "Implicit Filtering", 2011, ISBN: 978-1-61197-189-7
 Software available at ctk.math.ncsu.edu/imfil.html
 ------------------------------------------------------------------------""")
 
-__all__ = ['minimize', 'optset']
+__all__ = ['minimize', 'optset', 'log']
 
 from ._imfil import minimize
 from ._optset import optset

@@ -32,11 +32,14 @@ class TestSNOBFIT:
         budget = 40
         x0 = np.array([0.5, 0.5])
 
-        res, histout, complete_history = SQSnobFit.minimize(f_easy, x0, bounds, budget)
+        from SQSnobFit import optset
+        options = optset(maxmp=len(x0)+6)
+
+        result, history = SQSnobFit.minimize(f_easy, x0, bounds, budget, options)
 
         # this problem is symmetric, so values may have switched; for
         # simplicity, just check the sum
-        assert np.round(sum(res.optpar)-sum((-0.0001, -0.00018)), 8) == 0
+        assert np.round(sum(result.optpar)-sum((-0.00112, -0.00078)), 8) == 0
         #assert len(histout) == 10
         #assert np.round(histout[9,5:7].sum()-sum((-6.81757191e-03, 8.80742809e-03)), 8) == 0
 
@@ -61,11 +64,14 @@ class TestSNOBFIT:
         budget = 80      # larger budget needed for full convergence
         x0 = np.array([0.5, 0.5])
 
-        res, histout, complete_history = SQSnobFit.minimize(bra, x0, bounds, budget)
+        from SQSnobFit import optset
+        options = optset(maxmp=len(x0)+6)
+
+        result, history = SQSnobFit.minimize(bra, x0, bounds, budget, options)
         # LIMIT:
         # fglob = 0.397887357729739
         # xglob = [3.14159265, 2.27500000]
-        assert np.round(sum(res.optpar)-sum((3.1416, 2.275)), 8) == 0
+        assert np.round(sum(result.optpar)-sum((3.1416, 2.275)), 8) == 0
 
     def test03_Hartman6(self):
         """Minimize Hartman6 function"""
@@ -103,11 +109,11 @@ class TestSNOBFIT:
         budget = 250
         x0 = np.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
 
-        optset = {'p': 0.5}
-        res, histout, complete_history = \
-             SQSnobFit.minimize(Hartman6, x0, bounds, budget, optset)
+        from SQSnobFit import optset
+        options = optset(maxmp=len(x0)+6)
+        result, history = SQSnobFit.minimize(Hartman6, x0, bounds, budget, options)
 
         # LIMIT:
         # fglob = -3.32236801141551
         # xglob = [0.20168952, 0.15001069, 0.47687398, 0.27533243, 0.31165162, 0.65730054]
-        assert np.round(sum(res.optpar)-sum((0.2077, 0.14892, 0.4829, 0.2725, 0.31493, 0.66138)), 8) == 0
+        assert np.round(sum(result.optpar)-sum((0.2077, 0.14892, 0.4829, 0.2725, 0.31493, 0.66138)), 8) == 0

@@ -83,6 +83,7 @@ or make them available to be passed in?
 
 from SQCommon import Result, ObjectiveFunction
 from ._gen_utils import diag, rsort, max_, min_, find, extend, rand, sort
+from ._optset    import optset
 from ._snobinput import snobinput
 from ._snoblocf  import snoblocf, snobround
 from ._snoblp    import snoblp
@@ -161,26 +162,33 @@ def minimize(f, x0, bounds, budget, optin={}, **optkwds):
 
     minfcall = 10;      # minimum number of function values before
                         # considering stopping
-    nstop = 10           # number of times no improvement is tolerated
 
     # calculate resolution vector from the bounds
     dx = (bounds[:,1]-bounds[:,0])*1E-5
 
     # setup parameters (TODO: use optin/optkwds)
-    config = {"bounds": bounds, "nreq": len(bounds[:,0])+6, "p": .1}
+    if type(optin) == dict:
+        options = optset(**dict(optin, **optkwds))
+    else:
+        options = optset(optin, **optkwds)
+
+    config = {"bounds": bounds, "nreq": 2*len(bounds)+6, "p": .5}
     if optin is not None:
-        config.update(optin)
-    config.update(optkwds)
+        if options.maxmp is not None:
+            config["nreq"] = options.maxmp
+
+    nstop = options.maxfail      # number of times no improvement is tolerated
 
     nparams = len(bounds)
 
-    # initial call with list of just x0 as input point(s) (establishes initial request)
+    # initial call with empty list
     request, xbest, fbest = snobfit(
         numpy.array([]).reshape(0, len(bounds)), numpy.array([]).reshape(0,2), config, dx)
 
+    # initial call with just x0 as input point(s) (establishes initial request)
     #request, xbest, fbest = snobfit(x0, numpy.array([]).reshape(0,2), config, dx)
-    if optin and 'verbose' in optin:
-        print(request)
+    if options.verbose:
+        print('request =', request)
 
     # calculate the requested points and set uncertainties
     x, vals = fill_request(request, objfunc, nparams)
@@ -197,8 +205,8 @@ def minimize(f, x0, bounds, budget, optin={}, **optkwds):
     while ncall0 < budget:   # repeat till ncall function values are reached
                              # (if the stopping criterion is not fulfilled first)
         request, xbest, fbest = snobfit(x, vals, config)
-        if optin and 'verbose' in optin:
-            print(request)
+        if options.verbose:
+            print('request =', request)
 
         # computation of the function values at the suggested points
         x, vals = fill_request(request, objfunc, nparams)
@@ -221,8 +229,7 @@ def minimize(f, x0, bounds, budget, optin={}, **optkwds):
         if nstop0 >= nstop and ncall0 >= minfcall:
             break
 
-    full_history = objfunc.get_history()
-    return Result(fbest, xbest), full_history, full_history
+    return Result(fbest, xbest), objfunc.get_history()
 
 
 def snobfit(x, f, config, dx = None):
@@ -279,7 +286,7 @@ def snobfit(x, f, config, dx = None):
             near = numpy.zeros((len(x), nneigh))
             d = numpy.zeros(len(x))
             for j in inew:
-                near[j], d[j] = snobnn(x[j],x,nneigh,dx)
+                near[j], d[j] = snobnn(x[j], x, nneigh, dx)
 
             fnan = find(numpy.isnan(f[:,0]))
             if fnan.size > 0:

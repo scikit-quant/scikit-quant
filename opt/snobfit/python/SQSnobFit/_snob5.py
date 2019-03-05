@@ -72,7 +72,7 @@ def snob5(x, u, v, dx, nreq):
         x1 = xnew[0,:]
         xnew = xnew[1:]
         nx1 = nx1-1
-        d = numpy.sum((xnew - numpy.outer(numpy.ones(nx1), x1))**2, 1)
+        d = numpy.sum((xnew - numpy.outer(numpy.ones(nx1), x1))**2, axis=1, keepdims=True).flatten()
         nreq = nreq - 1
 
     for j in range(nreq):

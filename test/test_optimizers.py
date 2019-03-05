@@ -25,19 +25,25 @@ class TestOPTIMIZERS:
         bounds = np.array([[-1, 1], [-1, 1]], dtype=float)
         budget = 40
         x0 = np.array([0.5, 0.5])
-        res, histout, complete_history = \
-             minimize(f_easy_simple, x0, bounds, budget, method='imfil')
-        assert type(res.optpar) == np.ndarray
-        assert np.round(histout[9,5:7].sum()-sum((-6.81757191e-03, 8.80742809e-03)), 8) == 0
 
+        # interface with incorrect input
         assert raises(RuntimeError, minimize, f_easy_simple, x0, bounds, budget, method='does not exist')
 
-        res, histout, complete_history = \
-             minimize(f_easy_simple, x0, bounds, budget, method='snobfit')
-        assert type(res.optpar) == np.ndarray
-        assert np.round(sum(res.optpar)-sum((-0.0001, -0.00018)), 8) == 0
+        # ImFil
+        result, history = \
+             minimize(f_easy_simple, x0, bounds, budget, method='imfil')
+        assert type(result.optpar) == np.ndarray
 
-        res, histout, complete_history = \
+        # SnobFit
+        from SQSnobFit import optset
+        options = optset(maxmp=len(x0)+6)
+        result, history = \
+             minimize(f_easy_simple, x0, bounds, budget, method='snobfit', options=options)
+        assert type(result.optpar) == np.ndarray
+        assert np.round(sum(result.optpar)-sum((-0.00112, -0.00078)), 8) == 0
+
+        # Py-BOBYQA
+        result, history = \
              minimize(f_easy_simple, x0, bounds, budget, method='bobyqa')
-        assert type(res.optpar) == np.ndarray
-        assert np.round(sum(res.optpar), 5) == 0
+        assert type(result.optpar) == np.ndarray
+        assert np.round(sum(result.optpar), 5) == 0
