@@ -117,3 +117,21 @@ class TestSNOBFIT:
         # fglob = -3.32236801141551
         # xglob = [0.20168952, 0.15001069, 0.47687398, 0.27533243, 0.31165162, 0.65730054]
         assert np.round(sum(result.optpar)-sum((0.2077, 0.14892, 0.4829, 0.2725, 0.31493, 0.66138)), 8) == 0
+
+    def test04_direct_call(self):
+        """Direct call of a single iteration"""
+
+        import SQSnobFit
+        import numpy as np
+
+        x = np.array([[23, 23], [ 50, 50],  [50, 70],  [70, 70]])
+        f = np.array([[ 0, -1], [-34, -1], [-83, -1], [-85, -1]])
+
+        bounds = np.array([[0, 100], [0, 100]])
+        config = {'bounds': bounds, 'p': .5, 'nreq': 2*2+6}
+        dx = (bounds[:,1]-bounds[:,0])*1E-2
+
+        request, xbest, fbest = SQSnobFit.snobfit(x,f,config,dx)
+
+        assert xbest[0] == 70 and xbest[1] == 70
+        assert fbest == -85

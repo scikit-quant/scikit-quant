@@ -12,7 +12,7 @@ W. Huyer and A. Neumaier, "Snobfit - Stable Noisy Optimization by Branch and Fit
 Software available at www.mat.univie.ac.at/~neum/software/snobfit
 ------------------------------------------------------------------------""")
 
-__all__ = ['minimize', 'optset', 'log']
+__all__ = ['minimize', 'optset', 'log', 'snobfit']
 
-from ._snobfit import minimize
+from ._snobfit import minimize, snobfit
 from ._optset import optset
