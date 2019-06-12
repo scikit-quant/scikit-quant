@@ -255,8 +255,8 @@ def snobfit(x, f, config, dx = None):
         if dx.shape[0] > 1:
             dx = dx.T
         if x.size > 0:
-            u = numpy.minimum(x, u1)
-            v = numpy.maximum(x, v1)
+            u = numpy.minimum(x.min(axis=0), u1)
+            v = numpy.maximum(x.max(axis=0), v1)
         else:
             u = u1[:]
             v = v1[:]
