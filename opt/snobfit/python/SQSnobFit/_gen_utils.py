@@ -220,7 +220,7 @@ def rand(*args):
     return res
 
 #---------------------------------------------------------------
-def rsort(x, w=None):
+def rsort(x, w=None, remove_dups=True):
     """
     Sort x in increasing order, remove multiple entries,
     and adapt weights w accordingly x and w must both be a row or a column
@@ -238,12 +238,14 @@ def rsort(x, w=None):
     x = x[ind]
     w = w[ind]
 
-    # Remove repetitions
     n = len(x)
 
+    # Remove dubplicates if requested
     xnew = numpy.append(x[1:n], inf)
-
-    ind = numpy.nonzero(xnew != x)
+    if remove_dups:
+        ind = numpy.nonzero(xnew != x)
+    else:
+        ind = numpy.nonzero(range(1, len(x)+1))
     nn  = len(ind)
     x = x[ind]
 

@@ -113,7 +113,7 @@ def snobsplit(x, f, xl0, xu0, nspl=None, u=None, v=None):
     xx = numpy.sort(x,0)
     dd = xx[1:xx.shape[0]]-xx[0:xx.shape[0]-1]
     mvar, i = max_(var)
-    y, w, cdf, dof = rsort(x[:,i])
+    y, w, cdf, dof = rsort(x[:,i], remove_dups=False)
 
     d = y[1:y.shape[0]] - y[0:y.shape[0]-1]
     ld = len(d)
@@ -159,7 +159,7 @@ def snobsplit(x, f, xl0, xu0, nspl=None, u=None, v=None):
 
         maxvar, i = max_(var)
         rsort_x = (x[ind0,i])[:,0]
-        y, w, cdf, dof = rsort(rsort_x)
+        y, w, cdf, dof = rsort(rsort_x, remove_dups=False)
 
         d = y[1:len(y)] - y[0:len(y)-1]
         ld = len(d)

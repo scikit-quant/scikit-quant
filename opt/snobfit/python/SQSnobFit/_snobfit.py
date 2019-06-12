@@ -82,7 +82,7 @@ or make them available to be passed in?
 """
 
 from SQCommon import Result, ObjectiveFunction
-from ._gen_utils import diag, rsort, max_, min_, find, extend, rand, sort
+from ._gen_utils import diag, max_, min_, find, extend, rand, sort
 from ._optset    import optset
 from ._snobinput import snobinput
 from ._snoblocf  import snoblocf, snobround
