@@ -1,4 +1,4 @@
-import codecs, glob, os, sys, re
+import codecs, glob, os, re, subprocess, sys
 from setuptools import setup, find_packages
 from distutils import log
 
@@ -14,8 +14,12 @@ requirements.append('SQSnobFit>=0.2')
 requirements.append('Py-BOBYQA>=1.1')
 
 # rpy2 dependency for ORBIT
-if sys.version_info[0] == 3:
-    requirements.append('rpy2')
+try:
+    if sys.version_info[0] == 3 and \
+           subprocess.check_output("R -q --no-save -e 'quit()'".split()):
+        requirements.append('rpy2')
+except Exception:
+    pass
 
 here = os.path.abspath(os.path.dirname(__file__))
 with codecs.open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
