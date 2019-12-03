@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import logging
 import subprocess
 import sys
 from SQCommon import Result, ObjectiveFunction
@@ -8,7 +9,11 @@ from SQCommon import Result, ObjectiveFunction
 __all__ = [
     'methods',
     'minimize',
+    'log',
     ]
+
+log = logging.getLogger('SKQ')
+
 
 def _check_orbit_prerequisites():
     try:

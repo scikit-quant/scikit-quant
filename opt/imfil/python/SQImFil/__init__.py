@@ -7,12 +7,10 @@ warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
 
 import logging
 
-log = logging.getLogger('SQImFil')
-log.addHandler(logging.StreamHandler())
-if log.level == logging.NOTSET:
-    log.setLevel(logging.INFO)
+log = logging.getLogger('SKQ.ImFil')
 
-log.info("""------------------------------------------------------------------------
+log.info("""
+------------------------------------------------------------------------
 C.T. Kelley, "Implicit Filtering", 2011, ISBN: 978-1-61197-189-7
 Software available at ctk.math.ncsu.edu/imfil.html
 ------------------------------------------------------------------------""")

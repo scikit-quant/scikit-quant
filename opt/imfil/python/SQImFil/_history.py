@@ -82,6 +82,7 @@ def scan_history(complete_history, xp, fp, dx):
             oldresults[i] = (fpt, ift)
         except LookupError:
             newpoints[i] = point
+
     return oldresults, newpoints
 
 

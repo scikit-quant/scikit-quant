@@ -1,7 +1,9 @@
 from __future__ import print_function
 from ._linalg import eye, zeros, kk_proj, f_to_vals
 from ._history import CompleteHistory, single_point_hist_update
-import numpy, operator
+import numpy
+import operator
+import warnings
 
 __all__ = ['gauss_newton', 'qn_update']
 
@@ -487,7 +489,12 @@ def serial_armijo(f, sdir, fold, xc, h, obounds, core_data):
         d = -lbda*dd
         xt = x+d
         xt = kk_proj(xt, obounds)
-        ft, ifl, ict, tol = f(xt, h, core_data)
+        try:
+            ft, ifl, ict, tol = f(xt, h, core_data)
+        except Exception as e:
+            warnings.warn('dropping function evaluation "%s"' % (str(e),))
+            continue
+
         fct += ict
         single_point_hist_update(diff_hist, xt, ft, ifl)
         if least_squares == 1:

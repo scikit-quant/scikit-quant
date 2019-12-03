@@ -10,11 +10,17 @@ from ._linalg import eye, ones, zeros, kk_proj, f_to_vals
 from ._history import CompleteHistory, append_history, single_point_hist_update, \
    many_point_hist_update, scan_history
 from ._exec_functions import gauss_newton, qn_update
-import collections, copy, math, numpy, operator, random, logging
+import collections
+import copy
+import logging
+import math
+import numpy
+import operator
+import random
 
 __all__ = ['minimize', 'log']
 
-log = logging.getLogger('SQImFil')
+log = logging.getLogger('SKQ.ImFil')
 
 
 #-----
@@ -136,6 +142,8 @@ def minimize(f, x0, bounds, budget=10000, optin=None, **optkwds):
   This code comes with no guarantee or warranty of any kind."""
 
     global imfil_fscale
+
+    log.debug('optimization start')
 
     # TODO: get rid of matrix use
     # Make sure x0 is a single-column matrix
@@ -361,13 +369,13 @@ def imfil_core(x0, f, budget, core_data, bounds):
         hess = eye(n)
 
     xc = x0.copy(); ns = 0; failc = 0
-    stop_now = 0
+    stop_now = False
     fval = imfil_target+1
 
     # Sweep through the scales.
     sflag = 1
     while ns < nscal and fcount <= budget and failc < options.maxfail and \
-           stop_now == 0 and fval > imfil_target:
+           not stop_now and fval > imfil_target:
         h = dscal[ns]
         log.debug('current scale: %f', h)
 
@@ -416,7 +424,7 @@ def imfil_core(x0, f, budget, core_data, bounds):
 
         fcount += icf
         if fval < imfil_target :
-            stop_now = 1
+            stop_now = True
             break
 
         stol = imfil_termtol*h; iarm=0; nfail=0
@@ -424,13 +432,18 @@ def imfil_core(x0, f, budget, core_data, bounds):
         # Compute the stencil gradient to prepare for the quasi-Newton iteration.
         sdiff, sgrad, npgrad, fcount, sflag, jac, iteration_data, stop_now = \
             manage_stencil_diff(x, f, funs, \
-                  iteration_data, fcount, stencil_data, stop_now)
+                  iteration_data, fcount, stencil_data)
         append_history(histout, fcount, fval, npgrad, -1, -1, x)
         gc = sgrad
 
         #
-        if npgrad < stol or sflag == 0 or stop_now == 1:
+        if npgrad < stol or sflag == 0 or stop_now:
             # Declare convergence at this scale on stencil failure or tolerance match.
+            if npgrad < stol:
+                log.debug('converged at current scale with gradient (%f) below cut-off (%f)',
+                          npgrad, stol)
+            else:
+                log.debug('ended current scale due to stencil failure')
             gc = sgrad
             if sflag != 0:
                 failc += 1
@@ -438,6 +451,7 @@ def imfil_core(x0, f, budget, core_data, bounds):
                 failc = 0
         else:
             # Take a few quasi-Newton iterates. This is the inner iteration.
+            log.debug('start inner Newton loop iteration')
             failc = 0
 
             # itc = inner iteration counter
@@ -446,6 +460,7 @@ def imfil_core(x0, f, budget, core_data, bounds):
             # Newton while loop
             while itc < imfil_maxit*n and fval > imfil_target and \
                   npgrad >= stol and nfail==0 and fcount < budget and sflag > 0:
+
                 itc += 1
                 iteration_data.itc = itc;
                 fc = fval
@@ -457,7 +472,7 @@ def imfil_core(x0, f, budget, core_data, bounds):
 
                 # Stop the entire iteration if you've hit the target.
                 if fval < imfil_target:
-                    stop_now = 1
+                    stop_now = True
                     x = xp
                     stepn = numpy.linalg.norm(xold-x, ord=numpy.inf)
                     append_history(histout, fcount, fval, npgrad, stepn, iarm, x)
@@ -478,21 +493,21 @@ def imfil_core(x0, f, budget, core_data, bounds):
                 # Stop on small objective function changes?
                 fdelta = abs(fval-fc)
                 if fdelta > 0 and fdelta < function_delta :
-                    stop_now = 1
+                    stop_now = True
                     sflag = 0
                     stepn = numpy.linalg.norm(xc-x, ord=numpy.inf)
                     append_history(histout, fcount, fval, npgrad, stepn, iarm, x)
                     break
 
                 #    Compute the difference gradient for the next nonlinear iteration.
-                if stop_now == 0 and fcount < budget:
+                if not stop_now and fcount < budget:
                     sdiff, sgrad, npgrad, fcount, sflag, jac, iteration_data, stop_now = \
                         manage_stencil_diff(x, f, funs,
-                            iteration_data, fcount, stencil_data, stop_now)
+                            iteration_data, fcount, stencil_data)
 
                 # If the quasi-Newton method terminated successfully or with a
                 # stencil failure, make sure x is now the best point.
-                if stop_now == 1 or sflag == 0:
+                if stop_now or sflag == 0:
                     iteration_data, rflag = \
                         reconcile_best_point(funs, xp, iteration_data);
                     x, funs, fval = write_best_to_x(iteration_data)
@@ -512,6 +527,7 @@ def imfil_core(x0, f, budget, core_data, bounds):
 
                 # end Newton while loop
 
+            log.debug('end inner Newton loop iteration')
         # end test for stencil failure for first derivative at new scale
 
         # Apply the explore_function if there is one.
@@ -769,7 +785,7 @@ def stencil_diff(x, f, dx, fc, iteration_data, complete_history):
          sflag = 0 current point is best in the stencil
                       This means stencil failure.
 
-               = 1 means there's a better point on the stecil.
+               = 1 means there's a better point on the stencil.
 
           svar = variation on stencil = max - min
 
@@ -833,11 +849,11 @@ def stencil_diff(x, f, dx, fc, iteration_data, complete_history):
         grad = numpy.NaN*x
         jac = []
 
-    return (grad, best_value, best_value_f, best_point, icount, sflag, svar, diff_hist, jac)
+    return grad, best_value, best_value_f, best_point, icount, sflag, svar, diff_hist, jac
 
 
 #-----
-def manage_stencil_diff(x, f, funs, iteration_data, fcount, stencil_data, stop_now):
+def manage_stencil_diff(x, f, funs, iteration_data, fcount, stencil_data):
     """
   This function calls stencil_diff to compute the stencil derivative,
   updates the evaluation counter and complete_history, runs through
@@ -851,55 +867,56 @@ def manage_stencil_diff(x, f, funs, iteration_data, fcount, stencil_data, stop_n
 
   C. T. Kelley, January 12, 2011"""
 
-    if stop_now == 0:
-        options = iteration_data.options
+    options = iteration_data.options
 
-        h = iteration_data.h
+    h = iteration_data.h
 
-        # Unpack the stencil_data structure.
-        stencil_delta = stencil_data.stencil_delta
-        svarmin       = stencil_data.svarmin
-        noise_val     = stencil_data.noise_val
-        obounds       = iteration_data.obounds
-        bounds        = stencil_data.bounds
-        v             = stencil_data.v
+    # Unpack the stencil_data structure.
+    stencil_delta = stencil_data.stencil_delta
+    svarmin       = stencil_data.svarmin
+    noise_val     = stencil_data.noise_val
+    obounds       = iteration_data.obounds
+    bounds        = stencil_data.bounds
+    v             = stencil_data.v
 
-        # Complete the direction matrix and compute the stencil derivative.
-        vv = augment_directions(x, v, h, options, bounds)
-        complete_history = iteration_data.complete_history
-        sgrad, fb, fbf, xb, icount, sflag, svar, diff_hist, jac = \
-            stencil_diff(x, f, h*vv, funs, iteration_data, complete_history)
-        fcount += icount
-        pgrad = x - kk_proj(x-sgrad, obounds)
-        npgrad = numpy.linalg.norm(pgrad, ord=numpy.inf)
+    # Complete the direction matrix and compute the stencil derivative.
+    vv = augment_directions(x, v, h, options, bounds)
+    complete_history = iteration_data.complete_history
+    sgrad, fb, fbf, xb, icount, sflag, svar, diff_hist, jac = \
+        stencil_diff(x, f, h*vv, funs, iteration_data, complete_history)
+    fcount += icount
+    pgrad = x - kk_proj(x-sgrad, obounds)
+    npgrad = numpy.linalg.norm(pgrad, ord=numpy.inf)
 
-        # Run the optional stencil failure tests.
-        #
-        # If noise_aware = 1 (i.e. noise_val returned) and the scaled variation
-        # in f is < than the function's estimate of the noise, then I declare
-        # stencil failure!
-        if max(noise_val, svarmin) > svar:
-            sflag = 0
+    # Run the optional stencil failure tests.
+    #
+    # If noise_aware = 1 (i.e. noise_val returned) and the scaled variation
+    # in f is < than the function's estimate of the noise, then I declare
+    # stencil failure!
+    if max(noise_val, svarmin) > svar:
+        log.debug('scaled variation (%f) is less than estimated noise (%f)', svar, noise_val)
+        sflag = 0
 
-        # If stencil_delta > 0, then I terminate the entire optimization
-        # when the scaled variation in f < stencil_delta. I report this as
-        # stencil failure as well.
-        if stencil_delta > svar:
-          stop_now = 1
-          sflag = 0
+    # If stencil_delta > 0, then I terminate the entire optimization
+    # when the scaled variation in f < stencil_delta. I report this as
+    # stencil failure as well.
+    stop_now = False
+    if stencil_delta > svar:
+        log.debug('scaled variation (%f) is less than stencil delta (%f)', svar, stencil_delta)
+        stop_now = True
+        sflag = 0
 
-        # Update the iteration_data structure.
-        iteration_datap = iteration_data
-        if options.complete_history:
-            complete_history = many_point_hist_update(complete_history, diff_hist, False)
-            iteration_datap.complete_history = complete_history
+    # Update the iteration_data structure.
+    iteration_datap = iteration_data
+    if options.complete_history:
+        complete_history = many_point_hist_update(complete_history, diff_hist, False)
+        iteration_datap.complete_history = complete_history
 
-        iteration_datap, rflag = reconcile_best_point(fbf, xb, iteration_datap);
+    iteration_datap, rflag = reconcile_best_point(fbf, xb, iteration_datap);
 
-        sdiff = jac_or_grad(sgrad, jac, options)
+    sdiff = jac_or_grad(sgrad, jac, options)
 
-        return (sdiff, sgrad, npgrad, fcount, sflag, jac, iteration_datap, stop_now)
-    # returns None ? I.e. stop_now is never !0?
+    return sdiff, sgrad, npgrad, fcount, sflag, jac, iteration_datap, stop_now
 
 
 #-----
@@ -1067,6 +1084,7 @@ def poll_stencil(x, f, dx, fc, bounds, core_data, h, complete_history):
 #-----
 def collect_stencil_data(good_points, good_values, failed_points,
         best_point_old, best_value_old, best_value_f_old, fc, options):
+
     least_squares = options.least_squares
 
     # Who's number one?
@@ -1100,18 +1118,20 @@ def collect_stencil_data(good_points, good_values, failed_points,
     # Stencil failure?
     sflag = 1
     if abs(best_value_old-best_value) < 1.E-14:
+        global imfil_fscale
+        log.debug('no improvement found on stencil (current best: %f)',
+                  imfil_fscale*best_value_old)
         sflag = 0
         jac = []
         grad = []
 
-    return (sflag, best_value, best_value_f, best_point, svar, diff_hist)
+    return sflag, best_value, best_value_f, best_point, svar, diff_hist
 
 
 #-----
 def reconcile_best_point(funs, x, old_data):
     """
-  function [new_data, rflag] ...
-         = reconcile_best_point(funs, x, old_data)
+  new_data, rflag = reconcile_best_point(funs, x, old_data)
 
   After the poll, or when it's time to terminate the inner or outer
   iteration, you may have a new best point.
@@ -1274,14 +1294,15 @@ def random_augment(vin, k):
 
     if rv.any():
         vout = numpy.hstack((vin, rv))
+
     return vout
 
 
 #-----
 def jac_or_grad(sgrad, jac, options):
     """
-  returns either the simplex gradient or Jacobian depending
-  on the type of problem (optization or least squares)
+  Returns either the simplex gradient or Jacobian depending
+  on the type of problem (optization or least squares).
 
   sdiff = jac_or_grad(sgrad, jac, options)"""
 
