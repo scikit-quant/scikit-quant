@@ -28,12 +28,10 @@ import logging, scipy, scipy.spatial, sys
 import numpy as np
 from math import pi, cos, sqrt, exp
 
-log = logging.getLogger('SQOrbit')
-log.addHandler(logging.StreamHandler())
-if log.level == logging.NOTSET:
-    log.setLevel(logging.INFO)
+log = logging.getLogger('SKQ.Orbit')
 
-log.info("""------------------------------------------------------------------------
+log.info("""
+------------------------------------------------------------------------
 S.M. Wild, et al. "Global convergence of radial basis function trust-region
  algorithms for derivative-free optimization. SIAM Review, 55(2):349-371, 2013.
 ------------------------------------------------------------------------""")
@@ -42,7 +40,7 @@ __all__ = ['minimize', 'log']
 
 
 class OrbitObjectiveFunction(ObjectiveFunction):
-    def __init__(self, func, nevals, options = None):
+    def __init__(self, func, nevals, options = {}):
         ObjectiveFunction.__init__(self, func, options)
         self.nevals = nevals
 

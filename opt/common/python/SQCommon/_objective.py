@@ -7,9 +7,13 @@ import numpy
 
 
 class ObjectiveFunction(object):
-    def __init__(self, func, options = None):
+    def __init__(self, func, options = {}):
+        self.simple_function = False
+
         self.objective = func
         self.stats = Stats()
+        for key, value in options.items():
+            setattr(self, key, value)
 
     def __call__(self, par):
         self.stats.nevals += 1
@@ -31,6 +35,8 @@ class ObjectiveFunction(object):
                 cost = result[2]
         self.stats.add_history(val, par)
 
+        if self.simple_function:
+            return val
         return result
 
     def get_history(self):

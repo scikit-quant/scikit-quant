@@ -7,12 +7,10 @@ from __future__ import print_function
 from SQCommon import Result, ObjectiveFunction
 import logging, numpy, pybobyqa
 
-log = logging.getLogger('SQPyBobyqa')
-log.addHandler(logging.StreamHandler())
-if log.level == logging.NOTSET:
-    log.setLevel(logging.INFO)
+log = logging.getLogger('SKQ.PyBobyqa')
 
-log.info("""------------------------------------------------------------------------
+log.info("""
+------------------------------------------------------------------------
 Coralia Cartis, et. al., "Improving the Flexibility and Robustness of
  Model-Based Derivative-Free Optimization Solvers", technical report,
  University of Oxford, (2018).
@@ -23,7 +21,7 @@ __all__ = ['minimize', 'log']
 
 
 def minimize(func, x0, bounds, budget, optin, **optkwds):
-     objfunc = ObjectiveFunction(func)
+     objfunc = ObjectiveFunction(func, {'simple_function' : True })
 
      # massage bounds (force reshaping as bobyqa is picky)
      lower = numpy.asarray(bounds[:,0]).reshape(-1)
