@@ -12,8 +12,11 @@ class ObjectiveFunction(object):
 
         self.objective = func
         self.stats = Stats()
-        for key, value in options.items():
-            setattr(self, key, value)
+        try:
+            for key, value in options.items():
+                setattr(self, key, value)
+        except:
+            pass   # options is not a dict
 
     def __call__(self, par):
         self.stats.nevals += 1
