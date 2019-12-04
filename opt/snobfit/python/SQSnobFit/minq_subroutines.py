@@ -33,7 +33,7 @@ from __future__ import print_function
 from ._gen_utils import diag, find
 import copy, numpy, logging
 
-log = logging.getLogger('SQSnobFit')
+log = logging.getLogger('SKQ.SnobFit')
 
 
 #-----

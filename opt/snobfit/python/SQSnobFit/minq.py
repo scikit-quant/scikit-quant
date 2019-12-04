@@ -53,7 +53,7 @@ from ._gen_utils import diag, find
 from .minq_subroutines import getalp, ldldown, ldlup
 import copy, logging, math, numpy
 
-log = logging.getLogger('SQSnobFit')
+log = logging.getLogger('SKQ.SnobFit')
 
 
 def minq(gam, c, G, xu, xo, prt, xx=None):

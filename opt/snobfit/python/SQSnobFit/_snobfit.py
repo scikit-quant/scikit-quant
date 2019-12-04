@@ -97,7 +97,7 @@ import logging, math, numpy
 
 __all__ = ['minimize', 'log']
 
-log = logging.getLogger('SQSnobFit')
+log = logging.getLogger('SKQ.SnobFit')
 
 
 # dummy save/load (can always pickle but seems superflous; deal with this
@@ -141,9 +141,15 @@ def fill_request(request, func, nparams):
     for i in range(len(request)):
         x[i] = request[i][0:nparams]
         try:
-            f[i] = (func(x[i]), math.sqrt(numpy.spacing(1)))
+            res = func(x[i])
+            err = math.sqrt(numpy.spacing(1))
+            if type(res) == tuple:
+                if res[1] != 0:
+                    err = res[1]
+                res = res[0]
+            f[i] = (res, err)
         except Exception as e:
-            print('Function evaluation failed:', e)
+            log.Error('Function evaluation failed: %s', str(e))
             f[i] = numpy.nan
     return x, f
 
@@ -155,8 +161,14 @@ def minimize(f, x0, bounds, budget, optin={}, **optkwds):
     if budget <= 0:
         budget = 100000
 
+    if type(x0) != numpy.ndarray:
+        x0 = numpy.array(x0)
+
     if len(x0.shape) == 1:
         x0 = x0.reshape(1, len(x0))
+
+    if type(bounds) != numpy.ndarray:
+        bounds = numpy.array(bounds)
 
     objfunc = ObjectiveFunction(f)
 

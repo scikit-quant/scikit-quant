@@ -178,7 +178,7 @@ def minimize(f, x0, bounds, budget=10000, optin=None, **optkwds):
     # If the smooth_problem option is on, fix the dependencies and
     # change the scales.
     if options.smooth_problem == 1:
-        log.info('smooth problem on');
+        log.info('smooth problem selected: adjusting options');
         bscales=[.5, .01, .001, .0001, .00001]
         options = optset(options,
               custom_scales=bscales,
