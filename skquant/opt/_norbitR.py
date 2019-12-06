@@ -41,6 +41,7 @@ __all__ = ['minimize', 'log']
 
 class OrbitObjectiveFunction(ObjectiveFunction):
     def __init__(self, func, nevals, options = {}):
+        options['simple_function'] = True
         ObjectiveFunction.__init__(self, func, options)
         self.nevals = nevals
 
