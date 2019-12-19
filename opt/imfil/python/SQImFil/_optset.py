@@ -103,7 +103,7 @@ def optset(optin=None, **optkwds):
 
   scale_step, _start, _depth: The range of scales is scale_step^-scale_start
          to scale_step^-scale_depth. The defaults are scale_step=2,
-         scale_start=1, scale_depth=8.
+         scale_start=3, scale_depth=11.
 
   scale_aware: Setting this to 1 tells imfil that f can do something smart if
          it knows the scale. The call then becomes [fout,ifail,icount]=f(x,h)
@@ -332,9 +332,9 @@ def _create_defaults():
             #
             'scale_step' : 2,           # Stepping factor for scales
             #
-            'scale_start' : 3,          # Scales begin at h=(1/scale_step)^scale_start
+            'scale_start' : 1,          # Scales begin at h=(1/scale_step)^scale_start
             #
-            'scale_depth' : 11,         # Scales end at h=(1/scale_step)^(scale_start+scale_depth)
+            'scale_depth' : 8,         # Scales end at h=(1/scale_step)^(scale_start+scale_depth)
             #
             'simple_function' : 0,      # Your function returns more than just the value.
             #
