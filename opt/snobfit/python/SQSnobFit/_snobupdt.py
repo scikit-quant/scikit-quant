@@ -30,54 +30,55 @@ from __future__ import print_function
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-  function xl, xu, x, f, nsplit, small, near, d, np, t, inew, fnan, u, v = \
-    snobupdt(xl, xu, x, f, nsplit, small, near, d, np, t, xnew, fnew, fnan, u, v, u1, v1, dx)
-  updates the box parameters when a set of new points and their function
-  values are added, i.e., the boxes containing more than one point are
-  split and the nearest neighbors are computed or updated
+ function xl, xu, x, f, nsplit, small, near, d, np, t, inew, fnan, u, v = \
+   snobupdt(xl, xu, x, f, nsplit, small, near, d, np, t, xnew, fnew, fnan, u, v, u1, v1, dx)
 
-  Input:
-  xl,xu		rows contain lower and upper bounds of the old boxes
-  x		rows contain the old points
-  f		f[j] contains the function value at x[j], its
- 		variation and other parameters
-  nsplit	nsplit[j,i) number of times box j has been split along
- 		the ith coordinate
-  small		small[j) is an integer-valued logarithmic volume measure
- 		of box j
-  near		near[j] is a vector pointing to the nearest
- 		neighbors of x[j]
-  d		d[j) is the maximal distance between x[j] and one of
- 		its neighbors
-  np 	        np[j) is the number of times the function value of
- 		x[j] has been measured
-  t		t[j) is np[j) times the variance of the function values
- 		measured for the point x[j]
-  xnew		rows contain new points
-  fnew		new function values and their variations
- 		fnew[j,0] = f(xnew[j]), fnew[j,1] = df(xnew[j])
+ Updates the box parameters when a set of new points and their function
+ values are added; i.e. the boxes containing more than one point are
+ split and the nearest neighbors are computed or updated.
+
+ Input:
+  xl, xu        rows contain lower and upper bounds of the old boxes
+  x             rows contain the old points
+  f             f[j] contains the function value at x[j], its
+                variation and other parameters
+  nsplit        nsplit[j,i] number of times box j has been split along
+                the ith coordinate
+  small         small[j] is an integer-valued logarithmic volume measure
+                of box j
+  near          near[j] is a vector pointing to the nearest
+                neighbors of x[j]
+  d             d[j] is the maximal distance between x[j] and one of
+                its neighbors
+  np            np[j] is the number of times the function value of
+                x[j] has been measured
+  t             t[j] is np[j] times the variance of the function values
+                measured for the point x[j]
+  xnew          rows contain new points
+  fnew          new function values and their variations
+                fnew[j,0] = f(xnew[j]), fnew[j,1] = df(xnew[j])
   fnan          pointer to all old points where the function value could
                 not be obtained
-  u,v		box bounds
-  u1,v1         box in which the new points are to be generated
+  u, v          box bounds
+  u1, v1        box in which the new points are to be generated
   dx            resolution vector
- 
-  Output:
-  xl,xu		updated version of xl,xu [including new boxes)
-  x		updated version of x
-  f		updated version of f
-  nsplit	updated version of nsplit
-  small		updated version of small
-  near		updated version of near
-  d		updated version of d
-  np 		updated version of np
-  t		updated version of t
-  inew		pointer pointing to the new boxes and boxes whose
-                nearest neighbors have changed
-  fnan          possibly updated version of fnan [if a function value
-                was found for a point in the new iteration)
-  u,v		possibly updated box bounds such that all new points
-  		are in the box
+
+ Output:
+  xl, xu       updated version of xl, xu [including new boxes)
+  x            updated version of x
+  f            updated version of f
+  nsplit       updated version of nsplit
+  small        updated version of small
+  near         updated version of near
+  d            updated version of d
+  np           updated version of np
+  t            updated version of t
+  inew         pointer pointing to the new boxes and boxes whose
+               nearest neighbors have changed
+  fnan         possibly updated version of fnan [if a function value
+               was found for a point in the new iteration)
+  u, v         possibly updated box bounds such that all new points
+               are in the box
 """
 
 from ._gen_utils import find, min_, rsort, sort
@@ -88,21 +89,21 @@ import numpy
 
 
 def snobupdt(xl, xu, x, f, nsplit, small, near, d, np, t, xnew, fnew, fnan, u, v, u1, v1, dx):
-    n = len(u)          # dimension of the problem
+    n = u.shape[1]      # dimension of the problem
     nneigh = n+5
     nxold = len(x)      # number of points from the previous iteration
     nxnew = len(xnew)
 
     inew = numpy.array([], dtype=int)
     if x.size > 0:
-        # if any of the new points are already among the old points, they are
-        # thrown away and the function value and its uncertainty are updated
+      # if any of the new points are already among the old points, they are
+      # thrown away and the function value and its uncertainty are updated
         dismiss = []
         for j in range(nxnew):
-            i = find(sum(abs(numpy.ones((nxold,1))*xnew[j]-x),1)==0)
+            i = find(sum(abs(numpy.ones((nxold,1))*xnew[j]-x),1) == 0)
             if i.size > 0:
-                if (not find(fnan==i).any()) and numpy.isfinite(f[i,1]): # point i had finite
-                                                                         # function value
+                if not find(fnan==i).any() and numpy.isfinite(f[i,1]): # point i had finite
+                                                                       # function value
                     if not numpy.isnan(fnew[j,0]):
                         np[i] = np[i] + 1
                         delta = fnew[j,0] - f[i,0]
@@ -125,7 +126,7 @@ def snobupdt(xl, xu, x, f, nsplit, small, near, d, np, t, xnew, fnew, fnan, u, v
 
         xnew = numpy.delete(xnew, dismiss, 0)
         fnew = numpy.delete(fnew, dismiss, 0)
-        nxnew = xnew.shape[0]
+        nxnew = len(xnew)
         if not nxnew:
             inew = numpy.sort(inew)
             return xl, xu, x, f, nsplit, small, near, d, np, t, inew.astype(int), fnan, u, v
@@ -178,29 +179,28 @@ def snobupdt(xl, xu, x, f, nsplit, small, near, d, np, t, xnew, fnew, fnan, u, v
             ind = ind + nxold
             spl = numpy.append([j], ind.flatten())
             xl0, xu0, x0, f0, nsplit0, small0 = \
-                snobsplit(x[spl], f[spl,1], xl[j], xu[j], nsplit[j], u, v)
+                snobsplit(x[spl], f[spl], xl[j], xu[j], nsplit[j], u, v)
             nxj = len(ind) + 1    # number of points in box [xl[j],xu[j]]
-            k = find(numpy.sum(x0 == numpy.ones((nxj,1))*x[j], axis=1) == n)
+            k = find(numpy.sum(x0 == numpy.ones((nxj,1))*x[j,:], axis=1) == n)
             xl[j] = xl0[k]
             xu[j] = xu0[k]
             nsplit[j] = nsplit0[k]
             small[j] = small0[k]
             for k in range(nxj-1):
                 k1 = ind[k]
-                k2 = find(numpy.sum(x0 == numpy.ones((nxj,1))*x[k1],axis=1) == n)
+                k2 = find(numpy.sum(x0 == numpy.ones((nxj,1))*x[k1,:],axis=1) == n)
                 if len(k1) > 1:
                     msmall, k3 = min_(small[k1])
                     k2 = k2[k3]
-                else:
-                    ik1 = int(k1)
-                    if len(xl) <= ik1:
-                        xl = numpy.append(xl, numpy.zeros((ik1-len(xl)+1, xl.shape[1])), axis=0)
-                    if len(xu) <= ik1:
-                        xu = numpy.append(xu, numpy.zeros((ik1-len(xu)+1, xu.shape[1])), axis=0)
-                    if len(nsplit) <= ik1:
-                        nsplit = numpy.append(nsplit, numpy.zeros((ik1-len(nsplit)+1, nsplit.shape[1])), axis=0)
-                    if len(small) <= ik1:
-                        small = numpy.append(small, numpy.zeros((ik1-len(small)+1,)), axis=0)
+                ik1 = int(k1)
+                if len(xl) <= ik1:
+                    xl = numpy.append(xl, numpy.zeros((ik1-len(xl)+1, xl.shape[1])), axis=0)
+                if len(xu) <= ik1:
+                    xu = numpy.append(xu, numpy.zeros((ik1-len(xu)+1, xu.shape[1])), axis=0)
+                if len(nsplit) <= ik1:
+                    nsplit = numpy.append(nsplit, numpy.zeros((ik1-len(nsplit)+1, nsplit.shape[1])), axis=0)
+                if len(small) <= ik1:
+                    small = numpy.append(small, numpy.zeros((ik1-len(small)+1,)), axis=0)
                 xl[k1] = xl0[k2]
                 xu[k1] = xu0[k2]
                 nsplit[k1] = nsplit0[k2]
@@ -217,7 +217,7 @@ def snobupdt(xl, xu, x, f, nsplit, small, near, d, np, t, xnew, fnew, fnan, u, v
         fmn = 1
         fmx = 0
 
-    if (nx >= nneigh) and (fmn < fmx):
+    if nx >= nneigh and fmn < fmx:
         if near.size <= 0:
             near = numpy.zeros((nx, nneigh), dtype=int)
         if d.size <= 0:
@@ -230,7 +230,7 @@ def snobupdt(xl, xu, x, f, nsplit, small, near, d, np, t, xnew, fnew, fnan, u, v
             near[j] = jnear
 
             if len(d) <= j:
-                d = numpy.append(d, numpy.zeros((j-len(d)+1,)), axis=0)
+                d = numpy.append(d, numpy.zeros((j-len(d)+1,)))
             d[j] = jd
 
         for j in range(nxold):
@@ -241,11 +241,12 @@ def snobupdt(xl, xu, x, f, nsplit, small, near, d, np, t, xnew, fnew, fnan, u, v
                 near[j] = jnear
 
                 if len(d) <= j:
-                    d = numpy.append(d, numpy.zeros((j-len(d)+1,)), axis=0)
+                    d = numpy.append(d, numpy.zeros((j-len(d)+1,)))
                 d[j] = jd
                 inew = numpy.concatenate((inew, [j]))
 
         inew = sort(inew)[0]
+        d = d.reshape((1, len(d)))
     else:
         near = numpy.array([])
         d = numpy.inf*numpy.ones((1, nx))
@@ -260,10 +261,10 @@ def snobnewb(xnew, xl, xu, small, u, v, u1, v1):
     vold = v
     u = numpy.concatenate((xnew, u)).min(0)
     v = numpy.concatenate((xnew, v)).max(0)
-    u = numpy.min(u,u1)
-    v = numpy.max(v,v1)
-    i1 = find(u<uold)
-    i2 = find(v>vold)
+    u = numpy.min(u, u1)
+    v = numpy.max(v, v1)
+    i1 = find(u < uold)
+    i2 = find(v > vold)
     ind = numpy.array([])
     for j in range(len(i1)):
         j1 = find(xl[:,i1[j]] == uold[i1[j]])
@@ -276,6 +277,6 @@ def snobnewb(xnew, xl, xu, small, u, v, u1, v1):
         xu[j2,i2[j]] = v[i2[j]]
 
     if len(i1) + len(i2):    # at least one of the bounds was changed
-        small = - numpy.sum(numpy.round(numpy.log2((xu-xl)/(numpy.ones((nx,1))*(v-u)))),axis=1)
+        small = -numpy.sum(numpy.round(numpy.log2((xu-xl)/(numpy.ones((nx,1))*(v-u)))), axis=1)
 
     return xl, xu, small, u, v

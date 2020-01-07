@@ -31,24 +31,25 @@ from __future__ import print_function
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-  function y, f1 = snobqfit(j, x, f, near, dx, u, v)
-  a quadratic model around the best point is fitted and minimized with
-  minq over a trust region
+ function y, f1 = snobqfit(j, x, f, near, dx, u, v)
+
+ A quadratic model around the best point is fitted and minimized with
+ minq over a trust region.
  
-  Input:
-  j     index of the best point
-  x     the rows contain the points where the function has been
-        evaluated
-  f     corresponding function values, i.e., f(i) = f(x(i])
-  near  near(i] is a vector containing the indices of the nearest
-        neighbors of the point x(i]
-  dx    resolution vector, i.e. the ith coordinate of a point to be
-        generated is an integer-valued multiple of dx(i)
-  u,v   the points are to be generated in [u,v]
+ Input:
+  j            index of the best point
+  x            the rows contain the points where the function has been
+               evaluated
+  f            corresponding function values, i.e., f[i] = f[x(i]]
+  near         near[i] is a vector containing the indices of the nearest
+               neighbors of the point x[i]
+  dx           resolution vector, i.e. the ith coordinate of a point to be
+               generated is an integer-valued multiple of dx[i]
+  u, v         the points are to be generated in [u, v]
  
-  Output:
-  y     minimizer of the quadratic model around the best point
-  f1    its estimated function value
+ Output:
+  y            minimizer of the quadratic model around the best point
+  f1           its estimated function value
 """
 
 from ._gen_utils import rand, sort
@@ -97,9 +98,10 @@ def snobqfit(j, x, f, near, dx, u, v):
             l += 1
 
     g = y[:n]
-    y, f1, ierr, nsub = minq(f0-x0.dot(g) + 0.5*x0.dot(G.dot(x0.T)),
-            g - G.dot(x0.T), G, numpy.maximum(x0.T - d.T, u.T),
-            numpy.minimum(x0.T + d.T, v.T), 0)
+    c = g - G.dot(x0.T).reshape(u.shape)
+    dp = d.reshape(u.shape); x0p = x0.reshape(u.shape)
+    y, f1, ierr, nsub = minq(f0-x0.dot(g) + 0.5*x0.dot(G.dot(x0.T)), c, G,
+            numpy.maximum(x0p.T - dp.T, u.T), numpy.minimum(x0p.T + dp.T, v.T), 0)
     y = snobround(y.T, u, v, dx)
     nc = 0
     while (numpy.min(numpy.max(numpy.abs(x-numpy.outer(numpy.ones(len(x)), y))

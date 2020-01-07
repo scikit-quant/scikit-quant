@@ -31,23 +31,23 @@ from __future__ import print_function
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-  function f = snobnan(fnan, f, near, inew)
-  replaces the function values NaN of a set of points by a value
-  determined by their nearest neighbors with finite function values,
-  with a safeguard for the case that all neighbors have function value
-  NaN
+ function f = snobnan(fnan, f, near, inew)
+
+ Replaces the function values NaN of a set of points by a value determined by
+ their nearest neighbors with finite function values, with a safeguard for the
+ case that all neighbors have function value NaN.
  
-  Input:
-  fnan	  	vector containing the pointers to the points where the
-                function value could not be obtained
-  f	  	f(:,1) set of available function values
- 		f(:,2) their uncertainty/variation
-  near(j,:)	vector pointing to the nearest neighbors of point j
-  inew          vector pointing to the new boxes and boxes whose nearest
-                neighbors have changed
+ Input:
+  fnan         vector containing the pointers to the points where the
+               function value could not be obtained
+  f            f[:,0] set of available function values
+               f[:,1] their uncertainty/variation
+  near[j,:]    vector pointing to the nearest neighbors of point j
+  inew         vector pointing to the new boxes and boxes whose nearest
+               neighbors have changed
  
-  Output:
-  f		updated version of f
+ Output:
+  f            updated version of f
 """
 
 from ._gen_utils import rsort, max_, min_, find, std

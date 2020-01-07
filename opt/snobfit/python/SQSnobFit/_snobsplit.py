@@ -32,29 +32,28 @@ from __future__ import print_function
 
 """
  function xl, xu, x, f, nsplit, small = snobsplit(x, f, xl0, xu0, nspl, u, v)
- splits a box [xl0,xu0] contained in a bigger box [u,v] such that
- each of the resulting boxes contains just one point of a given set of
- points
+
+ Splits a box [xl0,xu0] contained in a bigger box [u,v] such that each of the
+ resulting boxes contains just one point of a given set of points.
 
  Input:
- x - the rows are a set of points
- f - f(j,:) contains the function value, its variation and possibly
-	other parameters belonging to point x(j,:)
- xl0 - vector of lower bounds of the box
- xu0 - vector of upper bounds of the box
- nspl - nspl(i) is the number of splits the box [xl0,xu0] has already
-	undergone along the ith coordinate
- u,v - bounds of the original problem
-	[xl0,xu0] is contained in [u,v]
+  x             the rows are a set of points
+  f - f[j,:]    contains the function value, its variation and possibly
+                other parameters belonging to point x(j,:)
+  xl0           vector of lower bounds of the box
+  xu0           vector of upper bounds of the box
+  nspl          nspl[i] is the number of splits the box [xl0,xu0] has already
+                undergone along the ith coordinate
+  u, v          bounds of the original problem; [xl0, xu0] is contained in [u, v]
 
  Output:
- xl - xl(j,:) is the lower bound of box j
- xu - xi(j,:) is the upper bound of box j
- x - x(j,:) is the point contained in box j
- f - f(j,:) contains the function value at x(j,:), its uncertainty etc.
- nsplit - nsplit(j,i) is the number of times box j has been split in the
-	ith coordinate
- small - small(j) = integer-valued logarithmic volume measure of box j
+  xl - xl[j,:]  is the lower bound of box j
+  xu - xi[j,:]  is the upper bound of box j
+  x - x[j,:]    is the point contained in box j
+  f - f[j,:]    contains the function value at x(j,:), its uncertainty etc.
+  nsplit - nsplit[j,i] is the number of times box j has been split in the
+                ith coordinate
+  small - small[j] integer-valued logarithmic volume measure of box j
 """
 
 from ._gen_utils import rsort, max_, find, std
@@ -63,30 +62,30 @@ import numpy
 
 def snobsplit(x, f, xl0, xu0, nspl=None, u=None, v=None):
     n = x.shape[1]
-    if xl0.shape[0] > 1:
+    if len(xl0) > 1:
         xl0 = xl0.T
         xu0 = xu0.T
 
     if nspl is None or nspl.size <= 0:
-        nspl = numpy.zeros(n)
+        nspl = numpy.zeros((1, n))
 
     if u is None or u.size <= 0:
         u = xl0.copy()
     if v is None or v.size <= 0:
         v = xu0.copy()
 
-    if x.shape[0] == 1:
+    if len(x) == 1:
         xl = xl0.copy()
         xu = xu0.copy()
         nsplit = nspl.copy()
-        small = -numpy.sum(numpy.round(numpy.log2((xu-xl)/(v-u))))
+        small = numpy.array([-numpy.sum(numpy.round(numpy.log2((xu-xl)/(v-u))))])
         return xl, xu, x, f, nsplit, small
 
-    elif x.shape[0] == 2:
-        dmax, i = max_(numpy.abs(x[0]-x[1])/(v-u))
+    elif len(x) == 2:
+        dmax, i = max_((numpy.abs(x[0]-x[1])/(v-u)).flatten())
         ymid = 0.5*(x[0,i]+x[1,i])
-        xl = numpy.zeros((2, len(xl0)))
-        xu = numpy.zeros((2, len(xu0)))
+        xl = numpy.zeros((2, n))
+        xu = numpy.zeros((2, n))
         xl[0] = xl0
         xu[0] = xu0
         xl[1] = xl0
@@ -98,17 +97,17 @@ def snobsplit(x, f, xl0, xu0, nspl=None, u=None, v=None):
             xl[0,i] = ymid
             xu[1,i] = ymid
 
-        nsplit = numpy.zeros((2, len(nspl)))
+        nsplit = numpy.zeros((2, n))
         nsplit[0] = nspl
         nsplit[0,i] = nsplit[0,i] + 1
         nsplit[1,i] = nsplit[0,i]
         small = -numpy.sum(numpy.round(numpy.log2((xu-xl)/(numpy.ones((2,1))*(v-u)))),1).T
         return xl, xu, x, f, nsplit, small
 
-    var = numpy.zeros(len(v))
+    var = numpy.zeros(v.shape[1])
 
     for i in range(n):
-        var[i] = std(x[:,i]/(v[i]-u[i]))
+        var[i] = std(x[:,i]/(v.T[i]-u.T[i]))
 
     xx = numpy.sort(x,0)
     dd = xx[1:xx.shape[0]]-xx[0:xx.shape[0]-1]
@@ -126,9 +125,9 @@ def snobsplit(x, f, xl0, xu0, nspl=None, u=None, v=None):
     ind1 = find(x[:,i] < ymid)
     ind2 = find(x[:,i] > ymid)
 
-    xl = numpy.zeros((2, len(xl0)))
-    xu = numpy.zeros((2, len(xu0)))
-    nsplit = numpy.zeros((2, len(nspl)))
+    xl = numpy.zeros((2, n))
+    xu = numpy.zeros((2, n))
+    nsplit = numpy.zeros((2, n))
     npoint = numpy.zeros(2)
     ind = numpy.zeros((2, max(len(ind1), len(ind2))), dtype=int)
     xl[0] = xl0
@@ -155,7 +154,7 @@ def snobsplit(x, f, xl0, xu0, nspl=None, u=None, v=None):
         for i_ in range(n):
             while i_ >= len(var):
                 var = numpy.append(var, 0)
-            var[i_] = std(x[ind0,i_]/(v[i_]-u[i_]))
+            var[i_] = std(x[ind0,i_]/(v.T[i_]-u.T[i_]))
 
         maxvar, i = max_(var)
         rsort_x = (x[ind0,i])[:,0]

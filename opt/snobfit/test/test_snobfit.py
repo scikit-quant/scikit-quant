@@ -28,20 +28,23 @@ class TestSNOBFIT:
 
             return fv
 
-        bounds = np.array([[-1, 1], [-1, 1]], dtype=float)
-        budget = 40
-        x0 = np.array([0.5, 0.5])
+        def test_one(initial, expected):
+            bounds = np.array([[-1, 1], [-1, 1]], dtype=float)
+            budget = 40
+            x0 = np.array(initial)
+           # [0.5, 0.5])
 
-        from SQSnobFit import optset
-        options = optset(maxmp=len(x0)+6)
+            from SQSnobFit import optset
+            options = optset(maxmp=len(x0)+6)
 
-        result, history = SQSnobFit.minimize(f_easy, x0, bounds, budget, options)
+            result, history = SQSnobFit.minimize(f_easy, x0, bounds, budget, options)
 
-        # this problem is symmetric, so values may have switched; for
-        # simplicity, just check the sum
-        assert np.round(sum(result.optpar)-sum((-0.00112, -0.00078)), 8) == 0
-        #assert len(histout) == 10
-        #assert np.round(histout[9,5:7].sum()-sum((-6.81757191e-03, 8.80742809e-03)), 8) == 0
+          # problem is symmetric, so values may have switched: just check the sum
+            assert np.round(sum(result.optpar)-sum(expected), 8) == 0
+            #assert len(histout) == 10
+
+        #test_one([],         (-0.00112, -0.00078))
+        test_one([0.5, 0.5], ( 0.00134, -0.00042))
 
     def test02_bra(self):
         """Minimize Branin's function"""

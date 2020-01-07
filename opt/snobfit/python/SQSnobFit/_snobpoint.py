@@ -31,25 +31,26 @@ from __future__ import print_function
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-  function y = snobpoint(x, xl, xu, f0, g, sigma, u, v, dx)
-  for a box [xl,xu] containing a point x, a point y in the intersection
-  of [xl,xu] and [u,v] is constructed such that it is both not close to
-  x and to the boundary of [xl,xu] and its function value is estimated
-  from a local quadratic model around x
+ function y = snobpoint(x, xl, xu, f0, g, sigma, u, v, dx)
+
+ For a box [xl, xu] containing a point x, a point y in the intersection
+ of [xl, xu] and [u, v] is constructed such that it is both not close to
+ x and to the boundary of [xl, xu] and its function value is estimated
+ from a local quadratic model around x.
  
-  Input:
-  x	     point contained in [xl,xu]
-  xl,xu	     box bounds
-  u,v        the point is to be generated in [u,v]
-  f0         f0(1) is the function value at x, f0(2) is its uncertainty
-  g,G,sigma  the local quadratic model around x is given by
-             q(y)=f0(1)+g*(y-x)'+sigma*((y-x)*diag(D)*(y-x)'+f0(2))
-             for a row vector y, where D = f0(2)./dx.^2
-  dx         resolution vector
+ Input:
+  x            point contained in [xl, xu]
+  xl, xu       box bounds
+  u, v         the point is to be generated in [u, v]
+  f0           f0[1] is the function value at x, f0[2] is its uncertainty
+  g, G, sigma  the local quadratic model around x is given by
+               q(y) = f0[0]+g*(y-x)'+sigma*((y-x)*diag(D)*(y-x)'+f0[1])
+               for a row vector y, where D = f0[1]/dx**2
+  dx           resolution vector
  
-  Output:
-  y	     point in the intersection of [xl,xu] and [u,v]
-  f          corresponding estimated function value
+ Output:
+  y            point in the intersection of [xl, xu] and [u, v]
+  f            corresponding estimated function value
 """
 
 from ._snoblocf  import snobround
@@ -69,4 +70,4 @@ def snobpoint(x, xl, xu, f0, g, sigma, u, v, dx):
     y = snobround(y, numpy.maximum(xl,u), numpy.minimum(xu,v), dx)
     D = f0[1]/dx**2
     f = f0[0] + g.dot((y-x).T) + sigma*((y-x).dot(numpy.diag(D).dot((y-x).T))+f0[1])
-    return y, f
+    return y, float(f)

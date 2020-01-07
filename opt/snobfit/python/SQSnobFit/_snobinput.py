@@ -31,24 +31,25 @@ from __future__ import print_function
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-function x, f, np, t = snobinput(x, f)
-checks whether there are any duplicates among the points given by the
-rows of x, throws away the duplicates and computes their average
-function values and an estimated uncertainty
+ function x, f, np, t = snobinput(x, f)
 
-Input:
-x - numpy array of points
-f - numpy array, f[j,0] is the function value of x[j] and f[j,1] is its
-	uncertainty
+ Checks whether there are any duplicates among the points given by the rows of
+ x, throws away the duplicates and computes their average function values and an
+ estimated uncertainty.
 
-Output: (x, f, np, t)
-x - updated version of x (possibly some points have been deleted)
-f - updated version of f (f[j,0] is the average function value and
-	f[j,1] the estimated uncertainty pertaining to x[j])
-np - np(j) is the number of times the row x[j] appeared in the
-	input version of x
-t - t[j] is np[j] times the variance of the function values measured
-	for point x[j]
+ Input:
+  x            numpy array of points
+  f            numpy array, f[j,0] is the function value of x[j] and f[j,1] is its
+               uncertainty
+
+ Output: (x, f, np, t)
+  x            updated version of x (possibly some points have been deleted)
+  f            updated version of f (f[j,0] is the average function value and
+               f[j,1] the estimated uncertainty pertaining to x[j])
+  np           np[j] is the number of times the row x[j] appeared in the
+               input version of x
+  t - t[j] is np[j] times the variance of the function values measured
+               for point x[j]
 """
 
 import math, numpy

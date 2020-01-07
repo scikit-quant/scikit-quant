@@ -31,20 +31,21 @@ from __future__ import print_function
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-  function x1 = snob5(x, u, v, dx, nreq)
-  generates nreq points of class 5 in [u,v]
+ function x5 = snob5(x, u, v, dx, nreq)
+
+ Generates nreq points of class 5 in [u, v].
  
-  Input:
-  x       the rows are the points already chosen by Snobfit (can be
-          empty)
-  u, v    bounds of the box in which the points are to be generated
-  dx      resolution vector, i.e. the ith coordinate of a point to be
-          generated is an integer-valued multiple of dx(i)
-  nreq    number of points to be generated
+ Input:
+  x             the rows are the points already chosen by Snobfit (can be
+                empty)
+  u, v          bounds of the box in which the points are to be generated
+  dx            resolution vector, i.e. the ith coordinate of a point to be
+                generated is an integer-valued multiple of dx(i)
+  nreq          number of points to be generated
  
-  Output:
-  x1      the rows are the requested points
-          x1 is of dimension nreq x n (n = dimension of the problem)
+ Output:
+  x5            the rows are the requested points
+                x5 is of dimension nreq x n (n = dimension of the problem)
 """
   
 from ._gen_utils import find, max_, rand
@@ -53,41 +54,38 @@ import numpy
 
 
 def snob5(x, u, v, dx, nreq):
-    n = len(u)     # dimension of the problem
+    n = u.shape[1] # dimension of the problem
     nx = len(x)    # number of data points
-    nx1 = 100*nreq
-    d = numpy.zeros(nx1, dtype=int)
-    xnew = numpy.outer(numpy.ones(nx1), u) + rand(nx1,n)*numpy.outer(numpy.ones(nx1), v-u)
+    nx5 = 100*nreq
+    d = numpy.zeros(nx5)
+    xnew = numpy.outer(numpy.ones(nx5), u) + rand(nx5,n)*numpy.outer(numpy.ones(nx5), v-u)
     if nx:
-        for j in range(nx1):
+        for j in range(nx5):
             xnew[j,:] = snobround(xnew[j,:], u, v, dx)
             d[j] = numpy.min(numpy.sum((x-numpy.ones((nx,1))*xnew[j,:])**2, 1))
 
         ind = find(d == 0)
         xnew = numpy.delete(xnew, ind, 0)
         d = numpy.delete(d, ind, 0)
-        x1 = numpy.array([])
-        nx1 = xnew.shape[0]
+        x5 = numpy.array([]).reshape(0, n)
+        nx5 = len(xnew)
     else:
-        x1 = xnew[0,:]
+        x5 = xnew[0,:]
         xnew = xnew[1:]
-        nx1 = nx1-1
-        d = numpy.sum((xnew - numpy.outer(numpy.ones(nx1), x1))**2, axis=1, keepdims=True).flatten()
+        nx5 = nx5-1
+        d = numpy.sum((xnew - numpy.outer(numpy.ones(nx5), x5))**2, axis=1, keepdims=True).flatten()
         nreq = nreq - 1
 
     for j in range(nreq):
         if d.size <= 0:
             break
         dmax, i = max_(d)
-        y = xnew[i]
-        if x1.size > 0:
-            x1 = numpy.vstack((x1, y))
-        else:
-            x1 = y.copy()
+        y = xnew[i,:]
+        x5 = numpy.vstack((x5, y))
         xnew = numpy.delete(xnew, i, 0)
         d = numpy.delete(d, i, 0)
-        nx1 = nx1 - 1
-        d1 = numpy.sum((xnew - numpy.outer(numpy.ones(nx1), y))**2, 1)
+        nx5 = nx5 - 1
+        d1 = numpy.sum((xnew - numpy.outer(numpy.ones(nx5), y))**2, 1)
         d = numpy.minimum(d, d1)
 
-    return x1
+    return x5

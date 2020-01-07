@@ -35,28 +35,28 @@ from __future__ import print_function
  minimization of a function over a box in R^n
 
  Input:
- file          name of file for input and output
+  file         name of file for input and output
                if nargin < 5, the program continues a previous run and
                reads from file.mat the output is (again) stored in file.mat
 
 ^^do not use file - store variables globally,
 or make them available to be passed in?
 
- x             the rows are a set of new points entering the
+  x            the rows are a set of new points entering the
                optimization algorithm together with their function
                values
- f             matrix containing the corresponding function values
+  f            matrix containing the corresponding function values
                and their uncertainties, i.e., f(j,1) = f(x(j))
                and f(j,2) = df(x(j))
                a value f(j,2)<=0 indicates that the corresponding
                uncertainty is not known, and the program resets it to
                sqrt(numpy.spacing(1))
- config        structure variable defining the box [u,v] in which the
+  config       structure variable defining the box [u,v] in which the
                points are to be generated, the number nreq of
                points to be generated and the probability p that a
                point of type 4 is generated
                config = struct('bounds',{u,v},'nreq',nreq,'p',p)
- dx            only used for the definition of a new problem (when
+  dx           only used for the definition of a new problem (when
                the program should continue from the values stored in
                file.mat, the call should have only 4 input parameters!)
                n-vector (n = dimension of the problem) of minimal
@@ -65,7 +65,7 @@ or make them available to be passed in?
                coordinate i
 
  Output:
- request       nreq x (n+3)-matrix
+  request      nreq x (n+3)-matrix
                request(j,1:n) is the jth newly generated point,
                request(j,n+1) is its estimated function value and
                request(j,n+3) indicates for which reason the point
@@ -77,8 +77,8 @@ or make them available to be passed in?
                               = 5 to fill up the required number of
                               function values if too little points of
                               the other classes are found
- xbest         current best point
- fbest         current best function value (i.e. function value at xbest)
+  xbest        current best point
+  fbest        current best function value (i.e. function value at xbest)
 """
 
 from SQCommon import Result, ObjectiveFunction
@@ -93,7 +93,9 @@ from ._snobqfit  import snobqfit
 from ._snobsplit import snobsplit
 from ._snobupdt  import snobupdt
 from ._snob5     import snob5
-import logging, math, numpy
+import logging
+import math
+import numpy
 
 __all__ = ['minimize', 'log']
 
@@ -164,9 +166,6 @@ def minimize(f, x0, bounds, budget, optin={}, **optkwds):
     if type(x0) != numpy.ndarray:
         x0 = numpy.array(x0)
 
-    if len(x0.shape) == 1:
-        x0 = x0.reshape(1, len(x0))
-
     if type(bounds) != numpy.ndarray:
         bounds = numpy.array(bounds)
 
@@ -193,12 +192,16 @@ def minimize(f, x0, bounds, budget, optin={}, **optkwds):
 
     nparams = len(bounds)
 
-    # initial call with empty list
-    request, xbest, fbest = snobfit(
-        numpy.array([]).reshape(0, len(bounds)), numpy.array([]).reshape(0,2), config, dx)
+    if not len(x0):
+      # initial call with empty list
+        request, xbest, fbest = snobfit(
+            numpy.array([]).reshape(0, len(bounds)), numpy.array([]).reshape(0,2), config, dx)
+    else:
+      # initial call with just x0 as input point(s) (establishes initial request)
+        request, xbest, fbest = snobfit(x0.reshape(1, len(x0)),
+            numpy.array([objfunc(x0), math.sqrt(numpy.spacing(1))]).reshape(1,len(bounds)),
+            config, dx)
 
-    # initial call with just x0 as input point(s) (establishes initial request)
-    #request, xbest, fbest = snobfit(x0, numpy.array([]).reshape(0,2), config, dx)
     if options.verbose:
         print('request =', request)
 
@@ -250,12 +253,13 @@ def snobfit(x, f, config, dx = None):
         f[ind,1] = math.sqrt(numpy.spacing(1))    # may be wrong
 
     rho = 0.5*(math.sqrt(5)-1)	  # golden section number
-    u1 = config['bounds'][:,0]    # lower
-    v1 = config['bounds'][:,1]    # upper
+    bounds = config['bounds']
+    u1 = bounds[:,0].reshape(1, len(bounds))    # lower
+    v1 = bounds[:,1].reshape(1, len(bounds))    # upper
 
     nreq = config['nreq']
     p = config['p']
-    n = len(u1)         # dimension of the problem
+    n = u1.shape[1]     # dimension of the problem
     nneigh = n+5        # number of nearest neighbors
 
     dy = 0.1*(v1-u1)    # defines the vector of minimal distances between two
@@ -264,14 +268,16 @@ def snobfit(x, f, config, dx = None):
     if dx is not None:  # a new job is started
         if numpy.any(dx<=0):
             raise ValueError('dx should contain only positive entries')
+
         if dx.shape[0] > 1:
             dx = dx.T
+
         if x.size > 0:
             u = numpy.minimum(x.min(axis=0), u1)
             v = numpy.maximum(x.max(axis=0), v1)
         else:
-            u = u1[:]
-            v = v1[:]
+            u = u1.copy()
+            v = v1.copy()
 
         x, f, np, t = snobinput(x, f)   # throw out duplicates among the points
                                         # and compute mean function value and
@@ -293,7 +299,7 @@ def snobfit(x, f, config, dx = None):
             fmn = 1
             fmx = 0
 
-        if (len(x) >= nneigh+1) and (fmn < fmx):
+        if len(x) >= nneigh+1 and fmn < fmx:
             inew = range(len(x))
             near = numpy.zeros((len(x), nneigh))
             d = numpy.zeros(len(x))
@@ -302,7 +308,7 @@ def snobfit(x, f, config, dx = None):
 
             fnan = find(numpy.isnan(f[:,0]))
             if fnan.size > 0:
-                f = snobnan(fnan,f,near,inew)
+                f = snobnan(fnan, f, near, inew)
 
             jsize = inew[-1]
             y = numpy.zeros((jsize, 2))
@@ -320,8 +326,8 @@ def snobfit(x, f, config, dx = None):
             near = numpy.array([], dtype=int)
             d = numpy.inf*numpy.ones((1,len(x)))
 
-            x1 = snob5(x, u1, v1, dx, nreq)
-            request = numpy.concatenate((x1, numpy.nan*numpy.ones((nreq,1)), 5*numpy.ones((nreq,1))), 1)
+            x5 = snob5(x, u1, v1, dx, nreq)
+            request = numpy.concatenate((x5, numpy.nan*numpy.ones((nreq,1)), 5*numpy.ones((nreq,1))), 1)
             if x.size > 0 and f.size > 0:
                 fbest, jbest = min_(f[:,0])
                 xbest = x[jbest]
@@ -339,6 +345,7 @@ def snobfit(x, f, config, dx = None):
         xnew = x.copy()
         fnew = f.copy()
         xbest, fbest, x, f, xl, xu, y, nsplit, small, near, d, np, t, fnan, u, v, dx = _snobload()
+
         nx = len(xnew)
         oldxbest = xbest
 
@@ -367,8 +374,8 @@ def snobfit(x, f, config, dx = None):
                 g[j] = c
 
         else:
-            x1 = snob5(x, u1, v1, dx, nreq)
-            request = numpy.concatenate((x1, numpy.NaN*numpy.ones((len(x1),1)), 5*numpy.ones((len(x1),1))), 1)
+            x5 = snob5(x, u1, v1, dx, nreq)
+            request = numpy.concatenate((x5, numpy.NaN*numpy.ones((nreq,1)), 5*numpy.ones((nreq,1))), 1)
             if x.size > 0:
                 (fbest, ibest) = min_(f[:,0])
                 xbest = x[ibest]
@@ -415,7 +422,7 @@ def snobfit(x, f, config, dx = None):
         if dmin <= 0.05*dmax:
             isplit = numpy.append(isplit, j)
         else:
-            request = numpy.vstack((request, numpy.concatenate((z, numpy.array((f1, 1))), 0)))
+            request = numpy.vstack((request, numpy.concatenate((z, numpy.array((f1, 1), ndmin=2)), axis=1)))
 
     if len(request) < nreq:
         globloc = nreq - len(request)
@@ -459,7 +466,7 @@ def snobfit(x, f, config, dx = None):
                             (y1 - x[l0]).dot(diag(D).dot((y1-x[l0]).T) + f[l0,1]))
                     else:
                         f1 = f[l0,2]
-                    request = numpy.vstack((request, numpy.concatenate((y1, numpy.array((f1, 2))), 0)))
+                    request = numpy.vstack((request, numpy.concatenate((y1, numpy.array((f1, 2), ndmin=2)), axis=1)))
 
                 sreq = len(request)
                 j += 1
@@ -495,7 +502,7 @@ def snobfit(x, f, config, dx = None):
                     else:
                         f1 = f[l0,2]
 
-                    request = numpy.vstack((request, numpy.concatenate((y1, numpy.array((f1, 3))), 0)))
+                    request = numpy.vstack((request, numpy.concatenate((y1, numpy.array((f1, 3), ndmin=2)), axis=1)))
 
                 sreq = len(request)
                 j += 1
@@ -511,7 +518,7 @@ def snobfit(x, f, config, dx = None):
                 (not sreq or numpy.min( \
                      numpy.max(numpy.abs(request[:,:n] - numpy.outer(numpy.ones(sreq), y1)) - \
                      numpy.outer(numpy.ones(sreq), dx), axis=1)) >= -numpy.spacing(1)):
-            request = numpy.vstack((request, numpy.concatenate((y1, numpy.array((f1, 4))), 0)))
+            request = numpy.vstack((request, numpy.concatenate((y1, numpy.array((f1, 4), ndmin=2)), axis=1)))
 
         sreq = len(request)
         if sreq == nreq:
@@ -542,7 +549,7 @@ def snobfit(x, f, config, dx = None):
                         (not sreq or numpy.min( \
                              numpy.max(numpy.abs(request[:,:n] - numpy.outer(numpy.ones(sreq), y1)) - \
                              numpy.outer(numpy.ones(sreq), numpy.maximum(dy,dx)), axis=1)) >= -numpy.spacing(1)):
-                    request = numpy.vstack((request, numpy.concatenate((y1, numpy.array((f1, 4))), 0)))
+                    request = numpy.vstack((request, numpy.concatenate((y1, numpy.array((f1, 4), ndmin=2)), axis=1)))
 
                 sreq = len(request)
                 if sreq == nreq:
@@ -550,18 +557,19 @@ def snobfit(x, f, config, dx = None):
             m = 0
 
     if len(request) < nreq:
-        x1 = snob5(numpy.concatenate((x, request[:,:n])), u1, v1, dx, nreq - len(request))
+        x5 = snob5(numpy.concatenate((x, request[:,:n])), u1, v1, dx, nreq - len(request))
         nx = len(x)
-        for j in range(len(x1)):
-            i = find((numpy.sum(xl <= numpy.outer(numpy.ones(nx), x1[j])) and \
-                   (numpy.outer(numpy.ones((nx,1)), x1[j]) <= xu), 1) == n)
+        for j in range(len(x5)):
+            x5j = x5[j,:]
+            i = find((numpy.sum(xl <= numpy.outer(numpy.ones(nx), x5j)) and \
+                   (numpy.outer(numpy.ones((nx,1)), x5j) <= xu), 1) == n)
             if len(i) > 1:
                 minv, i1 = min_(small[i])
                 i = i[i1]
 
             D = f[i,1]/(dx**2)
-            f1 = f[i,0] + (x1[j] - x[i]).dot(g[i].T) + sigma[i]*((x1[j] - x[i]).dot(diag(D).dot((x1[j] - x[i]).T))) + f[i,1]
-            request = numpy.vstack((request, numpy.concatenate((x1[j], numpy.array((f1, 5))), 0)))
+            f1 = f[i,0] + (x5j - x[i]).dot(g[i].T) + sigma[i]*((x5j - x[i]).dot(diag(D).dot((x5j - x[i]).T))) + f[i,1]
+            request = numpy.vstack((request, numpy.concatenate((x5j, numpy.array((f1, 5), ndmin=2)), axis=1)))
 
     if len(request) < nreq:
         snobwarn()

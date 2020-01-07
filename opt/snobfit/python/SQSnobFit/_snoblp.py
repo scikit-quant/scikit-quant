@@ -31,20 +31,20 @@ from __future__ import print_function
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-  function local, nlocal = snoblp(f, near, ind)
-  computes a pointer to all `local' points (i.e. points whose neighbors
-  have `significantly larger' function values)
+ function local, nlocal = snoblp(f, near, ind)
+
+ Computes a pointer to all "local" points (i.e. points whose neighbors have
+ "significantly larger" function values).
  
-  Input:
-  f	f(j) is the function value of point j
-  near	near(j,:) contains the indices of the size(near,2) neighbors of
- 	point j
-  ind	pointer to the boxes to be considered (optional, default
-        1:length(f))
+ Input:
+  f            f[j] is the function value of point j
+  near         near[j,:] contains the indices of the near.shape[1] neighbors of
+ 	       point j
+  ind          pointer to the boxes to be considered (optional, default 0:len(f)))
  
-  Output:
-  local		vector containing the indices of all local points
-  nlocal	vector containing the indices of all nonlocal points
+ Output:
+  local        vector containing the indices of all local points
+  nlocal       vector containing the indices of all nonlocal points
 """
 
 import numpy

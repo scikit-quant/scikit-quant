@@ -31,23 +31,24 @@ from __future__ import print_function
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-  function near, d = snobnn(x0, x, m, dx)
-  computes a safeguarded set of m nearest neighbors to a point x0
-  for each coordinate, the nearest point differing from x0 in the ith
-  coordinate by at least 1 is chosen
+ function near, d = snobnn(x0, x, m, dx)
+
+ Computes a safeguarded set of m nearest neighbors to a point x0
+ for each coordinate, the nearest point differing from x0 in the ith
+ coordinate by at least 1 is chosen.
  
-  Input:
-  x0	point for which the neighbors are to be found
-  x	the rows are the points from which the neighbors are to be
- 	chosen (possibly x0 is among these points)
-  m	number of neighbors to be found
-  dx    resolution vector
+ Input:
+  x0            point for which the neighbors are to be found
+  x             the rows are the points from which the neighbors are to be
+                chosen (possibly x0 is among these points)
+  m             number of neighbors to be found
+  dx            resolution vector
  
-  Output:
-  near	vector pointing to the nearest neighbors (i.e. to the rows
- 	of x)
-  d	maximal distance between x0 and a point of the set of m
-  	nearest neighbors
+ Output:
+  near          vector pointing to the nearest neighbors (i.e. to the rows
+                of x)
+  d             maximal distance between x0 and a point of the set of m
+                nearest neighbors
 """
 
 from ._gen_utils import rsort, max_, find, std, sort

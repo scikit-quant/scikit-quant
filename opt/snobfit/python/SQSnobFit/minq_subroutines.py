@@ -39,14 +39,16 @@ log = logging.getLogger('SKQ.SnobFit')
 #-----
 def getalp(alpu, alpo, gTp, pTGp):
     """
-      function alp, lba, uba, ier = getalp(alpu, alpo, gTp, pTGp)
-      get minimizer alp in [alpu, alpo] for a univariate quadratic
-            q(alp) = alp*gTp+0.5*alp^2*pTGp
-      lba   lower bound active
-      uba   upper bound active
+     function alp, lba, uba, ier = getalp(alpu, alpo, gTp, pTGp)
 
-      ier    0 (finite minimizer)
-             1 (unbounded minimum)
+     Get minimizer alp in [alpu, alpo] for a univariate quadratic
+            q(alp) = alp*gTp+0.5*alp^2*pTGp
+
+     lba       lower bound active
+     uba       upper bound active
+
+     ier       0 (finite minimizer)
+               1 (unbounded minimum)
     """
 
     lba = False
@@ -97,8 +99,9 @@ def getalp(alpu, alpo, gTp, pTGp):
 def ldldown(L, d, j):
     """
       function L, d = ldldown(L, d, j)
-      downdates LDL^T factorization when j-th row and column are replaced
-      by j-th unit vector
+
+      Downdates LDL^T factorization when j-th row and column are replaced
+      by j-th unit vector.
 
       d contains diag(D) and is assumed positive
     """
@@ -133,15 +136,14 @@ def ldldown(L, d, j):
 def ldlrk1(L, d, alp, u):
     """
       function L, d, p = ldlrk1(L, d, alp, u)
-      computes LDL^T factorization for LDL^T+alp*uu^T
-      if alp>=0 or if the new factorization is definite
-      (both signalled by p=[]);
-      otherwise, the original L,d and
-      a direction p of null or negative curvature are returned
+
+      Computes LDL^T factorization for LDL^T+alp*uu^T if alp>=0 or if the new factorization is
+      definite (both signalled by p=[]); otherwise, the original L,d and a direction p of null
+      or negative curvature are returned.
 
       d contains diag(D) and is assumed positive
 
-      does not work for dimension 0
+      Note: does not work for dimension 0.
     """
 
     test = 0
@@ -204,13 +206,13 @@ def ldlrk1(L, d, alp, u):
 def ldlup(L, d, j, g):
     """
       function L, d, p = ldlup(L, d, j, g)
-      updates LDL^T factorization when a unit j-th row and column
-      are replaced by column g
-      if the new matrix is definite (signalled by p=[]);
-      otherwise, the original L,d and
+
+      Updates LDL^T factorization when a unit j-th row and column are replaced by column g
+      if the new matrix is definite (signalled by p=[]); otherwise, the original L,d and
       a direction p of null or negative curvature are returned
 
       d contains diag(D) and is assumed positive
+
       Note that g must have zeros in other unit rows!!!
     """
 
@@ -293,7 +295,7 @@ def ldlup(L, d, j, g):
             print('leave ldlup at 4')
 
     else:
-        """
+        r"""
         % work around expensive sparse L(K,K)=LKK
         L=[L(1:j,:); LKI,L(K,j),LKK];
         pi=w'*q;

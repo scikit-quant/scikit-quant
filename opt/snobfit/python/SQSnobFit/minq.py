@@ -32,21 +32,23 @@ from __future__ import print_function
 
 """
   function x, fct, ier, nsub = minq(gam, c, G, xu, xo, prt, xx)
-  minimizes an affine quadratic form subject to simple bounds:
+
+  Minimizes an affine quadratic form subject to simple bounds:
   using coordinate searches and reduced subspace minimizations
   using LDL^T factorization updates
      min    fct =  gam + c^T x + 0.5 x^T G x
      s.t.   x in [xu:xo]    # xu< = xo is assumed
   where G is symmetric n x n
-  (if G is indefinite: only a local minimum is found)
- 
-  prt	print level
-  xx	initial guess (optional)
-  x	minimizer (but unbounded direction if ier = 1)
-  fct	optimal function value
-  ier	0  (local minimizer found)
-  	1  (unbounded below)
-  	99 (maxit exceeded)
+  (if G is indefinite: only a local minimum is found).
+
+  Output:
+  prt           print level
+  xx            initial guess (optional)
+  x             minimizer (but unbounded direction if ier = 1)
+  fct           optimal function value
+  ier            0 (local minimizer found)
+                 1 (unbounded below)
+                99 (maxit exceeded)
 """
 
 from ._gen_utils import diag, find
@@ -59,6 +61,7 @@ log = logging.getLogger('SKQ.SnobFit')
 def minq(gam, c, G, xu, xo, prt, xx=None):
     prt = 0
 
+    c = c.reshape(xu.shape)
     convex = 0
     n = len(G)
     hpeps = 100 * numpy.spacing(1)  # perturbation in last two digits
@@ -67,44 +70,46 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
                        # usually at most 2*n iterations are needed for convergence
     nitrefmax = 3      # maximal number of iterative refinement steps
 
-    # initialize trial point xx: function value fct and gradient g
+  # initialize trial point xx: function value fct and gradient g
     if xx is None:
-        # cold start with absolutely smallest feasible point
-        xx = numpy.zeros(n)
+      # cold start with absolutely smallest feasible point
+        xx = numpy.zeros(n).reshape(xu.shape)
 
-    # force starting point into the box
+  # force starting point into the box
     xx = numpy.maximum(xu, numpy.minimum(xx, xo))
 
-    # initialize factorization
+  # initialize factorization
     K = numpy.zeros(n, dtype=int) # initially no rows in factorization
     L = numpy.eye(n)
     dd = numpy.ones(n)            # LDL^T factorization of G_KK
-    # if issparse('G'):
-    #   print('better: use symbolic factorization (not yet implemented)')
+    #if issparse('G'):
+    #    print('better: use symbolic factorization (not yet implemented)')
 
-    # dummy initialization of indicator of free variables
-    # will become correct after first coordinate search
+  # dummy initialization of indicator of free variables
+  # will become correct after first coordinate search
     free = numpy.zeros(n, dtype=int)
     nfree = 0
     nfree_old = -1
 
-    fct = numpy.inf 		# best function value
-    nsub = 0			# number of subspace steps
-    unfix = 1		# allow variables to be freed in csearch?
-    nitref = 0  	# no iterative refinement steps so far
-    improvement = True		# improvement expected
+    fct = numpy.inf               # best function value
+    nsub = 0                      # number of subspace steps
+    unfix = 1                     # allow variables to be freed in csearch?
+    nitref = 0                    # no iterative refinement steps so far
+    improvement = True            # improvement expected
 
-    ########################################################################
-    # main loop: alternating coordinate and subspace searches
+  ########################################################################
+  # main loop: alternating coordinate and subspace searches
     while True:
         if prt > 1:
             print('enter main loop')
+
         if numpy.linalg.norm(xx, numpy.inf) == numpy.inf:
             error('infinite xx in minq.m')
+
         g = G.dot(xx) + c
-        fctnew = gam + 0.5*xx.T.dot(c+g)
+        fctnew = float(gam + 0.5*xx.T.dot(c+g))
         if not improvement:
-            # good termination
+          # good termination
             if prt:
                 print('terminate: no improvement in coordinate search')
 
@@ -112,23 +117,26 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
             break
 
         elif nitref > nitrefmax:
-            # good termination
+          # good termination
             if prt:
                 print('terminate: nitref>nitrefmax')
             ier = 0
             break
+
         elif nitref > 0 and nfree_old == nfree and fctnew >= fct:
-            # good termination
+          # good termination
             if prt:
                 print('terminate: nitref > 0 and nfree_old == nfree and fctnew >= fct')
 
             ier = 0
             break
+
         elif nitref == 0:
             x = xx[:]
             fct = min(fct, fctnew)
             if prt > 1:
                 print('fct:', fct)
+
         else:  # more accurate g and hence f if nitref>0
             x = xx[:]
             fct = fctnew
@@ -155,7 +163,7 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
         k = -1           # current coordinate searched
         while True:
             while count <= n:
-                # find next free index (or next index if unfix)
+              # find next free index (or next index if unfix)
                 count += 1
                 if k == n-1:
                     k = -1
@@ -164,14 +172,14 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
                     break
 
             if count > n:
-                # complete sweep performed without fixing a new active bound
+              # complete sweep performed without fixing a new active bound
                 break
 
             q = G[:, k]
             alpu = xu[k] - x[k]
             alpo = xo[k] - x[k]  # bounds on step
 
-            # find step size
+          # find step size
             alp, lba, uba, ier = getalp(alpu, alpo, g[k], q[k])
             if ier:
                 x = numpy.zeros(n)
@@ -199,7 +207,7 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
                 print('xnew:', xnew, 'alp:', alp)
 
             if lba or xnew <= xu[k]:
-                # lower bound active
+              # lower bound active
                 if prt > 2:
                     print(k, ' at lower bound')
                 if alpu != 0:
@@ -233,8 +241,8 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
         ######################################################################
         nfree = int(numpy.sum(free))
         if unfix and nfree_old == nfree:
-            # in exact arithmetic: we are already optimal
-            # recompute gradient for iterative refinement
+          # in exact arithmetic: we are already optimal
+          # recompute gradient for iterative refinement
             g = G.dot(x) + c
             nitref += 1
             if prt > 0:
@@ -244,30 +252,31 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
             nitref = 0
 
         nfree_old = nfree
-        gain_cs = fct - gam -0.5*x.T.dot(c+g)
+        g = g.reshape(c.shape)
+        gain_cs = float(fct - gam -0.5*x.T.dot(c+g))
         improvement = gain_cs > 10*numpy.spacing(1) or (not unfix)
 
         if prt:
-            # print (0,1) profile of free and return the number of nonnp.zeros
+          # print (0,1) profile of free and return the number of nonnp.zeros
             #nfree = pr01('csrch ', free)
             print('gain_cs:', gain_cs)
 
-        # subspace search
+      # subspace search
         xx = x[:]
         if (not improvement) or (nitref > nitrefmax):
             pass
-            # optimal point found - nothing done
+          # optimal point found - nothing done
         elif nitref > nitrefmax:
             pass
-            # enough refinement steps - nothing done
+          # enough refinement steps - nothing done
         elif nfree == 0:
             pass
-            # no free variables - no subspace step taken
+          # no free variables - no subspace step taken
             if prt > 0:
                 print('no free variables - no subspace step taken')
             unfix = 1
         else:
-            # take a subspace step
+          # take a subspace step
             nsub += 1
 
             if prt > 0:
@@ -275,17 +284,17 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
                 format='*** nsub = %4.0f fct = %15.6e fct_cs = %15.6e'
                 print(format % (nsub, fct, fct_cs))
 
-            # downdate factorization
+          # downdate factorization
             for j in find(free < K):    # list of newly active indices
                 L, dd = ldldown(L, dd, int(j))
                 K[j] = 0
                 if prt > 10:
                     print('downdate; fact_ind:', find(K))
 
-            # update factorization or find indefinite search direction
+          # update factorization or find indefinite search direction
             definite = 1
             for j in find(free > K):   # list of newly freed indices
-                # later: speed up the following by passing K to ldlup!
+              # later: speed up the following by passing K to ldlup!
                 p = numpy.zeros(n)
                 if n > 1:
                     idk = find(K)
@@ -302,31 +311,31 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
                     print('update; fact_ind', find(K))
 
             if definite:
-                # find reduced Newton direction
+              # find reduced Newton direction
                 p = numpy.zeros(n)
                 idk = find(K).flatten()
                 for kk in idk:
                     p[kk] = g[kk]
                 p = numpy.linalg.solve(L.T, numpy.linalg.solve(L, p)/dd)
-                #    pass # p will remain zero and ignored
+                # p will remain zero and ignored
                 if prt > 10:
                     print('reduced Newton step; fact_ind:', find(K))
 
-            # set tiny entries to zero
-            # p = (x+p)-x
+          # set tiny entries to zero
+          # p = (x+p)-x
             for ii in range(len(p)):
                 if abs(p[ii]) < 100*numpy.spacing(1):
                     p[ii] = 0.0
-            ind = find(p != 0)
+            ind = find(p != 0).flatten()
             if ind.size <= 0:
-                # zero direction
+              # zero direction
                 if prt:
                     print('zero direction')
                 unfix = 1
                 return x, fct, ier, nsub
 
-            # find range of step sizes
-            pp = p[ind]
+          # find range of step sizes
+            pp = p[ind].reshape(x[ind].shape)
             oo = (xo[ind]-x[ind])/pp
             uu = (xu[ind]-x[ind])/pp
             alpu = -numpy.inf 
@@ -335,16 +344,16 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
             alpo =  numpy.inf
             if oo[pp>0].size > 0: alpo = min(alpo, numpy.min(oo[pp>0]))
             if uu[pp<0].size > 0: alpo = min(alpo, numpy.min(uu[pp<0]))
-            # TODO: original had <= and =>, and alpo == 0.0 happens
+          # TODO: original had <= and =>, and alpo == 0.0 happens
             if alpo < 0 or alpu > 0:
                 log.debug("current alpo, alpu: %f, %f", alpo, alpu)
                 raise RuntimeError('programming error: no alp')
 
-            # find step size
+          # find step size
             gTp = g.T.dot(p)
             agTp = numpy.abs(g).T.dot(numpy.abs(p))
             if abs(gTp) < 100*numpy.spacing(1)*agTp:
-                # linear term consists of roundoff only
+              # linear term consists of roundoff only
                 gTp = 0
             pTGp = p.T.dot(G.dot(p))
             if convex: pTGp = max(0, pTGp)
@@ -381,9 +390,9 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
 
             unfix = not (lba or uba)   # allow variables to be freed in csearch?
             
-            # update of xx
+          # update of xx
             for k in range(len(ind)):
-                # avoid roundoff for active bounds
+              # avoid roundoff for active bounds
                 ik = int(ind[k])
                 if alp == uu[k]:
                     xx[ik] = xu[ik]
@@ -405,14 +414,14 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
                 return x, fct, ier, nsub
 
         if prt > 0:
-            # print (0:1) profile of free and return the number of nonzeros
+          # print (0:1) profile of free and return the number of nonzeros
             #nfree = pr01('ssrch ', free)
             print(' ')
             if unfix and numpy.sum(nfree) < n:
                 print('bounds may be freed in next csearch')
 
 
-    # end of main loop
+  # end of main loop
     if prt > 0:
         print(fct)
 

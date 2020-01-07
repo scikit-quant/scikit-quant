@@ -7,7 +7,7 @@ STANDALONE = True
 
 def optset(optin=None, **optkwds):
     """
-  Set the options in SnobFit.
+ Set the options in SnobFit.
 
   optout = optset(name1=val1, name2=val2, ...)
            creates the options dictionary with the named options
@@ -20,7 +20,7 @@ def optset(optin=None, **optkwds):
   And now for the lists. The details of the options, the motiviation
   for the defaults, and suggestions for their use live in the manual.
 
-  Scalar Options:
+ Scalar Options:
 
   maxmp: Maximum number of model points requested for the local fit.
          Default = 2*npar+6, with npar the number of parameters.
