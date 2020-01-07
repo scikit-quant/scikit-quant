@@ -66,11 +66,11 @@ or make them available to be passed in?
 
  Output:
   request      nreq x (n+3)-matrix
-               request(j,1:n) is the jth newly generated point,
-               request(j,n+1) is its estimated function value and
-               request(j,n+3) indicates for which reason the point
-               request(j,1:n) has been generated
-               request(j,n+3) = 1 best prediction
+               request[j,1:n] is the jth newly generated point,
+               request[j,n+1] is its estimated function value and
+               request[j,n+3] indicates for which reason the point
+               request[j,1:n] has been generated
+               request[j,n+3] = 1 best prediction
                               = 2 putative local minimizer
                               = 3 alternative good point
                               = 4 explore empty region
@@ -158,8 +158,8 @@ def fill_request(request, func, nparams):
 
 #-----
 def minimize(f, x0, bounds, budget, optin={}, **optkwds):
-    # The user-facing API is the equivalent of snobdriver, providing the loop
-    # over the "internal" snobfit function.
+  # The user-facing API is the equivalent of snobdriver, providing the loop
+  # over the "internal" snobfit function.
     if budget <= 0:
         budget = 100000
 
@@ -174,10 +174,10 @@ def minimize(f, x0, bounds, budget, optin={}, **optkwds):
     minfcall = 10;      # minimum number of function values before
                         # considering stopping
 
-    # calculate resolution vector from the bounds
+  # calculate resolution vector from the bounds
     dx = (bounds[:,1]-bounds[:,0])*1E-5
 
-    # setup parameters (TODO: use optin/optkwds)
+  # setup parameters (TODO: use optin/optkwds)
     if type(optin) == dict:
         options = optset(**dict(optin, **optkwds))
     else:
@@ -194,53 +194,54 @@ def minimize(f, x0, bounds, budget, optin={}, **optkwds):
 
     if not len(x0):
       # initial call with empty list
-        request, xbest, fbest = snobfit(
-            numpy.array([]).reshape(0, len(bounds)), numpy.array([]).reshape(0,2), config, dx)
+        request, xbest, fbest = snobfit(numpy.array([]).reshape(0, len(bounds)),
+            numpy.array([]).reshape(0, 2),
+            config, dx)
     else:
       # initial call with just x0 as input point(s) (establishes initial request)
         request, xbest, fbest = snobfit(x0.reshape(1, len(x0)),
-            numpy.array([objfunc(x0), math.sqrt(numpy.spacing(1))]).reshape(1,len(bounds)),
+            numpy.array([objfunc(x0), math.sqrt(numpy.spacing(1))]).reshape(1, 2),
             config, dx)
 
     if options.verbose:
         print('request =', request)
 
-    # calculate the requested points and set uncertainties
+  # calculate the requested points and set uncertainties
     x, vals = fill_request(request, objfunc, nparams)
 
     ncall0 = len(vals)                 # initial budget used
     fbestn, jbest = min_(vals[:,0])    # best function value
     xbest = x[jbest,:]
 
-    # display current number of function values, best point and function value
+  # display current number of function values, best point and function value
     log.info('# calls = %d; xbest = %s; fbest = %f', ncall0, str(xbest), fbest)
 
     nstop0 = 0;
-    # repeated calls to Snobfit
+  # repeated calls to Snobfit
     while ncall0 < budget:   # repeat till ncall function values are reached
                              # (if the stopping criterion is not fulfilled first)
         request, xbest, fbest = snobfit(x, vals, config)
         if options.verbose:
             print('request =', request)
 
-        # computation of the function values at the suggested points
+      # computation of the function values at the suggested points
         x, vals = fill_request(request, objfunc, nparams)
 
-        # update function call counter
+      # update function call counter
         ncall0 = ncall0 + len(vals)
         fbestn, jbest = min_(vals[:,0])    # best function value
         if fbestn < fbest:
             fbest = fbestn
             xbest = x[jbest,:]
 
-            # display current number of function values
+          # display current number of function values
             log.info('# calls = %d; xbest = %s; fbest = %f', ncall0, str(xbest), fbest)
 
             nstop0 = 0
         elif budget >= minfcall:
             nstop0 = nstop0 + 1
 
-        # check stopping criterion
+      # check stopping criterion
         if nstop0 >= nstop and ncall0 >= minfcall:
             break
 
