@@ -9,11 +9,14 @@ class TestSNOBFIT:
         import SQSnobFit, logging, numpy
         SQSnobFit.log.setLevel(logging.DEBUG)
 
-    def setup_method(self, method):
-        import SQSnobFit, numpy
+    def reset(self):
+        import SQSnobFit
 
-        # reset the random state for each method to get predictable results
-        SQSnobFit._gen_utils._randstate = numpy.random.RandomState(6)
+     # reset the random state for each method to get predictable results
+        SQSnobFit._gen_utils._randstate = np.random.RandomState(6)
+
+    def setup_method(self, method):
+        self.reset()
 
     def test01_simple_example(self):
         """Read access to instance public data and verify values"""
@@ -28,14 +31,15 @@ class TestSNOBFIT:
 
             return fv
 
-        def test_one(initial, expected):
+        def run_easy(self, initial, expected):
+            self.reset()
+
             bounds = np.array([[-1, 1], [-1, 1]], dtype=float)
             budget = 40
             x0 = np.array(initial)
-           # [0.5, 0.5])
 
             from SQSnobFit import optset
-            options = optset(maxmp=len(x0)+6)
+            options = optset(maxmp=2+6)
 
             result, history = SQSnobFit.minimize(f_easy, x0, bounds, budget, options)
 
@@ -43,8 +47,8 @@ class TestSNOBFIT:
             assert np.round(sum(result.optpar)-sum(expected), 8) == 0
             #assert len(histout) == 10
 
-        #test_one([],         (-0.00112, -0.00078))
-        test_one([0.5, 0.5], ( 0.00134, -0.00042))
+        run_easy(self, [],         (-0.00112, -0.00078))
+        run_easy(self, [0.5, 0.5], ( 0.00134, -0.00042))
 
     def test02_bra(self):
         """Minimize Branin's function"""
@@ -108,18 +112,21 @@ class TestSNOBFIT:
 
             return -(c.dot(numpy.exp(-d)))
 
-        bounds = np.array([[0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1]], dtype=float)
-        budget = 250
-        x0 = np.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
+        def run_Hartman6(self, initial, expected):
+            self.reset()
 
-        from SQSnobFit import optset
-        options = optset(maxmp=len(x0)+6)
-        result, history = SQSnobFit.minimize(Hartman6, x0, bounds, budget, options)
+            bounds = np.array([[0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1]], dtype=float)
+            budget = 250
+            x0 = np.array(initial)
 
-        # LIMIT:
-        # fglob = -3.32236801141551
-        # xglob = [0.20168952, 0.15001069, 0.47687398, 0.27533243, 0.31165162, 0.65730054]
-        assert np.round(sum(result.optpar)-sum((0.2077, 0.14892, 0.4829, 0.2725, 0.31493, 0.66138)), 8) == 0
+            from SQSnobFit import optset
+            options = optset(maxmp=6+6)
+            result, history = SQSnobFit.minimize(Hartman6, x0, bounds, budget, options)
+
+            assert np.round(sum(result.optpar)-sum(expected), 8) == 0
+
+        #run_Hartman6(self, [],                             (0.19879, 0.15305, 0.46964, 0.27738, 0.31289, 0.65971))
+        run_Hartman6(self, [0.5, 0.5, 0.5, 0.5, 0.5, 0.5], (0.20848, 0.15222, 0.46391, 0.27580, 0.31342, 0.65772))#0.2077, 0.14892, 0.4829, 0.2725, 0.31493, 0.66138))
 
     def test04_direct_call(self):
         """Direct call of a single iteration"""
