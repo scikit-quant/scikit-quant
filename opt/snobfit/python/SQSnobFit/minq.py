@@ -175,12 +175,12 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
               # complete sweep performed without fixing a new active bound
                 break
 
-            q = G[:, k]
+            q = G[:,k]
             alpu = xu[k] - x[k]
-            alpo = xo[k] - x[k]  # bounds on step
+            alpo = xo[k] - x[k]      # bounds on step
 
           # find step size
-            alp, lba, uba, ier = getalp(alpu, alpo, g[k], q[k])
+            alp, lba, uba, ier = getalp(alpu, alpo, float(g[k]), float(q[k]))
             if ier:
                 x = numpy.zeros(n)
                 if lba:
@@ -212,7 +212,7 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
                     print(k, ' at lower bound')
                 if alpu != 0:
                     x[k] = xu[k]
-                    g = g + alpu*q
+                    g = g + (alpu*q).reshape(g.shape)
                     count = 0
                 free[k] = 0
             elif uba or xnew >= xo[k]:
@@ -221,7 +221,7 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
                     print(k, ' at upper bound')
                 if alpo != 0:
                     x[k] = xo[k]
-                    g = g + alpo*q
+                    g = g + (alpo*q).reshape(g.shape)
                     count = 0
                 free[k] = 0
             else:
@@ -233,7 +233,7 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
                         print('unfixstep:', x[k], alp)
 
                     x[k] = xnew
-                    g = g.reshape(q.shape) + alp*q
+                    g = g + (alp*q).reshape(g.shape)
                     free[k] = 1
 
             # end of coordinate search
