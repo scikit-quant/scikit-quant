@@ -169,7 +169,7 @@ def minimize(f, x0, bounds, budget, optin={}, **optkwds):
     if type(bounds) != numpy.ndarray:
         bounds = numpy.array(bounds)
 
-    objfunc = ObjectiveFunction(f)
+    objfunc = ObjectiveFunction(f, options={'simple_function' : True})
 
     minfcall = 10;      # minimum number of function values before
                         # considering stopping
