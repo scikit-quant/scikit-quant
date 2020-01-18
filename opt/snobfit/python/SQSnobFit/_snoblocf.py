@@ -157,14 +157,16 @@ def snobround(x, u, v, dx):
       x         projected and rounded version of x
     """
 
-    x = numpy.minimum(numpy.maximum(x,u), v)
-    x = numpy.round(x/dx)*dx
+    x = numpy.minimum(numpy.maximum(x, u), v)
+    dx = dx.reshape(x.shape)
+    x = numpy.multiply(numpy.round(numpy.divide(x, dx)), dx)
+
     i1 = find(x<u)
-    if i1.size > 0:
-        x[i1] = x[i1] + dx[i1]
+    for i in i1:
+        x[0, i1] += dx[0, i1]
 
     i2 = find(x>v)
-    if i2.size > 0:
-        x[i2] = x[i2] - dx[i2]
+    for i in i2:
+        x[0, i2] -= dx[0, i2]
 
     return x
