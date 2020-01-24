@@ -71,10 +71,10 @@ def check_first_eval(funs, options, iflag):
   Warn if the function fails to return a value at the initial iterate."""
 
     lsqerr = 0
-    if not funs.shape:
-        mf = nf = 1
-    else:
+    try:
         mf, nf = funs.shape
+    except AttributeError:
+        mf = nf = 1
     lsq = options.least_squares
     if mf > 1 and lsq == 0:
         print('Your function is vector-valued but the least_squares option is off.')
