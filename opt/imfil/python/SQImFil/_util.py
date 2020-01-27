@@ -73,7 +73,7 @@ def check_first_eval(funs, options, iflag):
     lsqerr = 0
     try:
         mf, nf = funs.shape
-    except AttributeError:
+    except (AttributeError, ValueError):
         mf = nf = 1
     lsq = options.least_squares
     if mf > 1 and lsq == 0:
