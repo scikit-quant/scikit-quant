@@ -17,6 +17,9 @@
 
 # -- Project information -----------------------------------------------------
 
+# The master toctree document.
+master_doc = 'index'
+
 project = 'sckit-quant'
 copyright = '2020, Wim Lavrijsen'
 author = 'Wim Lavrijsen'
