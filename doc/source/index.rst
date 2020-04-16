@@ -17,10 +17,6 @@ Results for several VQE case studies are presented in this
 This is the manual for the software used.
 
 
-.. only: not latex
-
-   Contents:
-
 .. toctree::
    :maxdepth: 1
 
