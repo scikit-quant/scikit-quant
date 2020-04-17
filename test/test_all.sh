@@ -12,11 +12,10 @@ done
 PYTHONPATH=../opt/common/python:../opt/imfil/python:../opt/snobfit/python:$PYTHONPATH
 
 pytest $@ test*.py
-if [ $? -eq 0 ]; then
-   pytest $@ ../opt/imfil/test/test*.py
-elif [ ${EXIT_ON_FAILURE} -eq 1 ]; then
-   exit $?
+if [ $? -ne 0 ]; then
+  if [ ${EXIT_ON_FAILURE} -eq 1 ]; then
+    exit $?
+  fi
 fi
-if [ $? -eq 0 ]; then
-   pytest $@ ../opt/snobfit/test/test*.py
-fi
+pytest $@ ../opt/imfil/test/test*.py
+pytest $@ ../opt/snobfit/test/test*.py
