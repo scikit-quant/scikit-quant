@@ -4,8 +4,8 @@ License and copyright
 scikit-quant includes several optimizers with permission of their respective
 authors and all files are individually marked as such.
 This permission extends to redistribution for academic and personal use.
-For commercial use of any of the optimizers, please check with the relevant
-original authors.
+For commercial use of any of the optimizers, please read the relevant license
+and check with original authors where needed.
 The translations from MATLAB to Python are derived works and are packaged
 independently on PyPI to allow their inclusion/exclusion as needed.
 
@@ -13,9 +13,9 @@ independently on PyPI to allow their inclusion/exclusion as needed.
 Main scikit-quant code
 ----------------------
 
-This license applies to the common scikit-quant code itself.
+The following license applies to the common scikit-quant code itself.
 
-Copyright (c) 2018-2020, The Regents of the University of California,
+Copyright (c) 2019-2020, The Regents of the University of California,
 through Lawrence Berkeley National Laboratory (subject to receipt of
 any required approvals from the U.S. Dept. of Energy). All rights
 reserved. Redistribution and use in source and binary forms, with or

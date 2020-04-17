@@ -7,6 +7,7 @@ Our first focus in on classical optimizers, making the state-of-the art from
 the Applied Math community available in Python for use in quantum computing.
 
 Full documentation: https://scikit-quant.readthedocs.io/
+
 Website: http://scikit-quant.org
 
 

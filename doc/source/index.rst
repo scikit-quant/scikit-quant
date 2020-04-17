@@ -35,6 +35,15 @@ This is the manual for the software used.
    bugs
 
 .. toctree::
+   :caption: Optimizers
+   :maxdepth: 1
+
+   imfil
+   snobfit
+   nomad
+   bobyqa
+
+.. toctree::
    :maxdepth: 2
    :caption: Contents:
 
