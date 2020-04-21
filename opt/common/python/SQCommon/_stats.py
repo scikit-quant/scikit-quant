@@ -11,7 +11,7 @@ class Stats(object):
         self._history = list()
 
     def add_history(self, fval, par):
-        self._history.append([fval]+list(par))
+        self._history.append([fval]+list(numpy.atleast_1d(par)))
 
     def full_history(self):
         """Return the full call history. Each row represents one call, with
