@@ -12,7 +12,6 @@ class TestOPTIMIZERS:
     def test_issue2(self):
         """Errors with imfil for univariate functions"""
 
-        import numpy as np
         from skquant.opt import minimize
 
         def f(a):
@@ -21,3 +20,15 @@ class TestOPTIMIZERS:
         bounds = np.array([[0,2]], dtype=np.float)
         init = np.array([1.])
         res, hist = minimize(f, init, bounds, method='imfil')
+
+    def test_issue4(self):
+        """error in imfil with multivariate function"""
+
+        from skquant.opt import minimize
+
+        def g(a):
+            return a[0]**2 - a[0] +a[1]**3 -4*a[1]
+
+        bounds = np.array([[0,2],[-2,2]], dtype=np.float)
+        init = np.array([1.,0.])
+        res, hist = minimize(g, init, bounds, method='imfil')
