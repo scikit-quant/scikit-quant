@@ -24,10 +24,7 @@ if not log.hasHandlers():
         hdlr = logging.StreamHandler(sys.stdout)
         frmt = logging.Formatter('%(name)-12s: %(levelname)8s %(message)s')
         hdlr.setFormatter(frmt)
-        for h in log.handlers:
-            if h.formatter._fmt == logging.BASIC_FORMAT:
-                log.removeHandler(h)
-                break
         log.addHandler(hdlr)
+        log.propagate = False
     _setupLogger(log)
     del _setupLogger
