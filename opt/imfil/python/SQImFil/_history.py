@@ -1,4 +1,3 @@
-from __future__ import print_function
 import numpy
 
 __all__ = ['CompleteHistory', 'append_history', 'single_point_hist_update',
@@ -76,7 +75,7 @@ def scan_history(complete_history, xp, fp, dx):
     oldresults = {}
     newpoints = {}
     for i in range(xp.shape[1]):
-        point = xp[:,i]
+        point = xp[:,(i,)]
         try:
             fpt, ift = scan_complete_history(complete_history, point)
             oldresults[i] = (fpt, ift)

@@ -1,4 +1,3 @@
-from __future__ import print_function
 # Python version of IMFIL v1.02 "imfil.m" MATLAB version by C.T. Kelly.
 #
 # Modified and redistributed with permission.
@@ -6,7 +5,7 @@ from __future__ import print_function
 from SQCommon import Result, ObjectiveFunction
 from ._optset import optset
 from ._util import error_check, check_first_eval, isok
-from ._linalg import eye, ones, zeros, kk_proj, f_to_vals
+from ._linalg import kk_proj, f_to_vals
 from ._history import CompleteHistory, append_history, single_point_hist_update, \
    many_point_hist_update, scan_history
 from ._exec_functions import gauss_newton, qn_update
@@ -145,25 +144,24 @@ def minimize(f, x0, bounds, budget=10000, optin=None, **optkwds):
 
     log.debug('optimization start')
 
-    # TODO: get rid of matrix use
-    # Make sure x0 is a single-column matrix
-    if not isinstance(x0, numpy.matrix):
-        x0 = numpy.matrix(x0).T
+    # Make sure x0 is a single-column array
+    if not isinstance(x0, numpy.ndarray):
+        x0 = numpy.array(x0, shape=(len(x), 1))
+    elif len(x0.shape) == 1:
+        x0 = x0.reshape(len(x0), 1)
+    assert x0.shape[1] == 1
 
-    # Make sure bounds are a 2-column martrix
-    if not isinstance(bounds, numpy.matrix):
-        bounds = numpy.matrix(bounds)
+    # Make sure bounds are a 2-column array
+    if not isinstance(bounds, numpy.ndarray):
+        bounds = numpy.array(bounds)
+        assert bounds.shape[1] == 2
 
     qbounds = bounds
-    dbounds = bounds[:,1] - bounds[:,0]
+    dbounds = bounds[:,(1,)] - bounds[:,(0,)]
 
     # Objective function should be callable
     if not callable(f):
         raise ValueError('"%s" is not callable' % (str(objfunc),))
-
-    # Make sure x0 is a single-column matrix
-    if not isinstance(x0, numpy.matrix):
-        x0 = numpy.matrix(x0).T
 
     # Use optset to fill in defaults where no option values are provided
     if type(optin) == dict:
@@ -203,18 +201,18 @@ def minimize(f, x0, bounds, budget=10000, optin=None, **optkwds):
     # imfil_core uses 0 and 1 as the bounds for optimization.
     error_check('bounds', x0, bounds)
 
-    z0 = (x0 - qbounds[:,0])/dbounds
+    z0 = (x0 - qbounds[:,(0,)])/dbounds
     z, fval, histout, complete_history = \
        imfil_core(z0, f_internal, budget, core_data, bounds)
 
     # Unscale the results to original bounds.
-    opt_par = numpy.multiply(dbounds, z) + qbounds[:,0]
+    opt_par = numpy.multiply(dbounds, z) + qbounds[:,(0,)]
     db = numpy.diagflat(dbounds)
-    qb = numpy.diagflat(qbounds[:,0])
-    histout = numpy.matrix(histout)
+    qb = numpy.diagflat(qbounds[:,(0,)])
+    histout = numpy.array(histout)
     xout = histout[:,5:n+5]
-    xlow = ones(xout.shape)*qb
-    histout[:,5:n+5] = xout*db + xlow
+    xlow = numpy.ones(xout.shape).dot(qb)
+    histout[:,5:n+5] = xout.dot(db) + xlow
     xout = histout[:,5:n+5]
 
     # Correct scaling for nonlinear least squares problems.
@@ -226,23 +224,22 @@ def minimize(f, x0, bounds, budget=10000, optin=None, **optkwds):
     # Unscale the complete history
     if options.standalone and options.complete_history:
         ng, mg = len(complete_history.good_points), 2
-        good_points = zeros((mg, ng))
+        good_points = numpy.zeros((mg, ng))
         for i in range(ng):
             good_points[0, i] = complete_history.good_points[i][0]
             good_points[1, i] = complete_history.good_points[i][1]
 
         complete_history.good_values = [v*val_scale for v in complete_history.good_values]
         if mg > 0:
-            clow = qb*ones((mg, ng))
+            clow = qb*numpy.ones((mg, ng))
             complete_history.good_points = db * good_points + clow
 
-        nf, mf = len(complete_history.failed_points), 2
-        failed_points = zeros((mf, nf))
-        for i in range(nf):
-            failed_points[0, i] = complete_history.failed_points[i][0]
-            failed_points[1, i] = complete_history.failed_points[i][1]
-        if mf > 0:
-            flow = qb * ones((mf, nf))
+        nf = len(complete_history.failed_points)
+        if nf > 0:
+            failed_points = numpy.zeros((mf, nf))
+            for i in range(nf):
+                failed_points[:,(i)] = complete_history.failed_points[i]
+            flow = qb * numpy.ones((mf, nf))
             complete_history.failed_points = db * failed_points + flow
 
     # Unscale the function and gradients.
@@ -347,7 +344,7 @@ def imfil_core(x0, f, budget, core_data, bounds):
     # In imfil_core the bounds are 0 and 1 on all the variables.
     # We use the real bounds only if you use the add_new_directions
     # option.
-    obounds = zeros((n, 2)); obounds[:,1] = 1
+    obounds = numpy.zeros((n, 2)); obounds[:,(1,)] = 1
 
     # Get the options we need.
     imfil_maxit    = options.maxit
@@ -366,7 +363,7 @@ def imfil_core(x0, f, budget, core_data, bounds):
     if options.executive == 1:
         hess = options.executive_data
     else:
-        hess = eye(n)
+        hess = numpy.eye(n)
 
     xc = x0.copy(); ns = 0; failc = 0
     stop_now = False
@@ -577,10 +574,10 @@ def f_internal(x, h, core_data):
     dbounds = fun_data.dbounds
 
     mx, nx = x.shape
-    z = x.copy()
+    z = x.copy().reshape(mx, nx)
     for ix in range(nx):
-        z[:,ix] = numpy.multiply(dbounds, x[:,ix])+qbounds[:,0]
-    zargs = numpy.squeeze(numpy.asarray(z.T))
+        z[:,(ix,)] = numpy.multiply(dbounds, x[:,(ix,)])+qbounds[:,(0,)]
+    zargs = numpy.array(numpy.squeeze(z.T))
 
     call_args = [zargs,]
     if options.scale_aware:
@@ -602,7 +599,7 @@ def f_internal(x, h, core_data):
         fx = res
         mz, nz = z.shape
         if nz != 1:
-           iff = zeros(nz); icf = nz*ones(nz)
+           iff = numpy.zeros(nz); icf = nz*numpy.ones(nz)
 
     # If this is the first time you evalute f and if imfil_fscale < 0,
     # we change imfil_fscale to the correct relative scaling factor. This
@@ -706,7 +703,7 @@ def create_stencil_data(options, fscale, noise_val, bounds):
 #-----
 def create_stencil(options, n):
     """
-  Builds the stencil for imfil.m. As we evolve this we will be
+  Builds the stencil for _imfil.py. As we evolve this we will be
   adding the ability to do random rotations for all or part of
   a stencil and all sorts of other stuff.
 
@@ -748,7 +745,7 @@ def create_stencil(options, n):
     if stencil != -1:
         vstencil = v
 
-    return numpy.matrix(vstencil)
+    return vstencil
 
 
 #-----
@@ -970,19 +967,16 @@ def poll_stencil(x, f, dx, fc, bounds, core_data, h, complete_history):
         best_value = fc
     best_value_f = fc
 
-    iflag = zeros((vsize, 1))
+    iflag = numpy.zeros((vsize, 1))
 
     try:
         m = len(fc)
     except TypeError:
         m = 1
-    fp = zeros((m, vsize))
 
-    failed_points = []
     good_points = []
     good_values = []
-    sgood = 0
-    fval = zeros(vsize)
+    fval = numpy.zeros(vsize)
     icount = 0
 
     # fp[:,i] and fval(i) are not defined outside of the bounds
@@ -991,77 +985,74 @@ def poll_stencil(x, f, dx, fc, bounds, core_data, h, complete_history):
     # First cull the points which violate the bound constraints.
     #
     # Collect the feasible points, differences, and functions in xp1 and dx1.
-    pold = 0
     dx1 = None
     xp1 = None
-    xp  = zeros(dx.shape)
+    xp  = numpy.zeros(dx.shape)
 
     # One-sided differences may need to flip the direction if the positive
     # perturbation is not feasible.
     if options.stencil == 1:
         for i in range(vsize):
-            xp[:,i] = x+dx[:,i]
+            xp[:,i] = x+dx[:,(i,)]
             if isok(xp[:,i], bounds) == 0:
-                dx[:,i] = -dx[:,i]
+                dx[:,(i,)] = -dx[:,(i,)]
 
     for i in range(vsize):
-        xp[:,i] = x+dx[:,i]
+        xp[:,(i,)] = x+dx[:,(i,)]
         if isok(xp[:,i], bounds):
-            pold = pold+1
             if dx1 is None:
-                dx1 = dx[:,i]
-                xp1 = xp[:,i]
+                dx1 = dx[:,(i,)]
+                xp1 = xp[:,(i,)]
             else:
-                dx1 = numpy.hstack((dx1, dx[:,i]))
-                xp1 = numpy.hstack((xp1, xp[:,i]))
+                dx1 = numpy.hstack((dx1, dx[:,(i,)]))
+                xp1 = numpy.hstack((xp1, xp[:,(i,)]))
 
-    try:
-        fp = fp[:,0:pold]
-    except TypeErrorError:
-        pass
+    npoints = xp1.shape[1]
+    fp = numpy.zeros((m, npoints))
 
     # Query the complete_history structure to see if you've evaluated f
     # at any of these points before.
     oldresults, newpoints = scan_history(complete_history, xp1, fp, dx1)
 
     # Copy over pre-existing values.
-    iflago = zeros((vsize, 1))
-    for idx, vals in oldresults.items():
-        fp[:,idx] = vals[0]
-        iflago[idx] = vals[1]
+    iflago = numpy.zeros((npoints, 1))
+    for key, val in oldresults.items():
+        fp[:,(key,)] = val[0]
+        iflago[i]    = val[1]
 
     # Evaluate f, in parallel if possible. Flag the failed points.
-    fp1 = []
-    iflag = []
     if not options.parallel:
+        fp1, iflag = [], []
         for point in newpoints.values():
             fpx, iflagx, ict, tol = f(point, h, core_data)
             fp1.append(fpx)
             iflag.append(iflagx)
             icount += ict
     elif newpoints:
-        fp1, iflag, ictrp, tol = f(numpy.hstack(newpoints.values()), h, core_data)
+        fp1, iflag, ictrp, tol = f(numpy.hstack(tuple(newpoints.values())), h, core_data)
         icount += sum(ictrp)
 
     fp = numpy.zeros((1, len(fp1)))
 
     # Copy over new values.
     if newpoints:
-        for i, j in enumerate(newpoints.keys()):
-            fp[:,j]  = fp1[i]
-            iflago[j] = iflag[i]
+        for i, key in enumerate(newpoints.keys()):
+            fp[:,(key,)] = fp1[i]
+            iflago[key]  = iflag[i]
 
     fp1 = fp.T; iflag = iflago
 
     # Identify the failed points.
-    ibad = numpy.array((iflag[0:pold] == 1))[:,0]
-    if ibad.any():
-        failed_points = xp1[:,ibad]
+    ibad = numpy.nonzero(iflag == 1)[0]
+    failed_points = numpy.zeros((len(ibad), n))
+    if len(ibad):
+        for idx, key in enumerate(ibad):
+            failed_points[(idx,),:] = newpoints[key].T
 
     # Store the good points and their function values.
-    igood = numpy.array((iflag[0:pold] == 0))[:,0]
-    sgood = igood.sum()
-    good_df = zeros(fp1.shape)
+    igood = numpy.nonzero(iflag == 0)[0]
+    sgood = len(igood)
+    good_df = numpy.zeros(fp1.shape)
     good_dx = []
     if sgood > 0:
         good_points = xp1[:,igood]
@@ -1125,6 +1116,8 @@ def collect_stencil_data(good_points, good_values, failed_points,
         jac = []
         grad = []
 
+    if len(best_point.shape) == 1:
+        best_point = best_point.reshape((len(best_point), 1))
     return sflag, best_value, best_value_f, best_point, svar, diff_hist
 
 
@@ -1250,8 +1243,8 @@ def augment_directions(x, vin, h, options, bounds):
     # See if there's a new_directions function.
     new_directions = options.add_new_directions
     if new_directions:
-        dbv = bounds[:,1] - bounds[:,0]; db = numpy.diagflat(dbv)
-        unscaled_x = db*x + bounds[:,0]
+        dbv = bounds[:,(1,)] - bounds[:,(0,)]; db = numpy.diagflat(dbv)
+        unscaled_x = db*x + bounds[:,(0,)]
         unscaled_v = db*vout
         unscaled_vnew = new_directions(unscaled_x, h, unscaled_v)
         mv, nv = unscaled_vnew.shape

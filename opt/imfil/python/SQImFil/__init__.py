@@ -1,13 +1,17 @@
-from __future__ import print_function
-
-### temporary override of NumPy deprecation warning, see:
-### https://docs.scipy.org/doc/numpy/user/numpy-for-matlab-users.html
-import warnings
-warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
-
 import logging
 
 log = logging.getLogger('SKQ.ImFil')
+if not log.hasHandlers():
+    def _setupLogger(log):
+        import sys
+        hdlr = logging.StreamHandler(sys.stdout)
+        frmt = logging.Formatter('%(name)-12s: %(levelname)8s %(message)s')
+        hdlr.setFormatter(frmt)
+        log.addHandler(hdlr)
+        log.propagate = False
+    _setupLogger(log)
+    del _setupLogger
+
 
 log.info("""
 ------------------------------------------------------------------------

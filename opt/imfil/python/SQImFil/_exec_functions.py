@@ -1,11 +1,12 @@
-from __future__ import print_function
-from ._linalg import eye, zeros, kk_proj, f_to_vals
+from ._linalg import kk_proj, f_to_vals
 from ._history import CompleteHistory, single_point_hist_update
+import logging
 import numpy
 import operator
-import warnings
 
 __all__ = ['gauss_newton', 'qn_update']
+
+logger = logging.getLogger('SKQ.ImFil')
 
 
 #-----
@@ -67,7 +68,7 @@ def gauss_newton(f, x, fun, jac, xc,  gc, iteration_data, hessold):
 
     # Get the epsilon-active indices and encode them in a diagonal matrix.
     epsb = 1.E-6;
-    alist = zeros(len(x)).T
+    alist = numpy.zeros(len(x)).T
     for i in range(len(x)):
         alist[i] = (x[i] > obounds[i,0]+epsb) and (x[i] < obounds[i,1]-epsb)
     pr = numpy.diagflat(alist)
@@ -75,7 +76,7 @@ def gauss_newton(f, x, fun, jac, xc,  gc, iteration_data, hessold):
     # Compute the search direction with a QR factorization.
     rjac = jac.dot(pr)
     rq, rr = numpy.linalg.qr(rjac)
-    sdir1 = (eye(n)-pr)*sgrad
+    sdir1 = (numpy.eye(n)-pr)*sgrad
     sdir2 = rq.dot(fun)
     sdir2 = numpy.linalg.lstsq(rr, sdir2.T, rcond=None)[0]
     sdir = sdir1+sdir2
@@ -150,7 +151,7 @@ def qn_update(f, x, fval, sgrad, xc, gc, iteration_data, hessold):
     if itc > 1:
         # Get the epsilon-inactive indices.
         epsb=1.E-6;
-        alist = zeros(len(x)).T
+        alist = numpy.zeros(len(x)).T
         for i in range(len(x)):
             alist[i] = (x[i] > obounds[i,0]+epsb) and (x[i] < obounds[i,1]-epsb)
 
@@ -159,7 +160,7 @@ def qn_update(f, x, fval, sgrad, xc, gc, iteration_data, hessold):
         elif quasi == 2:      # SR1
             hess = sr1up(x, xc, sgrad, gc, hessold, alist)
         else:                 # nothing
-            hess = eye(nx, nx)
+            hess = numpy.eye(nx, nx)
 
     # Search direction
     sdir = numpy.linalg.lstsq(hess, sgrad, rcond=None)[0]
@@ -179,16 +180,16 @@ def bfupdate(x, xc, sgrad, gc, hess, alist):
 
     n = len(x)
     pr = numpy.diagflat(alist)
-    y = sgrad-gc; s = x-xc; z = hess*s
+    y = sgrad-gc; s = x-xc; z = hess.dot(s)
 
     # Turn y into y#.
-    y = pr*y
-    if y.T*s > 0:
-        hess = pr*hess*pr + (y*y.T/(y.T*s)) - pr*(z*z.T/(s.T*z))*pr
-        hess = eye(n) - pr + hess
+    y = pr.dot(y)
+    if y.T.dot(s) > 0:
+        hess = pr.dot(hess).dot(pr) + (y.dot(y.T)/(y.T.dot(s))) - pr.dot((z.dot(z.T)/(s.T.dot(z)))).dot(pr)
+        hess = numpy.eye(n) - pr + hess
 
     if numpy.linalg.cond(hess) > 1.E6:
-        hess = eye(n)
+        hess = numpy.eye(n)
 
     return hess
 
@@ -208,10 +209,10 @@ def sr1up(x, xc, sgrad, gc, hess, alist):
         ptst = z.T*(hess*z)+(z.T*z)*(z.T*z)/(z.T*s)
         if ptst > 0:
             hess = pr*hess*pr + (z*z.T)/(z.T*s);
-            hess = eye(n) - pr + hess
+            hess = numpy.eye(n) - pr + hess
 
     if numpy.linalg.cond(hess) > 1.E6:
-        hess = eye(n)
+        hess = numpy.eye(n)
 
     return hess
 
@@ -267,7 +268,7 @@ def armijo_explore(f, sdir, fold, xc, h, core_data, obounds):
             parallel_armijo(f, sdir, fold, xc, h, obounds, core_data)
 
     if iarm == options.maxitarm and aflag == 1 and options.verbose == 1:
-        print('line search failure', iarm, h)
+        logger.warning('line search failure %d %s', iarm, str(h))
 
     return (fct, x, fval, iarm, fres, diff_hist, nfail)
 
@@ -346,11 +347,11 @@ def parallel_armijo(f, sdir, fold, xc, h, obounds, core_data):
 
     # Evaluate all steplength choices at once.
     number_steps = maxitarm+1
-    ddm = zeros((n, number_steps))
+    ddm = numpy.zeros((n, number_steps))
     for i in range(number_steps):
-        ddm[:,i] = xc-lbda*dd
+        ddm[:,(i,)] = xc-lbda*dd
         lbda = beta*lbda
-        ddm[:,i] = kk_proj(ddm[:,i], obounds)
+        ddm[:,(i,)] = kk_proj(ddm[:,(i,)], obounds)
 
     fta, iflaga, ictra, tol = f(ddm, h, core_data)
 
@@ -409,8 +410,10 @@ def parallel_armijo(f, sdir, fold, xc, h, obounds, core_data):
                 iarm += 1
 
     if iarm == maxitarm and aflag == 1 and options.verbose == 1:
-        print('line search failure', iarm, h)
+        logger.warning('line search failure %d %s', iarm, str(h))
 
+    if len(x.shape) == 1:
+        x = x.reshape(len(x), 1)
     nfail = aflag
     return (fct, x, fval, iarm, aflag, fres, diff_hist, nfail)
 
@@ -492,7 +495,7 @@ def serial_armijo(f, sdir, fold, xc, h, obounds, core_data):
         try:
             ft, ifl, ict, tol = f(xt, h, core_data)
         except Exception as e:
-            warnings.warn('dropping function evaluation "%s"' % (str(e),))
+            logger.warning('dropping function evaluation "%s"' % (str(e),))
             continue
 
         fct += ict
@@ -509,7 +512,7 @@ def serial_armijo(f, sdir, fold, xc, h, obounds, core_data):
         iarm += 1
 
     if iarm == maxitarm and aflag == 1 and options.verbose == 1:
-        print('line search failure', iarm, h)
+        logger.warning('line search failure %d %s', iarm, str(h))
 
     nfail = aflag
     return (fct, x, fval, iarm, aflag, fres, diff_hist, nfail)

@@ -1,7 +1,9 @@
-from __future__ import print_function
+import logging
 import numpy
 
 __all__ = ['error_check', 'check_bounds', 'check_first_eval', 'isok']
+
+logger = logging.getLogger('SKQ.ImFil')
 
 
 #-----
@@ -50,13 +52,13 @@ def check_bounds(x, bounds):
     if bounds.shape[1] != 2:
         raise ValueError('The bounds array must have two columns [lower, upper].')
 
-    diff_vec = bounds[:,1] - bounds[:,0]
+    diff_vec = bounds[:,(1,)] - bounds[:,(0,)]
     m_vec = min(diff_vec)
     if m_vec <= 0:
         raise ValueError('The lower bound must be strictly greater than the upper bound.')
 
     if m_vec > 0:
-        px = numpy.maximum(bounds[:,0], numpy.minimum(x, bounds[:,1]))
+        px = numpy.maximum(bounds[:,(0,)], numpy.minimum(x, bounds[:,(1,)]))
         nd = numpy.linalg.norm(x-px)
         if nd > 0:
             raise ValueError('The initial iterate is infeasible. '
@@ -77,16 +79,16 @@ def check_first_eval(funs, options, iflag):
         mf = nf = 1
     lsq = options.least_squares
     if mf > 1 and lsq == 0:
-        print('Your function is vector-valued but the least_squares option is off.')
-        print('imfil cannot run with this inconsistency.')
+        logger.warning('Your function is vector-valued but the least_squares option is off.')
+        logger.warning('imfil cannot run with this inconsistency.')
         lsqerr = 1
 
     elif mf == 1 and lsq == 1:
-        print('Your function is scalar-valued but the least_squares option is on.')
-        print('Are you sure this is what you want to do?')
+        logger.warning('Your function is scalar-valued but the least_squares option is on.')
+        logger.warning('Are you sure this is what you want to do?')
 
     if iflag > 0:
-        print('Your function failed to return a value at the initial iterate.')
-        print('This is usually a problem. You have been warned.')
+        logger.warning('Your function failed to return a value at the initial iterate.')
+        logger.warning('This is usually a problem. You have been warned.')
 
     return lsqerr
