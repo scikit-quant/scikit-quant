@@ -217,7 +217,7 @@ def snobupdt(xl, xu, x, f, nsplit, small, near, d, np, t, xnew, fnew, fnan, u, v
         fmn = 1
         fmx = 0
 
-    if nx >= nneigh and fmn < fmx:
+    if nx >= nneigh+1 and fmn < fmx:
         if near.size <= 0:
             near = numpy.zeros((nx, nneigh), dtype=int)
         if d.size <= 0:
