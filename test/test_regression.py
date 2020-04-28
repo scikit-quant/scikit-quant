@@ -21,6 +21,18 @@ class TestOPTIMIZERS:
         init = np.array([1.])
         res, hist = minimize(f, init, bounds, method='imfil')
 
+    def test_issue3(self):
+        """error with snobfit for univariate function"""
+
+        from skquant.opt import minimize
+
+        def f(a):
+            return a[0]**2 - a[0]
+
+        bounds = np.array([[0,2]], dtype=np.float)
+        init = np.array([1.])
+        res, hist = minimize(f, init, bounds, method='snobfit')
+
     def test_issue4(self):
         """error in imfil with multivariate function"""
 

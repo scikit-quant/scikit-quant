@@ -125,7 +125,7 @@ class TestSNOBFIT:
 
             assert np.round(sum(result.optpar)-sum(expected), 8) == 0
 
-      # note: results are still subtly different from the reference, but the most likeley
+      # note: results are still subtly different from the reference, but the most likely
       # reason seems to be that the respective random number generators differ slightly
         run_Hartman6(self, [],      (0.2077,  0.14892, 0.4829,  0.2725,  0.31493, 0.66138))
         run_Hartman6(self, [0.5]*6, (0.20133, 0.1504,  0.47666, 0.27787, 0.3134,  0.65797))

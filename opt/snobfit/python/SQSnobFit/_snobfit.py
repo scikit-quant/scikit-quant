@@ -369,7 +369,9 @@ def snobfit(x, f, config, dx = None):
                 y = numpy.append(y, numpy.zeros((jsize-len(y), x.shape[1])), axis=0)
             g = numpy.zeros((jsize, x.shape[1]))
             sigma = numpy.zeros(jsize)
-            f = extend(f, x.shape[1]-1)
+            if f.shape[1] < 3:
+               f = extend(f, 3-f.shape[1])
+
             for j in inew:
                 y[j], f[j,2], c, sigma[j] = snoblocf(j, x, f[:,0:2], near, dx, u, v)
                 g[j] = c
@@ -561,9 +563,10 @@ def snobfit(x, f, config, dx = None):
         x5 = snob5(numpy.concatenate((x, request[:,:n])), u1, v1, dx, nreq - len(request))
         nx = len(x)
         for j in range(len(x5)):
-            x5j = x5[j,:]
-            i = find((numpy.sum(xl <= numpy.outer(numpy.ones(nx), x5j)) and \
-                   (numpy.outer(numpy.ones((nx,1)), x5j) <= xu), 1) == n)
+            x5j = x5[(j,),:]
+            i = find(numpy.sum(numpy.logical_and( \
+                         xl <= numpy.outer(numpy.ones(nx), x5j), numpy.outer(numpy.ones((nx,1)), x5j) <= xu),
+                     1) == n)
             if len(i) > 1:
                 minv, i1 = min_(small[i])
                 i = i[i1]
