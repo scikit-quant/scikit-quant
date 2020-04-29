@@ -72,7 +72,7 @@ def snobnan(fnan, f, near, inew):
             ind1 = numpy.array([])
             for i in range(len(ind)):
                  if (find(fnan == ind[i])).size > 0:
-                     ind1 = numpy.concatenate((ind1, i), 0)
+                     ind1 = numpy.concatenate((ind1, [i]), 0)
 
             if ind1.size > 0:
                 ind = numpy.delete(ind, ind1, 0)
@@ -82,7 +82,7 @@ def snobnan(fnan, f, near, inew):
                 f[l,1] = dfmax
             else:
                  fmax1, k = max_(f[ind, 0])
-                 fmin1, temp = min_(f[ind, 1])
+                 fmin1, temp = min_(f[ind, 0])
                  f[l,0] = fmax1 + 1.e-3*(fmax1-fmin1)
                  f[l,1] = f[ind[k],1]
 
