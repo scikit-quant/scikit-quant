@@ -57,7 +57,7 @@ import numpy
 def snobnan(fnan, f, near, inew):
     lnn = near.shape[1]
     fnan = fnan.flatten()
-    notnan = filter(lambda x: x not in fnan, range(len(f)))
+    notnan = list(filter(lambda x: x not in fnan, range(len(f))))
     fmx, imax = max_(f[notnan,0])
     fmn, imin = min_(f[notnan,0])
     dfmax = f[imax,1]
