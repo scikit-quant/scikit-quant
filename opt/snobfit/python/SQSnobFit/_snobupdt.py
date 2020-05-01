@@ -207,7 +207,6 @@ def snobupdt(xl, xu, x, f, nsplit, small, near, d, np, t, xnew, fnew, fnan, u, v
                 small[k1] = small0[k2]
 
     notnan = numpy.arange(0, nx)
-    notnan = numpy.delete(notnan, fnan)
     notnan = numpy.delete(notnan, find(numpy.isnan(f[:,0])))
 
     if notnan.size > 0:
