@@ -7,6 +7,8 @@ from qiskit.aqua.components.optimizers import Optimizer
 
 __all__ = [
     'ImFil',
+    'SnobFit',
+    'PyBobyqa',
     ]
 
 log = logging.getLogger('SKQ')
@@ -74,11 +76,12 @@ class SnobFit(Optimizer):
     Stable Noisy Optimization by Branch and FIT
 
     SnobFit is specifically developed for optimization problems with noisy and
-    expensive to compute objective functions. 
+    expensive to compute objective functions. This implementation uses the
+    SQSnobFit Python rewrite.
 
     Reference:
       W. Huyer and A. Neumaier, “Snobfit - Stable Noisy Optimization by Branch
-          and Fit”, ACM Trans. Math. Software 35 (2008), Article 9.
+      and Fit”, ACM Trans. Math. Software 35 (2008), Article 9.
 
     Original MATLAB code available at www.mat.univie.ac.at/~neum/software/snobfit
     """
@@ -119,4 +122,59 @@ class SnobFit(Optimizer):
              skqopt.minimize(objective_function, initial_point, variable_bounds, 
                              self.maxfun, method='snobfit', options=self._options)
                        
+        return res.optpar, res.optval, len(history)
+
+
+#
+### PyBobyqa Qiskit interoperable interface
+#
+class PyBobyqa(Optimizer):
+    """
+    Bound Optimization BY Quadratic Approximation
+
+    Trust region method that builds a quadratic approximation in each iteration
+    based on a set of automatically chosen and adjusted interpolation points. 
+
+    Reference:
+      Coralia Cartis, et. al., “Improving the Flexibility and Robustness of
+      Model-Based Derivative-Free Optimization Solvers”, technical report,
+      University of Oxford, (2018).
+
+    Code available at github.com/numericalalgorithmsgroup/pybobyqa/
+    """
+
+    _OPTIONS = []
+
+    def __init__(self,
+                 maxfun: int = 500) -> None:
+
+        """
+        Args:
+            maxfun: Maximum number of function evaluations.
+        """
+
+        super().__init__()
+        for k, v in locals().items():
+            if k in self._OPTIONS:
+                self._options[k] = v
+
+        self.maxfun = maxfun
+
+    def get_support_level(self):
+        """ Return support level dictionary """
+        return {
+            'gradient': Optimizer.SupportLevel.ignored,
+            'bounds': Optimizer.SupportLevel.required,
+            'initial_point': Optimizer.SupportLevel.required,
+        }
+
+    def optimize(self, num_vars, objective_function, gradient_function=None,
+                 variable_bounds=None, initial_point=None):
+        super().optimize(num_vars, objective_function, gradient_function,
+                         variable_bounds, initial_point)
+
+        res, history = \
+             skqopt.minimize(objective_function, initial_point, variable_bounds,
+                             self.maxfun, method='bobyqa', options=self._options)
+
         return res.optpar, res.optval, len(history)

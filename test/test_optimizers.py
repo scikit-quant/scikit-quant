@@ -17,6 +17,7 @@ ref_results = {
     f_easy_simple : {
         'imfil'   : (-0.00681757, 0.00880743),
         'snobfit' : (-0.00112, -0.00078),
+        'bobyqa'  : (-2.3883e-10, -1.3548e-10),
     }
 }
 
@@ -104,3 +105,11 @@ class TestOPTIMIZERS:
         ret = optimizer.optimize(num_vars=len(x0), objective_function=f_easy_simple, \
                                  variable_bounds=bounds)
         assert np.round(sum(ret[0])-sum(ref_results[f_easy_simple]['snobfit']), 8) == 0.0
+
+      # PyBobyqa
+        from skquant.interop.qiskit import PyBobyqa
+        optimizer = PyBobyqa(maxfun=budget)
+
+        ret = optimizer.optimize(num_vars=len(x0), objective_function=f_easy_simple, \
+                                 variable_bounds=bounds, initial_point=x0)
+        assert np.round(sum(ret[0])-sum(ref_results[f_easy_simple]['bobyqa']), 8) == 0.0
