@@ -4,7 +4,7 @@
 SnobFit
 =======
 
-Stable Noisy Optimization by Branch and FIT (SnobFit)~\cite{snobfit} is an
+Stable Noisy Optimization by Branch and FIT (SnobFit) is an
 optimizer developed specifically for optimization problems with noisy and
 expensive to compute objective functions.
 SnobFit iteratively selects a set of new evaluation points such that a balance

@@ -3,9 +3,10 @@
 Changelog
 =========
 
-master: 0.6.1
+master: 0.7.0
 -------------
 
+* Added Qiskit interoperability interface
 * Fix indexing error and double delete in NaN handling in SnobFit (Jan Rittig)
 
 
