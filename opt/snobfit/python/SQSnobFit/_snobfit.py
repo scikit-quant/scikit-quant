@@ -185,7 +185,7 @@ def minimize(f, x0, bounds, budget, optin={}, **optkwds):
 
     config = {"bounds": bounds, "nreq": 2*len(bounds)+6, "p": .5}
     if optin is not None:
-        if options.maxmp is not None:
+        if options.maxmp is not None and 0 < options.maxmp:
             config["nreq"] = options.maxmp
 
     nstop = options.maxfail      # number of times no improvement is tolerated
