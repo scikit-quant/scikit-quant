@@ -9,6 +9,15 @@ class TestOPTIMIZERS:
     def setup_class(cls):
         pass
 
+    def reset(self):
+        import SQSnobFit
+
+     # reset the random state for each method to get predictable results
+        SQSnobFit._gen_utils._randstate = np.random.RandomState(6)
+
+    def setup_method(self, method):
+        self.reset()
+
     def test_issue2(self):
         """Errors with imfil for univariate functions"""
 
