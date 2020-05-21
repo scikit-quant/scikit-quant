@@ -39,7 +39,7 @@ class IterData(object):
 
     def copy(self):
         return IterData(self.h, self.obounds.copy(), self.itc, self.xb.copy(),
-            self.fobjb.copy(), self.funsb.copy(), self.complete_history,
+            self.fobjb.copy(), self.funsb, self.complete_history,
             self.f_internal, self.core_data, self.options)
 
 class StencilData(object):
