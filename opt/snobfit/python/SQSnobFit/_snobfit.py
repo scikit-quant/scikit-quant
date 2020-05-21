@@ -192,7 +192,7 @@ def minimize(f, x0, bounds, budget, optin={}, **optkwds):
 
     nparams = len(bounds)
 
-    if x0 == None or not len(x0):
+    if x0 is None or (type(x0) == numpy.ndarray and not x0.shape) or not len(x0):
       # initial call with empty list
         request, xbest, fbest = snobfit(numpy.array([]).reshape(0, len(bounds)),
             numpy.array([]).reshape(0, 2),

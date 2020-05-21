@@ -9,6 +9,7 @@ __all__ = [
     'ImFil',
     'SnobFit',
     'PyBobyqa',
+    'Bobyqa',
     ]
 
 log = logging.getLogger('SKQ')
@@ -178,3 +179,5 @@ class PyBobyqa(Optimizer):
                              self.maxfun, method='bobyqa', options=self._options)
 
         return res.optpar, res.optval, len(history)
+
+Bobyqa = PyBobyqa
