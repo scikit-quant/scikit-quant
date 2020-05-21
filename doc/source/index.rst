@@ -32,6 +32,7 @@ This is the manual for the software used.
    :maxdepth: 1
 
    installation
+   starting
    bugs
 
 .. toctree::

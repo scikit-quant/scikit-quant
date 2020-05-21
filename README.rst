@@ -20,7 +20,8 @@ Installation
 Usage
 -----
 
-Basic example::
+Basic example (component interfaces for standard quantum programming
+frameworks and for SciPy are available as well)::
 
    # create a numpy array of bounds, one (low, high) for each parameter
    bounds = np.array([[-1, 1], [-1, 1]], dtype=float)
