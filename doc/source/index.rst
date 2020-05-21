@@ -44,8 +44,11 @@ This is the manual for the software used.
    bobyqa
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :caption: Components
+   :maxdepth: 1
+
+   qiskit
+   scipy
 
 .. toctree::
    :caption: Developers
