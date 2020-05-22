@@ -4,16 +4,16 @@
 Test suite
 ==========
 
-All packages have a ``tests`` subdirectory that contains tests runnable by
+All packages have a ``test`` subdirectory that contains tests runnable by
 ``pytest``.
-In addition, the top-level ``tests`` has a ``test_all.sh`` bash script to
+In addition, the top-level ``test`` has a ``test_all.sh`` bash script to
 walk the directories and run all tests.
 
 To install ``pytest``::
 
    $ python -m pip install pytest
 
-and to run any test, simply enter the ``tests`` subdirectory and run::
+and to run any test, simply enter the ``test`` subdirectory and run::
 
    $ pytest
 
