@@ -75,18 +75,16 @@ def getalp(alpu, alpo, gTp, pTGp):
         elif alpo == numpy.inf:
             lba = True
         else:
-            lba = (2*gTp + (alpu+alpo)*pTGp > 0)
+            lba = bool((2*gTp + (alpu+alpo)*pTGp) > 0)
 
         uba = not lba
     else:
-        alp = -gTp/pTGp        # unconstrained optimal step
-        lba = (alp <= alpu)    # lower bound active
-        uba = (alp >= alpo)    # upper bound active
+        alp = -gTp/pTGp           # unconstrained optimal step
+        lba = bool(alp <= alpu)   # lower bound active
+        uba = bool(alp >= alpo)   # upper bound active
 
-    if lba:
-        alp = alpu
-    if uba:
-        alp = alpo
+    if lba: alp = alpu
+    if uba: alp = alpo
 
     # print?
     if abs(alp) == numpy.inf:
@@ -117,8 +115,11 @@ def ldldown(L, d, j):
         A[j,j] = 1
 
     if j < n:
+        I = numpy.arange(j)
         K = numpy.arange(j+1,n)
         L[K[:,None],K], d[K], p = ldlrk1(L[K[:,None],K], d[K], d[j], L[K,j])
+      # update jth row and column
+        L[j,I] = numpy.zeros((    j,))
         L[K,j] = numpy.zeros((n-1-j,))
     else:
         L[n-1,:n-2] = numpy.zeros((1,n-2))
@@ -282,11 +283,11 @@ def ldlup(L, d, j, g):
         return L, d, p
 
     w = (g[K]-L[K[:,None],I].dot(u))/del_
-    L[K[:,None],K], d[K], q = ldlrk1(L[K[:,None],K], d[K], -del_, w)
+    L[K[:,None],K], d[K], q = ldlrk1(L[K[:,None],K], d[K], -del_, w.copy())
     if q.size <= 0:
         L[j,I] = v.T
-        d[j] = del_
         L[K[:,None],j] = w[:,None]
+        d[j] = del_
         if test:
             A1 = L.dot(diag(d).dot(L.T))
             logger.debug('A1 = %s', A1)

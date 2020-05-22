@@ -110,7 +110,6 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
         if not improvement:
           # good termination
             logger.debug('terminate: no improvement in coordinate search')
-
             ier = 0
             break
 
@@ -209,7 +208,7 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
             else:
                 # no bound active
                 logger.debug('%d free', k)
-                if alp != 0:
+                if numpy.spacing(1) < abs(alp):
                     if not free[k]:
                         logger.debug('unfixstep: %s %s', x[k], alp)
 
@@ -234,7 +233,7 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
         nfree_old = nfree
         g = g.reshape(c.shape)
         gain_cs = float(fct - gam -0.5*x.T.dot(c+g))
-        improvement = gain_cs > 10*numpy.spacing(1) or (not unfix)
+        improvement = gain_cs > 10*numpy.spacing(1) or not unfix
 
       # print (0,1) profile of free and return the number of nonnp.zeros
         #nfree = pr01('csrch ', free)
@@ -242,12 +241,9 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
 
       # subspace search
         xx = x[:]
-        if (not improvement) or (nitref > nitrefmax):
+        if not improvement or nitref >= nitrefmax:
+          # optimal point found or enough refinement steps - nothing done
             pass
-          # optimal point found - nothing done
-        elif nitref > nitrefmax:
-            pass
-          # enough refinement steps - nothing done
         elif nfree == 0:
             pass
           # no free variables - no subspace step taken
@@ -293,7 +289,7 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
                 idk = find(K).flatten()
                 for kk in idk:
                     p[kk] = g[kk]
-                p = numpy.linalg.solve(L.T, numpy.linalg.solve(L, p)/dd)
+                p = -numpy.linalg.solve(L.T, numpy.linalg.solve(L, p)/dd)
                 # p will remain zero and ignored
                 if logger.getEffectiveLevel() >= logging.DEBUG:
                     logger.debug('reduced Newton step; fact_ind: %s', find(K).flatten())
@@ -308,7 +304,7 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
               # zero direction
                 logger.debug('zero direction')
                 unfix = 1
-                return x, fct, ier, nsub
+                continue
 
           # find range of step sizes
             pp = p[ind].reshape(x[ind].shape)
@@ -362,6 +358,7 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
                     logger.debug('ddd = %s', diag(G))
                     logger.debug('min_diag_G = %s', min(ddd))
                     logger.debug('max_diag_G = %s', max(ddd))
+
                 return x, fct, ier, nsub
 
             unfix = not (lba or uba)   # allow variables to be freed in csearch?
@@ -385,9 +382,6 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
                     raise RuntimeError('infinite xx in minq.py')
 
             nfree = sum(free)
-
-            if ier:
-                return x, fct, ier, nsub
 
       # print (0:1) profile of free and return the number of nonzeros
         #nfree = pr01('ssrch ', free)
