@@ -3,8 +3,8 @@
 Changelog
 =========
 
-master: 0.7.0
--------------
+2020-05-22: 0.7.0
+-----------------
 
 * Added Qiskit interoperability interface
 * Added SciPy interoperability interface
@@ -17,4 +17,5 @@ master: 0.7.0
 -----------------
 
 * Remove use of numpy.matrix in SQImFil
+* Bug fixes in SQCommon and SQSnobFit
 * Start of documentation
