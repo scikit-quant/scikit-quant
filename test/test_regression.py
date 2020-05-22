@@ -53,3 +53,15 @@ class TestOPTIMIZERS:
         bounds = np.array([[0,2],[-2,2]], dtype=np.float)
         init = np.array([1.,0.])
         res, hist = minimize(g, init, bounds, method='imfil')
+
+    def test_issue10(self):
+        """SNOBFIT error for initialization with nreq=1"""
+
+        from skquant.opt import minimize
+
+        def f(a):
+            return a[0]**2 - a[0]
+
+        bounds = np.array([[0,2]], dtype=np.float)
+        init = np.array([1.])
+        res, hist = minimize(f, init, bounds, method='snobfit', options={'maxmp' : 1})
