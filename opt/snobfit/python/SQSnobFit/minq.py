@@ -55,7 +55,7 @@ from ._gen_utils import diag, find
 from .minq_subroutines import getalp, ldldown, ldlup
 import copy, logging, math, numpy
 
-log = logging.getLogger('SKQ.SnobFit')
+logger = logging.getLogger('SKQ.SnobFit.minq')
 
 
 def minq(gam, c, G, xu, xo, prt, xx=None):
@@ -100,8 +100,7 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
   ########################################################################
   # main loop: alternating coordinate and subspace searches
     while True:
-        if prt > 1:
-            print('enter main loop')
+        logger.debug('enter main loop')
 
         if numpy.linalg.norm(xx, numpy.inf) == numpy.inf:
             error('infinite xx in minq.m')
@@ -110,23 +109,20 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
         fctnew = float(gam + 0.5*xx.T.dot(c+g))
         if not improvement:
           # good termination
-            if prt:
-                print('terminate: no improvement in coordinate search')
+            logger.debug('terminate: no improvement in coordinate search')
 
             ier = 0
             break
 
         elif nitref > nitrefmax:
           # good termination
-            if prt:
-                print('terminate: nitref>nitrefmax')
+            logger.debug('terminate: nitref>nitrefmax')
             ier = 0
             break
 
         elif nitref > 0 and nfree_old == nfree and fctnew >= fct:
           # good termination
-            if prt:
-                print('terminate: nitref > 0 and nfree_old == nfree and fctnew >= fct')
+            logger.debug('terminate: nitref > 0 and nfree_old == nfree and fctnew >= fct')
 
             ier = 0
             break
@@ -134,26 +130,16 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
         elif nitref == 0:
             x = xx[:]
             fct = min(fct, fctnew)
-            if prt > 1:
-                print('fct:', fct)
+            logger.debug('fct: %s', fct)
 
         else:  # more accurate g and hence f if nitref>0
             x = xx[:]
             fct = fctnew
-            if prt > 1:
-                print('fct:', fct)
+            logger.debug('fct: %s', fct)
 
         if nitref == 0 and nsub >= maxit:
-            if prt:
-                print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-                print('!!!!!           minq          !!!!!')
-                print('!!!!! incomplete minimization !!!!!')
-                print('!!!!!   too many iterations   !!!!!')
-                print('!!!!!     increase maxit      !!!!!')
-                print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-            else:
-                print('iteration limit exceeded')
-
+            logger.debug('incomplete minimization (too many iterations): increase maxit')
+            logger.info('iteration limit exceeded')
             ier = 99
             break
 
@@ -187,29 +173,26 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
                     x[k] = -1
                 else:
                     x[k] = 1
-                if prt:
-                    print('minq: function unbounded below')
-                    print('      unbounded direction returned')
-                    print('      possibly caused by roundoff')
 
-                if prt > 1:
-                    print('f(alp*x) = gam+gam1*alp+gam2*alp^2/2: where')
-                    print('gam1 =', (c.T).dot(x))
-                    print('gam2 =', (x.T).dot(G.dot(x)))
-                    print('ddd =', diag(G))
-                    print('min_diag_G =', ddd.min())
-                    print('max_diag_G =', ddd.max())
+                if logger.getEffectiveLevel() >= logging.DEBUG:
+                    logger.debug('function unbounded below, unbounded direction returned')
+                    logger.debug('possibly caused by roundoff')
+                    logger.debug('f(alp*x) = gam+gam1*alp+gam2*alp^2/2: where')
+                    logger.debug('gam1 = %s', (c.T).dot(x))
+                    logger.debug('gam2 = %s', (x.T).dot(G.dot(x)))
+                    logger.debug('ddd = %s', diag(G))
+                    logger.debug('min_diag_G = %s', ddd.min())
+                    logger.debug('max_diag_G = %s', ddd.max())
 
                 return x, fct, ier, nsub       
 
             xnew = x[k] + alp
-            if prt and nitref > 0:
-                print('xnew:', xnew, 'alp:', alp)
+            if nitref > 0:
+                logger.debug('xnew: %s alp: %s', xnew, alp)
 
             if lba or xnew <= xu[k]:
               # lower bound active
-                if prt > 2:
-                    print(k, ' at lower bound')
+                logger.debug('%d at lower bound', k)
                 if alpu != 0:
                     x[k] = xu[k]
                     g = g + (alpu*q).reshape(g.shape)
@@ -217,8 +200,7 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
                 free[k] = 0
             elif uba or xnew >= xo[k]:
                 # upper bound active
-                if prt > 2:
-                    print(k, ' at upper bound')
+                logger.debug( '%d at upper bound', k)
                 if alpo != 0:
                     x[k] = xo[k]
                     g = g + (alpo*q).reshape(g.shape)
@@ -226,11 +208,10 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
                 free[k] = 0
             else:
                 # no bound active
-                if prt > 2:
-                    print(k, ' free')
+                logger.debug('%d free', k)
                 if alp != 0:
-                    if prt > 1 and not free[k]:
-                        print('unfixstep:', x[k], alp)
+                    if not free[k]:
+                        logger.debug('unfixstep: %s %s', x[k], alp)
 
                     x[k] = xnew
                     g = g + (alp*q).reshape(g.shape)
@@ -245,8 +226,7 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
           # recompute gradient for iterative refinement
             g = G.dot(x) + c
             nitref += 1
-            if prt > 0:
-                print('optimum found; iterative refinement tried')
+            logger.debug('optimum found; iterative refinement tried')
 
         else:
             nitref = 0
@@ -256,10 +236,9 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
         gain_cs = float(fct - gam -0.5*x.T.dot(c+g))
         improvement = gain_cs > 10*numpy.spacing(1) or (not unfix)
 
-        if prt:
-          # print (0,1) profile of free and return the number of nonnp.zeros
-            #nfree = pr01('csrch ', free)
-            print('gain_cs:', gain_cs)
+      # print (0,1) profile of free and return the number of nonnp.zeros
+        #nfree = pr01('csrch ', free)
+        logger.debug('gain_cs: %s', gain_cs)
 
       # subspace search
         xx = x[:]
@@ -272,24 +251,22 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
         elif nfree == 0:
             pass
           # no free variables - no subspace step taken
-            if prt > 0:
-                print('no free variables - no subspace step taken')
+            logger.debug('no free variables - no subspace step taken')
             unfix = 1
         else:
           # take a subspace step
             nsub += 1
 
-            if prt > 0:
-                fct_cs = gam+0.5*x.T.dot(c+g.reshape(c.shape))
-                format='*** nsub = %4.0f fct = %15.6e fct_cs = %15.6e'
-                print(format % (nsub, fct, fct_cs))
+            fct_cs = gam+0.5*x.T.dot(c+g.reshape(c.shape))
+            format='*** nsub = %4.0f fct = %15.6e fct_cs = %15.6e'
+            logger.debug(format % (nsub, fct, fct_cs))
 
           # downdate factorization
             for j in find(free < K):    # list of newly active indices
                 L, dd = ldldown(L, dd, int(j))
                 K[j] = 0
-                if prt > 10:
-                    print('downdate; fact_ind:', find(K))
+                if logger.getEffectiveLevel() >= logging.DEBUG:
+                    logger.debug('downdate; fact_ind: %s', find(K).flatten())
 
           # update factorization or find indefinite search direction
             definite = 1
@@ -304,11 +281,11 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
                 L, dd, p = ldlup(L, dd, int(j), p)
                 definite = p.size <= 0
                 if not definite:
-                    if prt: print('indefinite or illconditioned step')
+                    logger.debug('indefinite or illconditioned step')
                     break
                 K[j] = 1
-                if prt > 10:
-                    print('update; fact_ind', find(K))
+                if logger.getEffectiveLevel() >= logging.DEBUG:
+                    logger.debug('update; fact_ind %s', find(K).flatten())
 
             if definite:
               # find reduced Newton direction
@@ -318,8 +295,8 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
                     p[kk] = g[kk]
                 p = numpy.linalg.solve(L.T, numpy.linalg.solve(L, p)/dd)
                 # p will remain zero and ignored
-                if prt > 10:
-                    print('reduced Newton step; fact_ind:', find(K))
+                if logger.getEffectiveLevel() >= logging.DEBUG:
+                    logger.debug('reduced Newton step; fact_ind: %s', find(K).flatten())
 
           # set tiny entries to zero
           # p = (x+p)-x
@@ -329,8 +306,7 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
             ind = find(p != 0).flatten()
             if ind.size <= 0:
               # zero direction
-                if prt:
-                    print('zero direction')
+                logger.debug('zero direction')
                 unfix = 1
                 return x, fct, ier, nsub
 
@@ -346,7 +322,7 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
             if uu[pp<0].size > 0: alpo = min(alpo, numpy.min(uu[pp<0]))
           # TODO: original had <= and =>, and alpo == 0.0 happens
             if alpo < 0 or alpu > 0:
-                log.debug("current alpo, alpu: %f, %f", alpo, alpu)
+                logger.debug("current alpo, alpu: %f, %f", alpo, alpu)
                 raise RuntimeError('programming error: no alp')
 
           # find step size
@@ -358,7 +334,7 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
             pTGp = p.T.dot(G.dot(p))
             if convex: pTGp = max(0, pTGp)
             if not definite and pTGp > 0:
-                if prt: print('tiny pTGp =', pTGp,' set to zero')
+                logger.debug('tiny pTGp = %s set to zero', pTGp)
                 pTGp = 0
 
             alp, lba, uba, ier = getalp(alpu, alpo, gTp, pTGp)
@@ -366,26 +342,26 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
                 x = numpy.zeros(n)
                 if lba: x = -p
                 else: x = p
-                if prt:
+                if logger.getEffectiveLevel() >= logging.DEBUG:
                     qg = gTp/agTp
                     qG = pTGp/(numpy.linalg.norm(p, 1)**2*numpy.linalg.norm(G[:], numpy.inf))
                     lam = numpy.linalg.eig(G)
                     lam1 = numpy.min(lam)/numpy.max(abs(lam))
-                    print('minq: function unbounded below')
-                    print('  unbounded subspace direction returned')
-                    print('  possibly caused by roundoff')
-                    print('  regularize G to avoid this!')
-                if prt > 1:
-                    print('f(alp*x)=gam+gam1*alp+gam2*alp^2/2, where')
-                    print('gam1 =', c.T.dot(x))
-                    print('rel1 =', gam1/(numpy.abs(c).T.dot(numpy.abs(x))))
+                    logger.debug("minq: function unbounded below\n"
+                                 "  unbounded subspace direction returned\n"
+                                 "  possibly caused by roundoff\n"
+                                 "  regularize G to avoid this!")
+
+                    logger.debug('f(alp*x)=gam+gam1*alp+gam2*alp^2/2, where')
+                    logger.debug('gam1 = %s', c.T.dot(x))
+                    logger.debug('rel1 = %s', gam1/(numpy.abs(c).T.dot(numpy.abs(x))))
                     gam2 = x.T.dot(G.dot(x))
                     if convex: gam2 = max(0, gam2)
-                    print('gam2 =', gam2)
-                    print('rel2 =', gam2/(numpy.abs(x).T.dot((numpy.abs(G).dot(numpy.abs(x))))))
-                    print('ddd =', diag(G))
-                    print('min_diag_G =', min(ddd))
-                    print('max_diag_G =', max(ddd))
+                    logger.debug('gam2 = %s', gam2)
+                    logger.debug('rel2 = %s', gam2/(numpy.abs(x).T.dot((numpy.abs(G).dot(numpy.abs(x))))))
+                    logger.debug('ddd = %s', diag(G))
+                    logger.debug('min_diag_G = %s', min(ddd))
+                    logger.debug('max_diag_G = %s', max(ddd))
                 return x, fct, ier, nsub
 
             unfix = not (lba or uba)   # allow variables to be freed in csearch?
@@ -401,11 +377,11 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
                     xx[ik] = xo[ik]
                     free[ik] = 0
                 else:
-                    if prt: print('generic update')
+                    logger.debug('generic update')
                     xx[ik] = xx[ik]+alp*p[ik]
 
                 if numpy.abs(xx[ik]) == numpy.inf:
-                    print(ik, alp, p[ik])
+                    logger.debug("%s %s %s", ik, alp, p[ik])
                     raise RuntimeError('infinite xx in minq.py')
 
             nfree = sum(free)
@@ -413,16 +389,13 @@ def minq(gam, c, G, xu, xo, prt, xx=None):
             if ier:
                 return x, fct, ier, nsub
 
-        if prt > 0:
-          # print (0:1) profile of free and return the number of nonzeros
-            #nfree = pr01('ssrch ', free)
-            print(' ')
-            if unfix and numpy.sum(nfree) < n:
-                print('bounds may be freed in next csearch')
+      # print (0:1) profile of free and return the number of nonzeros
+        #nfree = pr01('ssrch ', free)
+        if unfix and numpy.sum(nfree) < n:
+            logger.debug('bounds may be freed in next csearch')
 
 
   # end of main loop
-    if prt > 0:
-        print(fct)
+    logger.debug('fct: %s', fct)
 
     return x, fct, ier, nsub

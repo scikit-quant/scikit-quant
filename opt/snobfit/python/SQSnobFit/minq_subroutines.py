@@ -33,7 +33,7 @@ from __future__ import print_function
 from ._gen_utils import diag, find
 import copy, numpy, logging
 
-log = logging.getLogger('SKQ.SnobFit')
+logger = logging.getLogger('SKQ.SnobFit.minq')
 
 
 #-----
@@ -110,7 +110,7 @@ def ldldown(L, d, j):
 
     test = 0
     if test:
-        print('enter ldldown')
+        logger.debug('enter ldldown')
         A = L.dot(diag(d).dot(L.T))
         A[:,j] = numpy.zeros(n)
         A[j] = numpy.zeros((1,n))
@@ -127,7 +127,7 @@ def ldldown(L, d, j):
     if test:
         A1 = L.dot(diag(d)).dot(L.T)
         quot = numpy.linalg.norm(A1-A,1)/numpy.linalg.norm(A,1)
-        print('leave ldldown')
+        logger.debug('leave ldldown')
 
     return L, d
 
@@ -148,7 +148,7 @@ def ldlrk1(L, d, alp, u):
 
     test = 0
     if test:
-        print('enter ldlrk1')
+        logger.debug('enter ldlrk1')
         A = L.dot(diag(d).dot(L.T)) + alp*(u.dot(u.T))
 
     p = numpy.array([])
@@ -176,14 +176,14 @@ def ldlrk1(L, d, alp, u):
             d = d0
             if test:
                 indef = ((p.T).dot(A.dot(p))) / ((numpy.abs(p).T).dot((numpy.abs(A)).dot(numpy.abs(p))))
-                print('leave ldlrk1 at 1')
+                logger.debug('leave ldlrk1 at 1')
 
             return L, d, p
 
         q = d[k]/del_
         d[k] = del_
         # in C, the following 3 lines would be done in a single loop
-        # WLAVLWAVLWLAVL
+        # WLAVWLAVWLAV
         ind = numpy.arange(k, n)  # TODO: why n-1 instead of n?
 #        if len(L.shape) == 1:
 #            L = L.reshape(1, len(L))
@@ -197,7 +197,7 @@ def ldlrk1(L, d, alp, u):
     if test:
         A1 = L.dot(diag(d).dot(L.T)), A
         quot = numpy.linalg.norm(A1-A,1)/numpy.linalg.norm(A,1)
-        print('leave ldlrk1 at 2')
+        logger.debug('leave ldlrk1 at 2')
 
     return L, d, p
 
@@ -220,7 +220,7 @@ def ldlup(L, d, j, g):
 
     test = 0
     if test:
-        print('enter ldlup')
+        logger.debug('enter ldlup')
         A = L.dot(diag(d).dot(L.T))
         A[:,j] = g
         A[j,:] = g.T
@@ -235,15 +235,15 @@ def ldlup(L, d, j, g):
         if del_ <= n*numpy.spacing(1):
             p = numpy.concatenate((1, zeros(n-2)))
             if test:
-                print('A =', A)
-                print('p =', p)
+                logger.debug('A = %s', A)
+                logger.debug('p = %s', p)
                 Nenner = numpy.abs(p).T.dot(numpy.abs(A).dot(numpy.abs(p)))
                 if Nenner == 0:
                     indef1 = 0
                 else:
                     indef1 = (p.T.dot(A.dot(p)))/Nenner
-                print('indef1 = ', indef1)
-                print('leave ldlup at 1')
+                logger.debug('indef1 = %s', indef1)
+                logger.debug('leave ldlup at 1')
 
             return L, d, p
 
@@ -252,10 +252,10 @@ def ldlup(L, d, j, g):
         d[j] = del_
         if test:
             A1 = L.dot(diag(d)).dot(L.T)
-            print('A1 =', A1)
-            print('A = ', A)
-            print('quot =', numpy.linalg.norm(A1-A, 1)/numpy.linalg.norm(A, 1))
-            print('leave ldlup at 3')
+            logger.debug('A1 = %s', A1)
+            logger.debug('A = %s', A)
+            logger.debug('quot = %s', numpy.linalg.norm(A1-A, 1)/numpy.linalg.norm(A, 1))
+            logger.debug('leave ldlup at 3')
 
         return L, d, p
 
@@ -274,10 +274,10 @@ def ldlup(L, d, j, g):
             p1 = v/L[I,I]
         p = numpy.concatenate((p1, numpy.array((-1,)), numpy.zeros(n-j-1)))
         if test:
-            print('A =', A)
-            print('p =', p)
-            print('indef1 =', (p.T.dot(A.dot(p)))/(numpy.abs(p).T.dot(numpy.abs(A).dot(numpy.abs(p)))))
-            print('leave ldlup at 2')
+            logger.debug('A = %s', A)
+            logger.debug('p = %s', p)
+            logger.debug('indef1 = %s', (p.T.dot(A.dot(p)))/(numpy.abs(p).T.dot(numpy.abs(A).dot(numpy.abs(p)))))
+            logger.debug('leave ldlup at 2')
 
         return L, d, p
 
@@ -289,10 +289,10 @@ def ldlup(L, d, j, g):
         L[K[:,None],j] = w[:,None]
         if test:
             A1 = L.dot(diag(d).dot(L.T))
-            print('A1 =', A1)
-            print('A =', A)
-            print('quot =', numpy.linalg.norm(A1-A,1)/numpy.linalg.norm(A,1))
-            print('leave ldlup at 4')
+            logger.debug('A1 = %s', A1)
+            logger.debug('A = %s', A)
+            logger.debug('quot = %s', numpy.linalg.norm(A1-A,1)/numpy.linalg.norm(A,1))
+            logger.debug('leave ldlup at 4')
 
     else:
         r"""
@@ -307,9 +307,9 @@ def ldlup(L, d, j, g):
         pi_ = numpy.outer(w.T, q)
         p = numpy.concatenate((numpy.linalg.solve(L[I[:,None],I].T, (pi_*v - L[K[:,None],I].T.dot(q))), - pi_, q))
         if test:
-            print('indef2 =', (p.T.dot(A.dot(p)))/(numpy.abs(p).T.dot(numpy.abs(A).dot(numpy.abs(p)))))
-            print('leave ldlup at 5')
+            logger.debug('indef2 = %s', (p.T.dot(A.dot(p)))/(numpy.abs(p).T.dot(numpy.abs(A).dot(numpy.abs(p)))))
+            logger.debug('leave ldlup at 5')
         """
-        log.debug('DEBUG: skipping update step in ldlup')
+        logger.debug('DEBUG: skipping update step in ldlup')
 
     return L, d, p
