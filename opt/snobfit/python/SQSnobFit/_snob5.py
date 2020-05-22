@@ -71,6 +71,8 @@ def snob5(x, u, v, dx, nreq):
         nx5 = len(xnew)
     else:
         x5 = xnew[0,:]
+        if len(x5.shape) == 1:
+           x5 = x5.reshape(1, len(x5))
         xnew = xnew[1:]
         nx5 = nx5-1
         d = numpy.sum((xnew - numpy.outer(numpy.ones(nx5), x5))**2, axis=1, keepdims=True).flatten()

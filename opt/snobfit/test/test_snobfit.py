@@ -112,7 +112,7 @@ class TestSNOBFIT:
 
             return -(c.dot(numpy.exp(-d)))
 
-        def run_Hartman6(self, initial, expected):
+        def run_Hartman6(self, initial, expected, options=None):
             self.reset()
 
             bounds = np.array([[0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1]], dtype=float)
@@ -120,7 +120,8 @@ class TestSNOBFIT:
             x0 = np.array(initial)
 
             from SQSnobFit import optset
-            options = optset(maxmp=6+6)
+            if options is None:
+                options = optset(maxmp=6+6)
             result, history = SQSnobFit.minimize(Hartman6, x0, bounds, budget, options)
 
             assert np.round(sum(result.optpar)-sum(expected), 8) == 0
@@ -129,6 +130,9 @@ class TestSNOBFIT:
       # reason seems to be that the respective random number generators differ slightly
         run_Hartman6(self, [],      (0.2077,  0.14892, 0.4829,  0.2725,  0.31493, 0.66138))
         run_Hartman6(self, [0.5]*6, (0.20133, 0.1504,  0.47666, 0.27787, 0.3134,  0.65797))
+
+      # regression: the following used to fail
+        run_Hartman6(self, [],      (0.02423, 0.12107, 0.98254, 0.05482, 0.07433, 0.86491), {'maxmp' : 1})
 
     def test04_direct_call(self):
         """Direct call of a single iteration"""
