@@ -513,6 +513,9 @@ def snobfit(x, f, config, dx = None):
 
     sreq = len(request)
     for l in isplit.flatten():
+        if sreq == nreq:
+            break
+
         jj = find(ind==l)
         ind = numpy.delete(ind, jj) #ind(jj) = []
         y1, f1 = snobpoint(x[l], xl[l], xu[l], f[l,0:2], g[l], sigma[l], u1, v1, dx)
@@ -522,10 +525,7 @@ def snobfit(x, f, config, dx = None):
                      numpy.max(numpy.abs(request[:,:n] - numpy.outer(numpy.ones(sreq), y1)) - \
                      numpy.outer(numpy.ones(sreq), dx), axis=1)) >= -numpy.spacing(1)):
             request = numpy.vstack((request, numpy.concatenate((y1, numpy.array((f1, 4), ndmin=2)), axis=1)))
-
         sreq = len(request)
-        if sreq == nreq:
-            break
 
     first = True
     while (sreq < nreq) and ind.size > 0:   # and find(small[ind] <= (minsmall + m1)).any():
