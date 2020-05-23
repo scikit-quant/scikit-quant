@@ -171,8 +171,8 @@ def minimize(f, x0, bounds, budget, optin={}, **optkwds):
 
     objfunc = ObjectiveFunction(f, options={'simple_function' : True})
 
-    minfcall = 10;      # minimum number of function values before
-                        # considering stopping
+    minfcall = len(bounds)*5      # minimum number of function values before
+                                  # considering stopping
 
   # calculate resolution vector from the bounds
     dx = (bounds[:,1]-bounds[:,0])*1E-5
@@ -211,7 +211,9 @@ def minimize(f, x0, bounds, budget, optin={}, **optkwds):
 
     ncall0 = len(vals)                 # initial budget used
     fbestn, jbest = min_(vals[:,0])    # best function value
-    xbest = x[jbest,:]
+    if fbestn < fbest:
+        fbest = fbestn
+        xbest = x[jbest,:]
 
   # display current number of function values, best point and function value
     log.info('# calls = %d; xbest = %s; fbest = %f', ncall0, str(xbest), fbest)
