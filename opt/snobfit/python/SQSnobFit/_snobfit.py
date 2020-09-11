@@ -94,6 +94,7 @@ from ._snobsplit import snobsplit
 from ._snobupdt  import snobupdt
 from ._snob5     import snob5
 import logging
+import pickle
 import math
 import numpy
 
@@ -102,16 +103,19 @@ __all__ = ['minimize', 'log']
 log = logging.getLogger('SKQ.SnobFit')
 
 
-# dummy save/load (can always pickle but seems superflous; deal with this
-# for full history later)
 _im_storage = None
-def _snobsave(*args):
-    global _im_storage
-    _im_storage = args
+def _snobsave(filename, *args):
+    if filename is None:
+        global _im_storage
+        _im_storage = args
+    else:
+        pickle.dump(args, open(filename, 'wb'))
 
-def _snobload():
-    global _im_storage
-    return _im_storage
+def _snobload(filename):
+    if filename is None:
+        global _im_storage
+        return _im_storage
+    return pickle.load(open(filename, 'rb'))
 
 
 '''
@@ -268,6 +272,8 @@ def snobfit(x, f, config, dx = None):
     dy = 0.1*(v1-u1)    # defines the vector of minimal distances between two
                         # points suggested in a single call to Snobfit
 
+    filename = config.get('filename', None)
+
     if dx is not None:  # a new job is started
         if numpy.any(dx<=0):
             raise ValueError('dx should contain only positive entries')
@@ -342,12 +348,12 @@ def snobfit(x, f, config, dx = None):
                 snobwarn()
 
             y = None
-            _snobsave(xbest, fbest, x, f, xl, xu, y, nsplit, small, near, d, np, t, fnan, u, v, dx)
+            _snobsave(filename, xbest, fbest, x, f, xl, xu, y, nsplit, small, near, d, np, t, fnan, u, v, dx)
             return request, xbest, fbest
     else:
         xnew = x.copy()
         fnew = f.copy()
-        xbest, fbest, x, f, xl, xu, y, nsplit, small, near, d, np, t, fnan, u, v, dx = _snobload()
+        xbest, fbest, x, f, xl, xu, y, nsplit, small, near, d, np, t, fnan, u, v, dx = _snobload(filename)
 
         nx = len(xnew)
         oldxbest = xbest
@@ -391,7 +397,7 @@ def snobfit(x, f, config, dx = None):
             if request.shape[0] < nreq:
                 snobwarn()
 
-            _snobsave(xbest, fbest, x, f, xl, xu, y, nsplit, small, near, d, np, t, fnan, u, v, dx)
+            _snobsave(filename, xbest, fbest, x, f, xl, xu, y, nsplit, small, near, d, np, t, fnan, u, v, dx)
             return request, xbest, fbest
 
     sx = len(x)
@@ -580,7 +586,7 @@ def snobfit(x, f, config, dx = None):
     if len(request) < nreq:
         snobwarn()
 
-    _snobsave(xbest, fbest, x, f, xl, xu, y, nsplit, small, near, d, np, t, fnan, u, v, dx)
+    _snobsave(filename, xbest, fbest, x, f, xl, xu, y, nsplit, small, near, d, np, t, fnan, u, v, dx)
     return request, xbest, fbest
 
 
