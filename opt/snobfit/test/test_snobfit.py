@@ -113,11 +113,10 @@ class TestSNOBFIT:
 
             return -(c.dot(numpy.exp(-d)))
 
-        def run_Hartman6(self, initial, expected, options=None):
+        def run_Hartman6(self, initial, expected, budget=250, options=None):
             self.reset()
 
             bounds = np.array([[0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1]], dtype=float)
-            budget = 250
             x0 = np.array(initial)
 
             from SQSnobFit import optset
@@ -134,8 +133,14 @@ class TestSNOBFIT:
         run_Hartman6(self, [0.5]*6, (0.21015, 0.12032, 0.46593, 0.27053, 0.30835, 0.66478))
 
       # regression: the following used to fail
-        run_Hartman6(self, [],      (0.02423, 0.12107, 0.98254, 0.05482, 0.07433, 0.86491), {'minfcall' : 10, 'maxmp' : 1})
-        run_Hartman6(self, [],      (0.24101, 0.16523, 0.43633, 0.28035, 0.31964, 0.64909), {'maxmp' : 2, 'maxfail' : 10})
+        run_Hartman6(self, [],      (0.02423, 0.12107, 0.98254, 0.05482, 0.07433, 0.86491),
+                     options={'minfcall' : 10, 'maxmp' : 1})
+        run_Hartman6(self, [],      (0.24101, 0.16523, 0.43633, 0.28035, 0.31964, 0.64909),
+                     options={'maxmp' : 2, 'maxfail' : 10})
+
+      # the following is super-slow and not common, so not currently run; uncomment to test
+        #run_Hartman6(self, [],  (0.20169, 0.15001, 0.47687, 0.27533, 0.31165, 0.65730),
+        #             budget=2000, options={'maxmp' : 12, 'maxfail' : 500})
 
     def test04_direct_call(self):
         """Direct call of a single iteration"""

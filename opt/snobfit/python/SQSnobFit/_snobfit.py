@@ -493,15 +493,19 @@ def snobfit(x, f, config, dx = None):
                 y1 = snobround(y[l0], u1, v1, dx)
                 yy = numpy.outer(numpy.ones(len(x)), y1)
                 l = find(numpy.sum(numpy.logical_and(xl<=yy, yy<=xu),1) == n)
-                if len(l) > 1:
-                    msmall, j1 = min_(small[l])
-                    l = l[j1]
+                if 1 < len(l):
+                    l = l[min_(small[l])[1]]
 
-                dmax = numpy.max((xu[l] - xl[l]) / (v - u))
-                dmin = numpy.min((xu[l] - xl[l]) / (v - u))
+                j += 1       # early in body, b/c of continue on error
+
+                normdiff = (xu[l] - xl[l]) / (v - u)
+                if not len(normdiff):
+                    continue
+
+                dmax = numpy.max(normdiff)
+                dmin = numpy.min(normdiff)
                 if dmin <= 0.05*dmax:
                     isplit = numpy.append(isplit, l)
-                    j += 1
                     continue
 
                 if numpy.max(numpy.abs(y1-x[l]) - dx) >= -numpy.spacing(1) and \
@@ -518,7 +522,6 @@ def snobfit(x, f, config, dx = None):
                     request = numpy.vstack((request, numpy.concatenate((y1, numpy.array((f1, 3), ndmin=2)), axis=1)))
 
                 sreq = len(request)
-                j += 1
 
 
     sreq = len(request)
@@ -539,6 +542,11 @@ def snobfit(x, f, config, dx = None):
 
     first = True
     while (sreq < nreq) and ind.size > 0:   # and find(small[ind] <= (minsmall + m1)).any():
+        try:
+            im1 = int(m1+1)
+        except OverflowError:     # happens with m1 == inf, b/c already converged
+            break
+
         for m in range(int(m1+1)):
             if first:
                 first = False
@@ -577,12 +585,11 @@ def snobfit(x, f, config, dx = None):
             i = find(numpy.sum(numpy.logical_and( \
                          xl <= numpy.outer(numpy.ones(nx), x5j), numpy.outer(numpy.ones((nx,1)), x5j) <= xu),
                      1) == n)
-            if len(i) > 1:
-                minv, i1 = min_(small[i])
-                i = i[i1]
+            if i < len(i):
+                i = i[min_(small[i])[1]]
 
             D = f[i,1]/(dx**2)
-            f1 = f[i,0] + (x5j - x[i]).dot(g[i].T) + sigma[i]*((x5j - x[i]).dot(diag(D).dot((x5j - x[i]).T))) + f[i,1]
+            f1 = f[i,0] + (x5j - x[i])*g[i].T + sigma[i]*(x5j - x[i])*(diag(D)*(x5j - x[i]).T) + f[i,1]
             request = numpy.vstack((request, numpy.concatenate((x5j, numpy.array((f1, 5), ndmin=2)), axis=1)))
 
     if len(request) < nreq:

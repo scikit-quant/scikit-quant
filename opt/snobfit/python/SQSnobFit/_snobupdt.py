@@ -182,6 +182,9 @@ def snobupdt(xl, xu, x, f, nsplit, small, near, d, np, t, xnew, fnew, fnan, u, v
                 snobsplit(x[spl], f[spl], xl[j], xu[j], nsplit[j], u, v)
             nxj = len(ind) + 1    # number of points in box [xl[j],xu[j]]
             k = find(numpy.sum(x0 == numpy.ones((nxj,1))*x[j,:], axis=1) == n)
+            if len(k) != 1:
+                if 1 < len(k): k = k[min_(small[k])[1]]
+                else: k = 0
             xl[j] = xl0[k]
             xu[j] = xu0[k]
             nsplit[j] = nsplit0[k]
@@ -189,9 +192,9 @@ def snobupdt(xl, xu, x, f, nsplit, small, near, d, np, t, xnew, fnew, fnan, u, v
             for k in range(nxj-1):
                 k1 = ind[k]
                 k2 = find(numpy.sum(x0 == numpy.ones((nxj,1))*x[k1,:],axis=1) == n)
-                if len(k1) > 1:
-                    msmall, k3 = min_(small[k1])
-                    k2 = k2[k3]
+                if len(k2) != 1:
+                    if 1 < len(k2): k2 = k2[min_(small[k2])[1]]
+                    else: k2 = 0
                 ik1 = int(k1)
                 if len(xl) <= ik1:
                     xl = numpy.append(xl, numpy.zeros((ik1-len(xl)+1, xl.shape[1])), axis=0)
