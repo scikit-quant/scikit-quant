@@ -5,25 +5,25 @@ __all__ = ['optset']
 STANDALONE = True
 
 def optset(optin=None, **optkwds):
-    """ 
+    """
   Set the options in imfil.
   C. T. Kelley, Nov 11, 2007
- 
+
   optout = optset(name1=val1, name2=val2, ...)
            creates the options dictionary with the named options
            set to something other than the defaults.
- 
+
   optout = optset(optin, name1=val1, name2=val2, ...);
            modifies the dictionary <optin> and creates a new structure
            <optout>.
- 
+
   And now for the lists. The details of the options, the motiviation
   for the defaults, and suggestions for their use live in the manual.
- 
+
   Scalar Options:
- 
+
   armijo_reduction: Reduction factor for the linesearch. The default is .5.
- 
+
   complete_history: 1 or 'on' to store complete history of all calls to f. 0
          or 'off' otherwise. The default is 'off'. Do not turn this off unless
          you are having severe problems with storage.
@@ -185,7 +185,7 @@ def optset(optin=None, **optkwds):
   these options. You are on your own. Please read the documentation and look
   at the examples.
 
-  add_new_directions: 
+  add_new_directions:
          This function, which you must provide, will examine the current
          stencil, scale, and history of the iteration and add directions to
          the stencil. You may want to do this, for example, to add tangent
@@ -243,11 +243,11 @@ def optset(optin=None, **optkwds):
   argument to your call to imfil. There is no reason to set them
   with imfil_optset.
 
-  extra_argument: 1 or 'yes' if you are passing data through imfil 
-                  to the function, 
+  extra_argument: 1 or 'yes' if you are passing data through imfil
+                  to the function,
                   0 or 'no' other wise
 
-  extra_arg_value: the data you are passing to the function if 
+  extra_arg_value: the data you are passing to the function if
                    'extra_argument' is on.
 
   ----------------------------------------------------------------
@@ -333,7 +333,7 @@ def _create_defaults():
             #
             'scale_start' : 1,          # Scales begin at h=(1/scale_step)^scale_start
             #
-            'scale_depth' : 8,         # Scales end at h=(1/scale_step)^(scale_start+scale_depth)
+            'scale_depth' : 8,          # Scales end at h=(1/scale_step)^(scale_start+scale_depth)
             #
             'simple_function' : 0,      # Your function returns more than just the value.
             #
@@ -417,7 +417,7 @@ def _optset_one(name, val, optin):
 def verbal_shortcut(name, val, optin):
     """
   Plugs into imfil_optset and lets you use verbal shortcuts
-  to control options with yes/no, on/off, or short lists of 
+  to control options with yes/no, on/off, or short lists of
   options."""
 
     val = val.lower();
