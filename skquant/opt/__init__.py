@@ -47,7 +47,7 @@ def minimize(func, x0, bounds, budget=10000, method='imfil', options=None, **opt
         import skquant.opt._pybobyqa as optimizer
     elif 'orbit' in method_:
         if not _check_orbit_prerequisites():
-            raise RuntimeError("ORBIT is only supported on Python3 because of rpy2")
+            raise RuntimeError("ORBIT requires rpy2 (and octave) to be installed")
         import skquant.opt._norbitR as optimizer
 
     if optimizer is not None:
