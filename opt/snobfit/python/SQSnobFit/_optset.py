@@ -11,25 +11,28 @@ def optset(optin=None, **optkwds):
 
   optout = optset(name1=val1, name2=val2, ...)
            creates the options dictionary with the named options
-           set to something other than the defaults.
+           set to something other than the defaults
 
   optout = optset(optin, name1=val1, name2=val2, ...);
            modifies the dictionary <optin> and creates a new structure
-           <optout>.
+           <optout>
 
   And now for the lists. The details of the options, the motiviation
-  for the defaults, and suggestions for their use live in the manual.
+  for the defaults, and suggestions for their use live in the manual
 
  Scalar Options:
 
-  maxmp: Maximum number of model points requested for the local fit.
-         Default = 2*npar+6, with npar the number of parameters.
+  minfcall: minimum number of function calls before considering stopping
+            default: (problem dimension)*5
 
-  maxfail: Maximum number of consecutive failures before iteration stops.
-         Default = 5.
+  maxmp:    maximum number of model points requested for the local fit
+            default: 2*(problem dimension)+6
 
-  verbose: Provide verbose (debugging) output
-         Default = False
+  maxfail:  maximum number of consecutive failures before iteration stops
+            default: 5
+
+  verbose: provide verbose (debugging) output
+           default: False
    """
 
     if not optin:
@@ -50,11 +53,13 @@ def _create_defaults():
 
     class OptSet(object):
         __slots__ = {
-            'maxmp' : None,             # Maximum number of model points (default set in driver)
+            'minfcall' : None,          # minimum number of function calls
             #
-            'maxfail' : 5,              # Stop iterating after maxfail failures to improve
+            'maxmp' : None,             # maximum number of model points (default set in driver)
             #
-            'verbose' : False,          # Provide verbose output
+            'maxfail' : 5,              # stop iterating after maxfail failures to improve
+            #
+            'verbose' : False,          # provide verbose output
         }
 
         def __init__(self):

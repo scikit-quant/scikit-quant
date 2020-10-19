@@ -134,7 +134,7 @@ class TestSNOBFIT:
         run_Hartman6(self, [0.5]*6, (0.21015, 0.12032, 0.46593, 0.27053, 0.30835, 0.66478))
 
       # regression: the following used to fail
-        run_Hartman6(self, [],      (0.02423, 0.12107, 0.98254, 0.05482, 0.07433, 0.86491), {'maxmp' : 1})
+        run_Hartman6(self, [],      (0.02423, 0.12107, 0.98254, 0.05482, 0.07433, 0.86491), {'minfcall' : 10, 'maxmp' : 1})
         run_Hartman6(self, [],      (0.24101, 0.16523, 0.43633, 0.28035, 0.31964, 0.64909), {'maxmp' : 2, 'maxfail' : 10})
 
     def test04_direct_call(self):

@@ -175,9 +175,6 @@ def minimize(f, x0, bounds, budget, optin={}, **optkwds):
 
     objfunc = ObjectiveFunction(f, options={'simple_function' : True})
 
-    minfcall = len(bounds)*5      # minimum number of function values before
-                                  # considering stopping
-
   # calculate resolution vector from the bounds
     dx = (bounds[:,1]-bounds[:,0])*1E-5
 
@@ -186,6 +183,11 @@ def minimize(f, x0, bounds, budget, optin={}, **optkwds):
         options = optset(**dict(optin, **optkwds))
     else:
         options = optset(optin, **optkwds)
+
+  # minimum number of function values before considering stopping
+    minfcall = options.minfcall
+    if minfcall is None:
+        minfcall = len(bounds)*5
 
     config = {"bounds": bounds, "nreq": 2*len(bounds)+6, "p": .5}
     if optin is not None:
