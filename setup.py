@@ -8,8 +8,8 @@ requirements = []
 
 # optimizers sub-package requirements
 requirements.append('SQCommon==0.3.1')
-requirements.append('SQImFil==0.3.6')
-requirements.append('SQSnobFit==0.4.4')
+requirements.append('SQImFil==0.3.7')
+requirements.append('SQSnobFit==0.4.5')
 
 # external optimizers
 requirements.append('Py-BOBYQA>=1.1')
