@@ -1,13 +1,7 @@
 #!/usr/bin/env python
 
-import codecs, os, sys, re, glob, subprocess
-from setuptools import setup, find_packages, Extension
-from distutils.command.build_ext import build_ext as _build_ext
-try:
-    from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
-    has_wheel = True
-except ImportError:
-    has_wheel = False
+import codecs, os, re
+from setuptools import setup, find_packages
 from codecs import open
 
 
@@ -31,7 +25,7 @@ def find_version(*file_paths):
 setup(
     name='SQCommon',
     version=find_version('python', 'SQCommon', '_version.py'),
-    description='SQCommon - Common Optimizer API',
+    description='SQCommon - skopt common optimizer API',
     long_description=long_description,
 
     url='http://scikit-quant.org/',
@@ -64,7 +58,6 @@ setup(
         'Natural Language :: English'
     ],
 
-    setup_requires=['wheel'],
     install_requires=['numpy'],
 
     keywords='quantum computing optimization',
