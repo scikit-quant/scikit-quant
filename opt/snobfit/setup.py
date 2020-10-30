@@ -1,13 +1,7 @@
 #!/usr/bin/env python
 
-import codecs, os, sys, re, glob, subprocess
-from setuptools import setup, find_packages, Extension
-from distutils.command.build_ext import build_ext as _build_ext
-try:
-    from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
-    has_wheel = True
-except ImportError:
-    has_wheel = False
+import codecs, os, re, glob
+from setuptools import setup, find_packages
 from codecs import open
 
 
@@ -65,7 +59,6 @@ setup(
         'Natural Language :: English'
     ],
 
-    setup_requires=['wheel'],
     install_requires=['numpy', 'SQCommon'],
 
     keywords='quantum computing optimization',
