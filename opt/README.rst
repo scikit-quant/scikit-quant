@@ -10,4 +10,6 @@ Website: http://scikit-quant.org
 Installation
 ------------
 
-   ImFil: pip install SQImFil
+   ImFil:   pip install SQImFil
+   SnobFit: pip install SQSnobFit
+   NOMAD:   pip install SQNomad
