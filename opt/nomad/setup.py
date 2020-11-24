@@ -2,7 +2,11 @@
 
 import codecs, os, sys, glob, re
 from setuptools import setup, find_packages, Extension
-from distutils.command.build_ext import build_ext as _build_ext
+try:
+    from numpy.distutils.command.build_ext import build_ext as _build_ext
+except ImportError:     # no numpy / no PEP517
+    from distutils.command.build_ext import build_ext as _build_ext
+from distutils.core import Command
 from codecs import open
 
 
@@ -28,6 +32,10 @@ def find_version(*file_paths):
 # customized commands
 #
 class my_build_extension(_build_ext):
+    def initialize_options(self):
+        _build_ext.initialize_options(self)
+        self.warn_error = False
+
     def build_extension(self, ext):
         if not 'NOOMP' in os.environ:
             ext.extra_compile_args += ['-fopenmp']
@@ -41,8 +49,19 @@ class my_build_extension(_build_ext):
 
         return _build_ext.build_extension(self, ext)
 
+class my_build_src(Command):           # just needs to exist (used by numpy to build SWIG etc.)
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        pass
+
 
 cmdclass = {
+    'build_src': my_build_src,
     'build_ext': my_build_extension }
 
 
