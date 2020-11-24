@@ -146,7 +146,7 @@ def minimize(f, x0, bounds, budget=10000, optin=None, **optkwds):
 
     # Make sure x0 is a single-column array
     if not isinstance(x0, numpy.ndarray):
-        x0 = numpy.array(x0, shape=(len(x), 1))
+        x0 = numpy.array(x0, shape=(len(x0), 1))
     elif len(x0.shape) == 1:
         x0 = x0.reshape(len(x0), 1)
     assert x0.shape[1] == 1
