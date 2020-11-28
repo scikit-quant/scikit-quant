@@ -389,7 +389,7 @@ static PyObject* minimize(PyObject* /* dummy */, PyObject* args, PyObject* kwds)
 
 static PyMethodDef gSQNomadMethods[] = {
     {(char*) "minimize", (PyCFunction)minimize,
-      METH_VARARGS | METH_KEYWORDS, (char*)"cppyy internal function"},
+      METH_VARARGS | METH_KEYWORDS, (char*)"NOMAD minimizer"},
     {nullptr, nullptr, 0, nullptr}
 };
 
