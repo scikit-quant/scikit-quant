@@ -15,8 +15,10 @@ if not log.hasHandlers():
 
 log.info("""
 ------------------------------------------------------------------------
-C.T. Kelley, "Implicit Filtering", 2011, ISBN: 978-1-61197-189-7
-Software available at ctk.math.ncsu.edu/imfil.html
+C. Audet, S. Le Digabel, C. Tribes and V. Rochon Montplaisir. "The NOMAD
+project." Software available at https://www.gerad.ca/nomad .
+S. Le Digabel. "NOMAD: Nonlinear Optimization with the MADS algorithm."
+ACM Trans. on Mathematical Software, 37(4):44:1–44:15, 2011.
 ------------------------------------------------------------------------""")
 
 __all__ = ['minimize', 'log']
