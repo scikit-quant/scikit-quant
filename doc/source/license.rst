@@ -63,5 +63,5 @@ one or more of the following people and organizations, and licensed under
 the same conditions (except for some compatible licenses as retained in the
 source code):
 
-  Jan Rittig
-  Matthias Degroote
+  * Jan Rittig
+  * Matthias Degroote

@@ -32,7 +32,7 @@ to polling directions of the more important parameters.
 We incorporate the published open-source NOMAD code through a modified Python
 interface.
 
-Reference: C. Audet and J. Dennis, Jr. Mesh adaptive direct search algorithms for
-constrained optimization. SIAM Journal on Optimization, 17(1):188–217, 2006.
+Reference: S. Le Digabel. "NOMAD: Nonlinear Optimization with the MADS
+algorithm." ACM Trans. on Mathematical Software, 37(4):44:1–44:15, 2011.
 
 Software available at: https://www.gerad.ca/nomad/

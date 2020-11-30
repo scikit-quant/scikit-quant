@@ -45,7 +45,7 @@ This is the manual for the software used.
    bobyqa
 
 .. toctree::
-   :caption: Components
+   :caption: Interoperability
    :maxdepth: 1
 
    qiskit
