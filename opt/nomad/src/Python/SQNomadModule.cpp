@@ -288,7 +288,7 @@ static PyObject* minimize(PyObject* /* dummy */, PyObject* args, PyObject* kwds)
             if (ubounds[i] <= lbounds[i]) {
                  PyErr_Format(PyExc_ValueError,
                      "for element " PY_SSIZE_T_FORMAT ", upper bound(%d) is not larger than lower bound (%d)",
-                     i, ubounds[i], lbounds[i]);
+                     i, ubounds[i].todouble(), lbounds[i].todouble());
                  return nullptr;
             }
         }

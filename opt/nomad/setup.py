@@ -37,15 +37,24 @@ class my_build_extension(_build_ext):
         self.warn_error = False
 
     def build_extension(self, ext):
-        if not 'NOOMP' in os.environ:
-            ext.extra_compile_args += ['-fopenmp']
-            ext.extra_link_args += ['-fopenmp']
         if 'linux' in sys.platform:
+            if not 'NOOMP' in os.environ:
+                ext.extra_compile_args += ['-fopenmp']
+                ext.extra_link_args += ['-fopenmp']
+            ext.extra_compile_args += ['-Wno-unused-value', '-Wno-unused-private-field']
             ext.extra_link_args += ['-Wl,-Bsymbolic-functions']
+        elif 'darwin' in sys.platform:
+            ext.extra_compile_args += ['-Wno-unused-value', '-Wno-unused-private-field']
 
         # adding numpy late to allow setup to install it in the build env
         import numpy
         ext.extra_compile_args += ['-I'+os.path.join(numpy.__path__[0], 'core/include/numpy')]
+
+        # force C++14
+        if 'linux' in sys.platform or 'darwin' in sys.platform:
+            ext.extra_compile_args += ['-std=c++14']
+        elif 'win32' in sys.platform:
+            ext.extra_compile_args += ['/std:c++14']
 
         return _build_ext.build_extension(self, ext)
 

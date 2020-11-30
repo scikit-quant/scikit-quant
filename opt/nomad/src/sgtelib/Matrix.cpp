@@ -71,6 +71,7 @@
 
 #include "Matrix.hpp"
 #include <math.h>
+#include <random>
 
 /*---------------------------*/
 /*        constructor 1      */
@@ -1639,7 +1640,7 @@ SGTELIB::Matrix SGTELIB::Matrix::random_permutation_matrix ( const int n ) {
   for (int i=0; i<n; ++i) v.push_back(i); // 1 2 3 4 5 6 7 8 9
 
   // shuffle
-  std::random_shuffle ( v.begin(), v.end() );
+  std::shuffle ( v.begin(), v.end(), std::mt19937{ std::random_device{}() } );
 
   // Fill matrix
   for (int i=0; i<n; ++i) perm.set(i,v[i],1.0);
