@@ -4,7 +4,7 @@
 NOMAD
 =====
 
-NOMAD, or"Nonlinear Optimization by Mesh Adaptive Direct Search (MADS)" is a
+NOMAD, or "Nonlinear Optimization by Mesh Adaptive Direct Search (MADS)" is a
 C++ implementation of the MADS algorithm.
 MADS searches the parameter space by iteratively generating a new sample
 point from a  mesh that is adaptively adjusted based on the progress

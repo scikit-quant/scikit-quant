@@ -3,12 +3,11 @@
 Changelog
 =========
 
-
 master: 0.8.0
 -------------
 
+* Added SQNomand
 * Require rpy2 to be installed separately as ORBIT use is uncommon
-
 
 
 2020-05-22: 0.7.0

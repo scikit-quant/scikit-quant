@@ -33,4 +33,5 @@ Example usage:
                               variable_bounds=bounds,
                               initial_point=x0)
 
-Available component classes are ``ImFil``, ``SnobFit``, and ``PyBobyqa``.
+Available component classes are ``ImFil``, ``SnobFit``, ``Nomad``, and
+``PyBobyqa``.

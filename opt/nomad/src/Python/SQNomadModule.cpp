@@ -338,6 +338,15 @@ static PyObject* minimize(PyObject* /* dummy */, PyObject* args, PyObject* kwds)
     // verify (should never fail at this point)
         params->checkAndComply();
 
+    // reset the cache (TODO: let the user control this behavior, but w/o knowing what filled
+    // the cache, using it implicitly is too error prone)
+        try {
+            const std::unique_ptr<CacheBase>& cache = CacheBase::getInstance();
+            cache->clear();
+        } catch (...) {
+        // non-existent / nothing to clear
+        }
+
     // create and configure NOMAD instance (outside of thread blocks b/c it will own a Python object)
         MainStep cnomad;
         cnomad.setAllParameters(params);

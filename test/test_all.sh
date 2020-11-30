@@ -9,7 +9,7 @@ do
     fi
 done
 
-PYTHONPATH=../opt/common/python:../opt/imfil/python:../opt/snobfit/python:$PYTHONPATH
+PYTHONPATH=../opt/common/python:../opt/imfil/python:../opt/snobfit/python:../opt/nomad/python:$PYTHONPATH
 
 pytest $@ test*.py
 if [ $? -ne 0 ]; then
@@ -19,3 +19,4 @@ if [ $? -ne 0 ]; then
 fi
 pytest $@ ../opt/imfil/test/test*.py
 pytest $@ ../opt/snobfit/test/test*.py
+pytest $@ ../opt/nomad/test/test*.py

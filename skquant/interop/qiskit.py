@@ -88,7 +88,7 @@ class SnobFit(Optimizer):
     """
 
     _OPTIONS = ['maxmp']
-                                                                        
+
     def __init__(self,
                  maxfun: int = 500,
                  maxmp: int = -1) -> None:
@@ -112,7 +112,7 @@ class SnobFit(Optimizer):
             'gradient': Optimizer.SupportLevel.ignored,
             'bounds': Optimizer.SupportLevel.required,
             'initial_point': Optimizer.SupportLevel.supported,
-        }   
+        }
 
     def optimize(self, num_vars, objective_function, gradient_function=None,
                  variable_bounds=None, initial_point=None):
@@ -120,10 +120,70 @@ class SnobFit(Optimizer):
                          variable_bounds, initial_point)
 
         res, history = \
-             skqopt.minimize(objective_function, initial_point, variable_bounds, 
+             skqopt.minimize(objective_function, initial_point, variable_bounds,
                              self.maxfun, method='snobfit', options=self._options)
-                       
+
         return res.optpar, res.optval, len(history)
+
+
+#
+### NOMAD Qiskit interoperable interface
+#
+class NOMAD(Optimizer):
+    """
+    Nonlinear Optimization by Mesh Adaptive Direct Search
+
+    NOMAD is designed for time-consuming blackbox simulations, with a small
+    number of variables, that may fail. It samples the parameter space using a
+    mesh that is adaptively adjusted based on the progress of the search.
+
+    Reference:
+      C. Audet, S. Le Digabel, C. Tribes and V. Rochon Montplaisir. "The NOMAD
+      project." Software available at https://www.gerad.ca/nomad .
+
+      S. Le Digabel. "NOMAD: Nonlinear Optimization with the MADS algorithm."
+      ACM Trans. on Mathematical Software, 37(4):44:1–44:15, 2011.
+
+    Original C++ code available at www.gerad.ca/nomad
+    """
+
+    _OPTIONS = []
+
+    def __init__(self,
+                 maxfun: int = 500) -> None:
+
+        """
+        Args:
+            maxfun: Maximum number of function evaluations.
+        """
+
+        super().__init__()
+        for k, v in locals().items():
+            if k in self._OPTIONS:
+                self._options[k] = v
+
+        self.maxfun = maxfun
+
+    def get_support_level(self):
+        """ Return support level dictionary """
+        return {
+            'gradient': Optimizer.SupportLevel.ignored,
+            'bounds': Optimizer.SupportLevel.required,
+            'initial_point': Optimizer.SupportLevel.supported,
+        }
+
+    def optimize(self, num_vars, objective_function, gradient_function=None,
+                 variable_bounds=None, initial_point=None):
+        super().optimize(num_vars, objective_function, gradient_function,
+                         variable_bounds, initial_point)
+
+        res, history = \
+             skqopt.minimize(objective_function, initial_point, variable_bounds,
+                             self.maxfun, method='nomad', options=self._options)
+
+        return res.optpar, res.optval, len(history)
+
+Nomad = NOMAD
 
 
 #

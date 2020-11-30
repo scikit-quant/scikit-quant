@@ -7,6 +7,7 @@ import scipy.optimize as spopt
 __all__ = [
     'imfil',
     'snobfit',
+    'nomad',
     'pybobyqa',
     'bobyqa',
     ]
@@ -42,6 +43,9 @@ def _split_options(options):
     raise RuntimeError('missing bounds or budget in options')
 
 
+#
+### ImFil SciPy interoperable interface
+#
 def imfil(fun, x0, *args, **options):
     """
     Implicit Filtering
@@ -64,6 +68,9 @@ def imfil(fun, x0, *args, **options):
     return _res2scipy(result, history)
 
 
+#
+### SnobFit SciPy interoperable interface
+#
 def snobfit(fun, x0, *args, **options):
     """
     Stable Noisy Optimization by Branch and FIT
@@ -87,6 +94,38 @@ def snobfit(fun, x0, *args, **options):
     return _res2scipy(result, history)
 
 
+#
+### NOMAD SciPy interoperable interface
+#
+def nomad(fun, x0, *args, **options):
+    """
+    Nonlinear Optimization by Mesh Adaptive Direct Search
+
+    NOMAD is designed for time-consuming blackbox simulations, with a small
+    number of variables, that may fail. It samples the parameter space using a
+    mesh that is adaptively adjusted based on the progress of the search.
+
+    Reference:
+      C. Audet, S. Le Digabel, C. Tribes and V. Rochon Montplaisir. "The NOMAD
+      project." Software available at https://www.gerad.ca/nomad .
+
+      S. Le Digabel. "NOMAD: Nonlinear Optimization with the MADS algorithm."
+      ACM Trans. on Mathematical Software, 37(4):44:1–44:15, 2011.
+
+    Original C++ code available at www.gerad.ca/nomad
+    """
+
+    budget, bounds, options = _split_options(options)
+
+    result, history = skqopt.minimize(fun, x0, bounds=bounds, budget=budget, \
+                                      method='nomad', options=options)
+
+    return _res2scipy(result, history)
+
+
+#
+### PyBobyqa SciPy interoperable interface
+#
 def pybobyqa(fun, x0, *args, **options):
     """
     Bound Optimization BY Quadratic Approximation

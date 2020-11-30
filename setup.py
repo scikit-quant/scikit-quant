@@ -7,9 +7,10 @@ add_pkg = []
 requirements = []
 
 # optimizers sub-package requirements
-requirements.append('SQCommon==0.3.1')
+requirements.append('SQCommon==0.3.2')
 requirements.append('SQImFil==0.3.7')
 requirements.append('SQSnobFit==0.4.5')
+requirements.append('SQNomad==0.1.0')
 
 # external optimizers
 requirements.append('Py-BOBYQA>=1.1')

@@ -26,10 +26,10 @@ def _check_orbit_prerequisites():
 def methods():
     """Returns a list of available optimizer methods"""
 
-    m = ['bobyqa', 'imfil']
+    m = ['imfil', 'snobfit', 'nomad', 'bobyqa']
     if _check_orbit_prerequisites():
         m.append('orbit')
-    m.append('snobfit')
+
     return m
 
 
@@ -43,6 +43,8 @@ def minimize(func, x0, bounds, budget=10000, method='imfil', options=None, **opt
         _optset.STANDALONE = False
     elif 'snobfit' in method_ :
         import SQSnobFit as optimizer
+    elif 'nomad' in method_ :
+        import SQNomad as optimizer
     elif 'bobyqa' in method_:
         import skquant.opt._pybobyqa as optimizer
     elif 'orbit' in method_:

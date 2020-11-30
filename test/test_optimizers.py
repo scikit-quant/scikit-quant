@@ -15,8 +15,9 @@ def f_easy_simple(x):
 
 ref_results = {
     f_easy_simple : {
-        'imfil'   : (-0.00681757, 0.00880743),
-        'snobfit' : (-0.00112, -0.00078),
+        'imfil'   : (-0.00681757,  0.00880743),
+        'snobfit' : (-0.00112,    -0.00078),
+        'nomad'   : (0.,          -0.01),
         'bobyqa'  : (-2.3883e-10, -1.3548e-10),
     }
 }
@@ -60,6 +61,14 @@ class TestOPTIMIZERS:
              skqopt.minimize(f_easy_simple, [], bounds, budget, method='snobfit', options=options)
         assert type(result.optpar) == np.ndarray
         assert np.round(sum(result.optpar)-sum(ref_results[f_easy_simple]['snobfit']), 8) == 0.0
+
+        # NOMAD
+        result, history = \
+             skqopt.minimize(f_easy_simple, x0, bounds, budget, method='nomad')
+        assert type(result.optpar) == np.ndarray
+        assert np.round(sum(result.optpar)-sum(ref_results[f_easy_simple]['nomad']), 8) == 0.0
+        result, history = \
+             skqopt.minimize(f_easy_simple, x0, bounds, budget, method='nomad')
 
         # Py-BOBYQA
         result, history = \
@@ -106,6 +115,15 @@ class TestOPTIMIZERS:
                                  variable_bounds=bounds)
         assert np.round(sum(ret[0])-sum(ref_results[f_easy_simple]['snobfit']), 8) == 0.0
 
+      # NOMAD
+        from skquant.interop.qiskit import NOMAD
+
+        optimizer = NOMAD(maxfun=budget)
+
+        ret = optimizer.optimize(num_vars=len(x0), objective_function=f_easy_simple, \
+                                 variable_bounds=bounds, initial_point=x0)
+        assert np.round(sum(ret[0])-sum(ref_results[f_easy_simple]['nomad']), 8) == 0.0
+
       # PyBobyqa
         from skquant.interop.qiskit import PyBobyqa
         optimizer = PyBobyqa(maxfun=budget)
@@ -141,6 +159,14 @@ class TestOPTIMIZERS:
                                          options={'budget' : budget, 'maxmp' : len(x0)+6})
         assert type(result) == scipy.optimize.OptimizeResult
         assert np.round(sum(result.x)-sum(ref_results[f_easy_simple]['snobfit']), 8) == 0.0
+
+      # NOMAD
+        from skquant.interop.scipy import nomad
+
+        result = scipy.optimize.minimize(f_easy_simple, x0, method=nomad, bounds=bounds,
+                                         options={'budget' : budget})
+        assert type(result) == scipy.optimize.OptimizeResult
+        assert np.round(sum(result.x)-sum(ref_results[f_easy_simple]['nomad']), 8) == 0.0
 
       # PyBobyqa
         from skquant.interop.scipy import pybobyqa
