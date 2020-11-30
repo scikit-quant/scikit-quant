@@ -296,12 +296,12 @@ def ORBIT2(func,rbftype,gamma,n,nfmax,nmpmax,delta,maxdelta,trnorm,gtol,Low,Upp,
     # Make sure that we are sufficiently in the interior of the domain:
     m1 = np.min(np.max(np.vstack((X[xkin,:] - Low,Upp - X[xkin,:])),axis=0)) # make sure you understand what this is doing
     if (m1 < mindelta): # If infeasible or bounds too tight relative to mindelta
-        print('Minimum trust-region radius too large given the bounds')
+        log.info('Minimum trust-region radius too large given the bounds')
         return (X,F,xkin,nf,exitflag,xkin_mat,xkin_val)
     else:
         if (m1 < 0.5 * delta):
             delta = m1
-            print('Changing initial radius to %g delta ='%delta)
+            log.info('Changing initial radius to %g delta ='%delta)
 
     while (nf < nfmax):
         # STEP 1: Find affinely independent points & check if fully linear
@@ -372,7 +372,7 @@ def ORBIT2(func,rbftype,gamma,n,nfmax,nmpmax,delta,maxdelta,trnorm,gtol,Low,Upp,
         ng = sqrt(ng)
         while (ng <= gtol) and (valid):
 
-            print('******** RBF gradient is smaller than tolerance! *********')
+            log.info('******** RBF gradient is smaller than tolerance! *********')
             X = X[0:nf + nfs]; F = F[0:nf + nfs,:]; xkin_mat = xkin_mat[0:nf,:]; xkin_val = xkin_val[0:nf];
             exitflag = 1;
             return (X,F,xkin,nf,exitflag,xkin_mat,xkin_val)
@@ -508,7 +508,7 @@ def phi_(r,rbftype,gamma,numout):
             if 'Gaussian' == rbftype:
                 Out1 = exp(- (r / (gamma * np.ones(len(r)))) ** 2)
             else:
-                print('Error: Unknown type.')
+                log.error('Error: Unknown type.')
                 return (Out1,Out2,Out3)
     if numout > 1:
         if 'cubic' == rbftype:
@@ -542,7 +542,7 @@ def phiprimezero_(rbftype,gamma):
             if 'Gaussian' == rbftype:
                 Out = - 2 / (gamma ** 2)
             else:
-                print('Error: Unknown type.')
+                log.error('Error: Unknown type.')
                 return Out
     return Out
 
