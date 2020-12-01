@@ -99,7 +99,7 @@ setup(
         'Topic :: Scientific/Engineering :: Physics',
         'Topic :: Software Development',
 
-        'License :: Other/Proprietary License',
+        'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
 
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
