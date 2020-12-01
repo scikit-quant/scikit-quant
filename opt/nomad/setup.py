@@ -6,7 +6,7 @@ try:
     from numpy.distutils.command.build_ext import build_ext as _build_ext
 except ImportError:     # no numpy / no PEP517
     from distutils.command.build_ext import build_ext as _build_ext
-from distutils.core import Command
+from setuptools import Command
 from codecs import open
 
 
