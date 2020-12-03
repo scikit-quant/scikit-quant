@@ -6,13 +6,14 @@
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
 /*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural Science    */
-/*  and Engineering Research Council of Canada), INOVEE (Innovation en Energie     */
-/*  Electrique and IVADO (The Institute for Data Valorization)                     */
+/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
+/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
+/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -26,8 +27,6 @@
 /*    Polytechnique Montreal - GERAD                                               */
 /*    C.P. 6079, Succ. Centre-ville, Montreal (Quebec) H3C 3A7 Canada              */
 /*    e-mail: nomad@gerad.ca                                                       */
-/*    phone : 1-514-340-6053 #6928                                                 */
-/*    fax   : 1-514-340-5665                                                       */
 /*                                                                                 */
 /*  This program is free software: you can redistribute it and/or modify it        */
 /*  under the terms of the GNU Lesser General Public License as published by       */
@@ -46,9 +45,9 @@
 /*---------------------------------------------------------------------------------*/
 
 #include <iomanip>  // For std::setprecision
-#include "../Math/RNG.hpp"
-#include "../Type/BBInputType.hpp"
+
 #include "../Param/PbParameters.hpp"
+#include "../Type/BBInputType.hpp"
 
 /*----------------------------------------*/
 /*         initializations (private)      */
@@ -98,14 +97,13 @@ void NOMAD::PbParameters::checkAndComply( )
     auto lb = getAttributeValueProtected<NOMAD::ArrayOfDouble>("LOWER_BOUND",false);
     if (lb.size() != n)
     {
-        if (lb.size() > 0)
+        if (lb.size() > 0 && lb.isDefined())
         {
-            err = "Warning: Parameter LOWER_BOUND resized from ";
-            err += std::to_string(lb.size()) + " to " + std::to_string(n);
-            err += ". Values may be lost.";
-            std::cerr << err << std::endl;
+            err = "Error: Parameter LOWER_BOUND has dimension ";
+            err += std::to_string(lb.size()) + " which is different from ";
+            err += "problem dimension " + std::to_string(n);
+            throw NOMAD::InvalidParameter(__FILE__,__LINE__,err);
         }
-
         lb.resize(n);
         setAttributeValue("LOWER_BOUND", lb);
     }
@@ -113,14 +111,13 @@ void NOMAD::PbParameters::checkAndComply( )
     auto ub = getAttributeValueProtected<NOMAD::ArrayOfDouble>("UPPER_BOUND",false);
     if (ub.size() != n)
     {
-        if (ub.size() > 0)
+        if (ub.size() > 0 && ub.isDefined())
         {
-            err = "Warning: Parameter UPPER_BOUND resized from ";
-            err += std::to_string(ub.size()) + " to " + std::to_string(n);
-            err += ". Values may be lost.";
-            std::cerr << err << std::endl;
+            err = "Error: Parameter UPPER_BOUND has dimension ";
+            err += std::to_string(ub.size()) + " which is different from ";
+            err += "problem dimension " + std::to_string(n);
+            throw NOMAD::InvalidParameter(__FILE__,__LINE__,err);
         }
-
         ub.resize(n);
         setAttributeValue("UPPER_BOUND", ub);
     }
@@ -137,24 +134,13 @@ void NOMAD::PbParameters::checkAndComply( )
             x0[i].setToBeDefined();
         }
         x0s.push_back(x0);
-        setAttributeValue("X0", x0s);
     }
-
-    NOMAD::ArrayOfPoint x0SResized;
-    for (size_t x0index = 0; x0index < x0s.size(); x0index++)
+    else
     {
-        auto x0 = x0s[x0index];
-        if ( x0.size() != n )
+        for (size_t x0index = 0; x0index < x0s.size(); x0index++)
         {
-            if (x0.size() > n)
-            {
-                err = "Warning: Parameter X0 resized from ";
-                err += std::to_string(x0.size()) + " to " + std::to_string(n);
-                err += ". Values may be lost or reset.";
-                std::cerr << err << std::endl;
-                x0.resize(n, x0[0]);
-            }
-            else
+            auto x0 = x0s[x0index];
+            if ( x0.size() != n )
             {
                 // X0 empty
                 err = "Error: X0 " + x0.display() + " has dimension ";
@@ -163,9 +149,8 @@ void NOMAD::PbParameters::checkAndComply( )
                 throw NOMAD::InvalidParameter(__FILE__,__LINE__, err);
             }
         }
-        x0SResized.push_back(x0);
     }
-    setAttributeValue("X0", x0SResized);
+    setAttributeValue("X0", x0s);
 
     for ( size_t i = 0 ; i < n ; ++i )
     {
@@ -213,11 +198,15 @@ void NOMAD::PbParameters::checkAndComply( )
         setAttributeValue("MIN_FRAME_SIZE", iPS );
     }
 
-
     /*--------------------*/
     /* Granular variables */
     /*--------------------*/
     setGranularityAndBBInputType();
+
+    /*--------------------------*/
+    /* Variables groups         */
+    /*--------------------------*/
+    setVariableGroups();
 
     /*-----------------*/
     /* Fixed variables */
@@ -249,6 +238,7 @@ void NOMAD::PbParameters::checkAndComply( )
 
     _toBeChecked = false;
 
+
 }
 // End checkAndComply()
 
@@ -264,17 +254,20 @@ void NOMAD::PbParameters::setGranularityAndBBInputType()
     auto ub = getAttributeValueProtected<NOMAD::ArrayOfDouble>("UPPER_BOUND",false);
     std::ostringstream oss;
 
-    if (granularity.isDefined() && granularity.size() != n)
+    if (granularity.size() != n)
     {
-        std::string err;
-        err = "Warning: Parameter GRANULARITY resized from ";
-        err += std::to_string(granularity.size()) + " to " + std::to_string(n);
-        err += ". Values may be lost.";
-        std::cerr << err << std::endl;
-
+        if (granularity.size() > 0 && granularity.isDefined())
+        {
+            oss << "Error: Parameter GRANULARITY has dimension ";
+            oss << granularity.size() << " which is different from ";
+            oss << "problem dimension " << n;
+            throw NOMAD::InvalidParameter(__FILE__,__LINE__,oss.str());
+        }
         granularity.resize(n);
+        setAttributeValue("GRANULARITY", granularity);
     }
 
+    // When granularity is not defined the default value is set.
     if (!granularity.isDefined())
     {
         granularity = NOMAD::ArrayOfDouble(n, 0.0);
@@ -415,12 +408,11 @@ void NOMAD::PbParameters::setFixedVariables()
     }
     else if (fixedVariable.size() != n)
     {
-        std::string err = "Warning: Parameter FIXED_VARIABLE resized from ";
-        err += std::to_string(fixedVariable.size()) + " to " + std::to_string(n);
-        err += ". Values may be lost.";
-        std::cerr << err << std::endl;
-
-        fixedVariable.resize(n);
+        std::ostringstream oss;
+        oss << "Error: FIXED_VARIABLES has dimension ";
+        oss << fixedVariable.size() << " which is different from ";
+        oss << "problem dimension " << n;
+        throw NOMAD::InvalidParameter(__FILE__,__LINE__, oss.str());
     }
 
     for (size_t x0index = 0; x0index < x0s.size(); x0index++)
@@ -477,8 +469,65 @@ void NOMAD::PbParameters::setFixedVariables()
     // subproblem: the bounds will still be valid.
 }
 
+// This -> should be set at read
+// If a single group of variables is set the remaining variables
+// must be in another variable group
+void NOMAD::PbParameters::setVariableGroups()
+{
+    auto lvg = getAttributeValueProtected<NOMAD::ListOfVariableGroup>("VARIABLE_GROUP",false);
 
-void NOMAD::PbParameters::checkX0AgainstBounds()
+    if (lvg.size() == 0)
+        return;
+
+    const size_t n = getAttributeValueProtected<size_t>("DIMENSION",false);
+
+    // Test if indices are uniquely used by the groups of variables
+    // Create a single set of indices from all existing group of variables
+    std::set<size_t> listOfAllVariableIndices;
+    std::pair<std::set<size_t>::iterator,bool> ret;
+    for (auto vg: lvg )
+    {
+        for (auto index: vg)
+        {
+            if ( index >= n)
+            {
+                std::ostringstream oss;
+                oss << "Parameters check: VARIABLE_GROUP, an index must be an integer in [0;" << n-1 << "]." << std::endl;
+                throw NOMAD::InvalidParameter(__FILE__, __LINE__, oss.str());
+            }
+            ret = listOfAllVariableIndices.insert(index);
+            if (!ret.second)
+            {
+                std::ostringstream oss;
+                oss << "Parameters check: VARIABLE_GROUP, each index must be unique." << std::endl;
+                throw NOMAD::InvalidParameter(__FILE__, __LINE__, oss.str());
+            }
+        }
+    }
+
+    // Some indices are not in any VARIABLE_GROUP, create a new group
+    if (listOfAllVariableIndices.size() < n)
+    {
+        NOMAD::VariableGroup newVG;
+        for ( size_t i=0 ; i < n  ; i++ )
+        {
+            ret = listOfAllVariableIndices.insert(i);
+            // If we can insert a point, it is not already in the set
+            // Add it the the new group of variables
+            if(ret.second)
+                newVG.insert(i);
+        }
+        if (newVG.size() > 0)
+        {
+            lvg.push_back(newVG);
+
+            // Update values
+            setAttributeValue("VARIABLE_GROUP", lvg);
+        }
+    }
+}
+
+void NOMAD::PbParameters::checkX0AgainstBounds() const
 {
     const size_t n = getAttributeValueProtected<size_t>("DIMENSION",false);
     // Get bounds
@@ -549,12 +598,11 @@ void NOMAD::PbParameters::setMinMeshParameters(const std::string &paramName)
     {
         if (minArray.size() != n)
         {
-            std::string err = "Check: dimension of parameter " + paramName;
-            err += " resized from " + std::to_string(minArray.size()) + " to " + std::to_string(n);
-            err += ". Values may be lost.";
-            std::cerr << err << std::endl;
-
-            minArray.resize(n);
+            std::ostringstream oss;
+            oss << "Error: " << paramName << " has dimension ";
+            oss << minArray.size() << " which is different from ";
+            oss << "problem dimension " << n;
+            throw NOMAD::InvalidParameter(__FILE__,__LINE__, oss.str());
         }
 
         for (size_t i = 0 ; i < n ; ++i)
@@ -602,20 +650,20 @@ void NOMAD::PbParameters::setInitialMeshParameters()
     // Basic checks
     if (initialMeshSize.isDefined() && initialMeshSize.size() != n)
     {
-        std::string err = "Warning: Parameter INITIAL_MESH_SIZE resized from ";
-        err += std::to_string(initialMeshSize.size()) + " to " + std::to_string(n);
-        err += ". Values may be lost.";
-        std::cerr << err << std::endl;
-        initialMeshSize.resize(n);
+        std::ostringstream oss;
+        oss << "Error: INITIAL_MESH_SIZE has dimension ";
+        oss << initialMeshSize.size() << " which is different from ";
+        oss << "problem dimension " << n;
+        throw NOMAD::InvalidParameter(__FILE__,__LINE__, oss.str());
     }
 
     if (initialFrameSize.isDefined() && initialFrameSize.size() != n)
     {
-        std::string err = "Warning: Parameter INITIAL_MESH_SIZE resized from ";
-        err += std::to_string(initialFrameSize.size()) + " to " + std::to_string(n);
-        err += ". Values may be lost.";
-        std::cerr << err << std::endl;
-        initialFrameSize.resize(n);
+        std::ostringstream oss;
+        oss << "Error: INITIAL_FRAME_SIZE has dimension ";
+        oss << initialFrameSize.size() << " which is different from ";
+        oss << "problem dimension " << n;
+        throw NOMAD::InvalidParameter(__FILE__,__LINE__, oss.str());
     }
 
     if (initialMeshSize.isDefined() && initialFrameSize.isDefined())
@@ -777,7 +825,7 @@ void NOMAD::PbParameters::checkX0ForGranularity() const
 
 void NOMAD::PbParameters::checkForGranularity(const std::string &paramName) const
 {
-    // Assuming paramName is of type ArrayOfDouble.    
+    // Assuming paramName is of type ArrayOfDouble.
     NOMAD::ArrayOfDouble arrayToCheck = getAttributeValueProtected<NOMAD::ArrayOfDouble>(paramName,false);
     checkForGranularity(paramName, arrayToCheck);
 }

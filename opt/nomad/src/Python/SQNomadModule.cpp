@@ -2,6 +2,7 @@
 
 #include "PyCompat.h"
 #include "../Nomad/nomad.hpp"
+#include "../Cache/CacheBase.hpp"
 #include "../Type/BBOutputType.hpp"
 #include "../Math/RNG.hpp"
 
@@ -364,7 +365,7 @@ static PyObject* minimize(PyObject* /* dummy */, PyObject* args, PyObject* kwds)
 
         if (run_ok) {
             std::vector<EvalPoint> evpl;
-            auto nf = CacheBase::getInstance()->findBestFeas(evpl, Point(), EvalType::BB);
+            auto nf = CacheBase::getInstance()->findBestFeas(evpl, Point(), EvalType::BB, nullptr);
             if (0 < nf) {
                 EvalPoint evres = evpl[0];
                 result = PyTuple_New(2);

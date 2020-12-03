@@ -6,13 +6,14 @@
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
 /*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural Science    */
-/*  and Engineering Research Council of Canada), INOVEE (Innovation en Energie     */
-/*  Electrique and IVADO (The Institute for Data Valorization)                     */
+/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
+/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
+/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -26,8 +27,6 @@
 /*    Polytechnique Montreal - GERAD                                               */
 /*    C.P. 6079, Succ. Centre-ville, Montreal (Quebec) H3C 3A7 Canada              */
 /*    e-mail: nomad@gerad.ca                                                       */
-/*    phone : 1-514-340-6053 #6928                                                 */
-/*    fax   : 1-514-340-5665                                                       */
 /*                                                                                 */
 /*  This program is free software: you can redistribute it and/or modify it        */
 /*  under the terms of the GNU Lesser General Public License as published by       */
@@ -48,7 +47,6 @@
 #define __NOMAD400_BARRIER__
 
 #include "../Eval/EvalPoint.hpp"
-#include "../Math/Double.hpp"
 
 #include "../nomad_nsbegin.hpp"
 
@@ -57,27 +55,43 @@ class Barrier
 {
 private:
 
-    std::vector<EvalPointPtr> _xFeas;    ///< Current feasible incumbent solutions
-    std::vector<EvalPointPtr> _xInf;     ///< Current infeasible incumbent solutions
+    std::vector<EvalPoint> _xFeas;  ///< Current feasible incumbent solutions
+    std::vector<EvalPoint> _xInf;   ///< Current infeasible incumbent solutions
 
-    Double _hMax;        ///< Maximum acceptable value for h
+    EvalPointPtr _refBestFeas;      ///< Previous first feasible incumbent
+    EvalPointPtr _refBestInf;       ///< Previous first infeasible incumbent
+
+    Double _hMax;                   ///< Maximum acceptable value for h
+
+    /// Dimension of the points in the barrier.
+    /**
+     * Used for verification only.
+     * To be reviewed when we address category variables.
+       /see _n in CacheBase.
+     */
+    size_t _n;
 
 public:
     /// Constructor
     /**
      * hMax will be updated during optimization.
-     \param hMax             The max of h to keep a point in the barrier -- \b IN.
+     \param hMax            The max of h to keep a point in the barrier -- \b IN.
      \param fixedVariable   The fixed variables have a fixed value -- \b IN.
-     \param evalType         Type of evaluation (BB or SGTE) -- \b IN.
+     \param evalType        Type of evaluation (BB or SGTE) -- \b IN.
+     \param evalPointList   Additional points to consider in building the barrier -- \b IN.
      */
     Barrier(const Double& hMax = INF,
             const Point& fixedVariable = Point(),
-            const EvalType& evalType = EvalType::BB)
+            const EvalType& evalType = EvalType::BB,
+            const std::vector<EvalPoint>& evalPointList = std::vector<EvalPoint>())
       : _xFeas(),
         _xInf(),
-        _hMax(hMax)
+        _refBestFeas(nullptr),
+        _refBestInf(nullptr),
+        _hMax(hMax),
+        _n(0)
     {
-        init(fixedVariable, evalType);
+        init(fixedVariable, evalType, evalPointList);
     }
 
     /*-----------------*/
@@ -87,14 +101,25 @@ public:
     /**
      \return All the eval points that are feasible.
      */
-    const std::vector<EvalPointPtr> getAllXFeas()    const { return _xFeas; }
+    const std::vector<EvalPoint> getAllXFeas()    const { return _xFeas; }
 
-    ///  Get the first feasible points in the barrier.
+    /// Update ref best feasible and ref best infeasible values.
+    void updateRefBests();
+
+    ///  Get the first feasible point in the barrier.
     /**
      * If there is no feasible point, return a \c nullptr
      \return A single feasible eval point.
      */
     EvalPointPtr getFirstXFeas() const;
+
+    ///  Get the point that was previously the first feasible point in the barrier.
+    /**
+     * If there is no feasible point, return a \c nullptr
+     \return A single feasible eval point.
+     */
+    EvalPointPtr getRefBestFeas() const { return _refBestFeas; }
+    void setRefBestFeas(const EvalPointPtr refBestFeas) { _refBestFeas = refBestFeas; }
 
     /// Number of feasible points in the barrier.
     size_t nbXFeas() const { return _xFeas.size(); }
@@ -105,7 +130,7 @@ public:
      \param xFeas       The eval point to add -- \b IN.
      \param evalType    Which eval (Blackbox or Surrogate) of the EvalPoint to use to verify feasibility  -- \b IN.
      */
-    void addXFeas(const EvalPointPtr &xFeas, const EvalType& evalType);
+    void addXFeas(const EvalPoint &xFeas, const EvalType& evalType);
 
     /// Remove feasible points from the barrier.
     void clearXFeas();
@@ -117,14 +142,22 @@ public:
     /**
      \return All the eval points that are infeasible.
      */
-    const std::vector<EvalPointPtr> getAllXInf() const { return _xInf; }
+    const std::vector<EvalPoint> getAllXInf() const { return _xInf; }
 
-    ///  Get the first infeasible points in the barrier.
+    ///  Get the first infeasible point in the barrier.
     /**
      * If there is no infeasible point, return a \c nullptr
      \return A single infeasible eval point.
      */
     EvalPointPtr getFirstXInf() const;
+
+    ///  Get the point that was previously the first infeasible point in the barrier.
+    /**
+     * If there is no feasible point, return a \c nullptr
+     \return A single feasible eval point.
+     */
+    EvalPointPtr getRefBestInf() const { return _refBestInf; }
+    void setRefBestInf(const EvalPointPtr refBestInf) { _refBestInf = refBestInf; }
 
     /// Number of infeasible points in the barrier.
     size_t nbXInf() const { return _xInf.size(); }
@@ -134,7 +167,7 @@ public:
      * If the point is nullptr an exception is triggered.
      \param xInf   The eval point to add -- \b IN.
      */
-    void addXInf(const EvalPointPtr &xInf);
+    void addXInf(const EvalPoint &xInf);
 
     /// Remove infeasible points from the barrier.
     void clearXInf();
@@ -142,8 +175,8 @@ public:
     /*---------------*/
     /* Other methods */
     /*---------------*/
-    // Get all feasible and infeasable points
-    std::vector<EvalPointPtr> getAllPoints();
+    /// Get all feasible and infeasable points
+    std::vector<EvalPoint> getAllPoints();
 
     /// Get the current hMax of the barrier.
     Double getHMax() const { return _hMax; }
@@ -153,6 +186,16 @@ public:
      \param hMax    The hMax -- \b IN.
      */
     void setHMax(const Double &hMax);
+
+    /// Update xFeas and xInf according to given points.
+    /* \param evalPointList vector of EvalPoints  -- \b IN.
+     * \param keepAllPoints keep all good points, or keep just one point as in NOMAD 3 -- \b IN.
+     * \return true if the Barrier was updated, false otherwise
+     * \note Input EvalPoints are already in subproblem dimention
+     */
+    bool updateWithPoints(const std::vector<EvalPoint>& evalPointList,
+                          const EvalType& evalType,
+                          const bool keepAllPoints);
 
     /// Return the barrier as a string.
     /* May be used for information, or for saving a barrier. In the former case,
@@ -171,13 +214,21 @@ private:
      * Will throw exceptions or output error messages if something is wrong. Will remain silent otherwise.
      \param fixedVariable  The fixed variables have a fixed value     -- \b IN.
      \param evalType        Which eval (Blackbox or Surrogate) to use to verify feasibility  -- \b IN.
+     \param evalPointList Additional points to consider to construct barrier. -- \b IN.
      */
-    void init(const Point& fixedVariable, const EvalType& evalType);
+    void init(const Point& fixedVariable,
+              const EvalType& evalType,
+              const std::vector<EvalPoint>& evalPointList);
+
+    /**
+     * \brief Helper function for init/constructor.
+     */
+    void setN();
 
     /**
      * \brief Helper function for init/constructor.
      *
-     * Throw an exception if the Cache has not been instanciated yet. Will remain silent otherwise.
+     * Throw an exception if the Cache has not been instantiated yet. Will remain silent otherwise.
      */
     void checkCache();
 

@@ -6,13 +6,14 @@
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
 /*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural Science    */
-/*  and Engineering Research Council of Canada), INOVEE (Innovation en Energie     */
-/*  Electrique and IVADO (The Institute for Data Valorization)                     */
+/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
+/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
+/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -26,8 +27,6 @@
 /*    Polytechnique Montreal - GERAD                                               */
 /*    C.P. 6079, Succ. Centre-ville, Montreal (Quebec) H3C 3A7 Canada              */
 /*    e-mail: nomad@gerad.ca                                                       */
-/*    phone : 1-514-340-6053 #6928                                                 */
-/*    fax   : 1-514-340-5665                                                       */
 /*                                                                                 */
 /*  This program is free software: you can redistribute it and/or modify it        */
 /*  under the terms of the GNU Lesser General Public License as published by       */
@@ -45,8 +44,11 @@
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
 
+#include "../../Algos/AlgoStopReasons.hpp"
+#include "../../Algos/CacheInterface.hpp"
+#include "../../Algos/EvcInterface.hpp"
 #include "../../Algos/NelderMead/NMInitializeSimplex.hpp"
-#include "../../Algos/NelderMead/NMMegaIteration.hpp"
+#include "../../Output/OutputQueue.hpp"
 
 
 void NOMAD::NMInitializeSimplex::init()
@@ -59,36 +61,52 @@ void NOMAD::NMInitializeSimplex::init()
 
 bool NOMAD::NMInitializeSimplex::runImp()
 {
+    bool simplexCreated = false;
+    if (nullptr == _nmY)
+    {
+        throw NOMAD::Exception(__FILE__, __LINE__, "The simplex is not defined.");
+    }
 
-    if ( _nmY == nullptr )
-        NOMAD::Exception(__FILE__, __LINE__, "The simplex is not defined.");
-
-    // create a simplex from EvalPoints in Cache
-    if ( _nmY->size() == 0 )
-        return createSimplexFromCache();
+    // Create a simplex from EvalPoints in Cache or in Barrier
+    if (_nmY->empty())
+    {
+        simplexCreated = createSimplex();
+    }
     else
     {
+        OUTPUT_INFO_START
         AddOutputInfo("Simplex already initialized: " + std::to_string(_nmY->size()) + " points");
-        return true;
+        OUTPUT_INFO_END
+        simplexCreated = true;
     }
+
+    return simplexCreated;
 }
 
 
 /*----------------------------------------------------------------------------------*/
 /*  Create initial sets of points for Nelder-Mead within a radius of current best   */
 /*----------------------------------------------------------------------------------*/
-bool NOMAD::NMInitializeSimplex::createSimplexFromCache ( )
+bool NOMAD::NMInitializeSimplex::createSimplex()
 {
-    auto evalType = getEvalType();
+    auto evalType = NOMAD::EvcInterface::getEvaluatorControl()->getEvalType();
 
     auto iter = dynamic_cast<const NOMAD::NMIteration*>( NOMAD::Step::_parentStep );
-    if ( nullptr == iter )
-        NOMAD::Exception(__FILE__, __LINE__, "The simplex initialization must have a NMIteration Step has parent");
+    if (nullptr == iter)
+    {
+        throw NOMAD::Exception(__FILE__, __LINE__, "The simplex initialization must have a NMIteration Step as parent");
+    }
 
     const std::shared_ptr<NOMAD::EvalPoint> centerPt = iter->getFrameCenter();
     // Use center point of iteration, otherwise
-    if ( centerPt == nullptr )
-            NOMAD::Exception(__FILE__, __LINE__, "A center point must be defined.");
+    if (nullptr == centerPt)
+    {
+        throw NOMAD::Exception(__FILE__, __LINE__, "A center point must be defined.");
+    }
+    if ( ! centerPt->getEval(evalType)->isBBOutputComplete() )
+    {
+        throw NOMAD::Exception(__FILE__, __LINE__, "A center point must have all output defined for functions (OBJ, PB, EB).");
+    }
 
     // Clear the list of NM points
     _nmY->clear();
@@ -115,26 +133,35 @@ bool NOMAD::NMInitializeSimplex::createSimplexFromCache ( )
         includeRectangle = mesh->getDeltaFrameSize() ;
 
         if ( ! includeRectangle.isDefined() )
-            NOMAD::Exception(__FILE__, __LINE__, "The frame size is not defined.");
+            throw NOMAD::Exception(__FILE__, __LINE__, "The frame size is not defined.");
 
         includeRectangle *= includeFactor ;
 
+        OUTPUT_DEBUG_START
         dbgInfo.addMsg("The include rectangle: " + includeRectangle.display() );
+        OUTPUT_DEBUG_END
     }
     if ( includeRectangle.max() == 0 )
-        NOMAD::Exception(__FILE__, __LINE__, "The include rectangle has no volume");
-
-    const NOMAD::ArrayOfDouble & bbo  = centerPt->getEval(evalType)->getBBOutput().getBBOAsArrayOfDouble();
-    size_t m = bbo.size();
+        throw NOMAD::Exception(__FILE__, __LINE__, "The include rectangle has no volume");
 
     // The set of points initially included
     NOMAD::NMSimplexEvalPointSet T;
 
-    // browse the cache:
-    auto cache = NOMAD::CacheBase::getInstance().get();
     std::vector<NOMAD::EvalPoint> evalpointlist;
-
-    cache->getAllPoints( evalpointlist );
+    if (NOMAD::EvcInterface::getEvaluatorControl()->getUseCache())
+    {
+        // browse the cache:
+        NOMAD::CacheInterface cacheInterface(this);
+        cacheInterface.getAllPoints(evalpointlist);
+    }
+    else
+    {
+        auto barrier = getMegaIterationBarrier();
+        if (nullptr != barrier)
+        {
+            evalpointlist = barrier->getAllPoints();
+        }
+    }
 
     // variables used to limit display
     const size_t maxPointsToDisplay = 4;
@@ -144,9 +171,7 @@ bool NOMAD::NMInitializeSimplex::createSimplexFromCache ( )
         if ( cur.getEvalStatus(evalType) == NOMAD::EvalStatusType::EVAL_OK &&
             cur.getX()->size() == n             )
         {
-            const NOMAD::ArrayOfDouble & bboCur  = cur.getEval(evalType)->getBBOutput().getBBOAsArrayOfDouble();
-
-            if ( bboCur.isComplete() && checkOutputs(bboCur, static_cast<int>(m) ) )
+            if ( cur.getEval(evalType)->isBBOutputComplete() )
             {
                 // the center point has been found and put in list
                 if ( *centerPt == cur )
@@ -155,7 +180,9 @@ bool NOMAD::NMInitializeSimplex::createSimplexFromCache ( )
                     T.insert ( Y );
                     if (nbPoints < maxPointsToDisplay)
                     {
+                        OUTPUT_DEBUG_START
                         dbgInfo.addMsg(Y.display());
+                        OUTPUT_DEBUG_END
                         nbPoints++;
                     }
                 }
@@ -175,23 +202,24 @@ bool NOMAD::NMInitializeSimplex::createSimplexFromCache ( )
                     if ( include )
                     {
 
-                        // Make sure to evaluate f or h for points in cache (important if cache is loaded from file)
-                        // TODO
-
+                        // Issue #382: make sure to evaluate f or h for points in cache (important if cache is loaded from file) see 
                         NOMAD::EvalPoint Y ( cur );
                         std::pair<NMSimplexEvalPointSetIterator,bool> ret = T.insert ( Y );
 
 
                         if ( ! ret.second )
                         {
-                            dbgInfo.addMsg("Cannot insert a point in Y: " + Y.display() );
-                            break;
+                            OUTPUT_DEBUG_START
+                            dbgInfo.addMsg("Cannot insert a point in Y (probably tied with another point): " + Y.display() );
+                            OUTPUT_DEBUG_END
                         }
                         else
                         {
                             if (nbPoints <= maxPointsToDisplay)
                             {
+                                OUTPUT_DEBUG_START
                                 dbgInfo.addMsg( ((nbPoints < maxPointsToDisplay) ? Y.display() : "...") );
+                                OUTPUT_DEBUG_END
                                 nbPoints++;
                             }
                         }
@@ -200,9 +228,13 @@ bool NOMAD::NMInitializeSimplex::createSimplexFromCache ( )
             }
         }
     }
+    OUTPUT_DEBUG_START
     NOMAD::OutputQueue::Add(std::move(dbgInfo));
+    OUTPUT_DEBUG_END
 
+    OUTPUT_INFO_START
     AddOutputInfo("Number of potential points to include in initial Y: " + std::to_string(T.size()) );
+    OUTPUT_INFO_END
 
     //
     auto nmStopReason = NOMAD::AlgoStopReasons<NOMAD::NMStopType>::get ( getAllStopReasons() );
@@ -211,9 +243,12 @@ bool NOMAD::NMInitializeSimplex::createSimplexFromCache ( )
     if ( T.size() < minYSize )
     {
         nmStopReason->set ( NMStopType::INITIAL_FAILED );
+        OUTPUT_INFO_START
         AddOutputInfo("Stop NM because not enough points in Y.");
+        OUTPUT_INFO_END
         return false;
     }
+
 
 
     // Add points in simplex to obtain dim = n+1 and simplex affinely independant
@@ -225,8 +260,10 @@ bool NOMAD::NMInitializeSimplex::createSimplexFromCache ( )
     // First point is always added
     _nmY->insert ( *itT );
 
+    OUTPUT_DEBUG_START
     dbgInfo2.addMsg("k=0: Point z0:" + (*itT).display() ) ;
     dbgInfo2.addMsg(" ---> z0 KEPT in Y ");;
+    OUTPUT_DEBUG_END
 
     int count_feasible = 0;
 
@@ -242,14 +279,18 @@ bool NOMAD::NMInitializeSimplex::createSimplexFromCache ( )
         if ( _nmY->size() == minYSize )
             break;
 
+        OUTPUT_DEBUG_START
         dbgInfo2.addMsg("k=" + std::to_string(k) +": Point zk:" + (*itT).display()) ;
+        OUTPUT_DEBUG_END
 
         std::pair<NMSimplexEvalPointSetIterator,bool> ret = _nmY->insert ( *itT );
 
         if ( ! ret.second )
         {
             nmStopReason->set ( NMStopType::INITIAL_FAILED );
+            OUTPUT_INFO_START
             AddOutputInfo("Stop NM because cannot insert a point in Y.");
+            OUTPUT_INFO_END
             break;
         }
 
@@ -258,20 +299,26 @@ bool NOMAD::NMInitializeSimplex::createSimplexFromCache ( )
         if ( rank <= 0 )
         {
             nmStopReason->set ( NMStopType::INITIAL_FAILED );
+            OUTPUT_INFO_START
             AddOutputInfo("Cannot get rank of DZ=[(y1-y0 (y2-y0) ...(yk-y0)].");
+            OUTPUT_INFO_END
             break;
         }
 
         // Erase last point or not
         if ( rank != k )
         {
+            OUTPUT_DEBUG_START
             dbgInfo2.addMsg(" ---> zk NOT KEPT in Y ");
-            _nmY->erase( *itT );
+            OUTPUT_DEBUG_END
+            _nmY->erase( ret.first );
             itT++;
         }
         else
         {
+            OUTPUT_DEBUG_START
             dbgInfo2.addMsg( " ---> zk KEPT in Y " );
+            OUTPUT_DEBUG_END
             if ( (*itT).isFeasible(evalType) )
                 count_feasible++;
             k++;
@@ -279,22 +326,29 @@ bool NOMAD::NMInitializeSimplex::createSimplexFromCache ( )
         }
 
     }
+    OUTPUT_DEBUG_START
     NOMAD::OutputQueue::Add(std::move(dbgInfo2));
+    OUTPUT_DEBUG_END
 
     // not enough points or insufficient rank of simplex (this is not counted as an error):
     // Erase point
     if ( _nmY->size() < minYSize )
     {
         nmStopReason->set ( NMStopType::INITIAL_FAILED );
+        OUTPUT_INFO_START
         AddOutputInfo( "Stop NM because not enough simplex points in Y." );
+        OUTPUT_INFO_END
         return false;
     }
     if ( getRankDZ() != (int)n )
     {
         nmStopReason->set ( NMStopType::INITIAL_FAILED );
+        OUTPUT_INFO_START
         AddOutputInfo( "Stop NM because rank of Y < n." );
+        OUTPUT_INFO_END
         return false;
     }
+
 
 
     // Update simplex characteristics (volumes and diameter)
@@ -304,22 +358,4 @@ bool NOMAD::NMInitializeSimplex::createSimplexFromCache ( )
 
     return true;
 
-}
-
-
-/*---------------------------------------------------------*/
-/*  check evaluation point outputs before the integration  */
-/*  into NM set (private)                                  */
-/*---------------------------------------------------------*/
-bool NOMAD::NMInitializeSimplex::checkOutputs ( const NOMAD::ArrayOfDouble & bbo , int m ) const
-{
-
-    if ( bbo.size() != (size_t)m )
-        return false;
-
-    for ( int i = 0 ; i < m ; ++i )
-        if ( !bbo[i].isDefined() )
-            return false;
-
-    return true;
 }

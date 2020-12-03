@@ -41,8 +41,8 @@ class my_build_extension(_build_ext):
             if not 'NOOMP' in os.environ:
                 ext.extra_compile_args += ['-fopenmp']
                 ext.extra_link_args += ['-fopenmp']
-            ext.extra_compile_args += ['-Wno-unused-value', '-Wno-unused-private-field']
-            ext.extra_link_args += ['-Wl,-Bsymbolic-functions']
+            ext.extra_compile_args += ['-Wno-unused-value']
+            ext.extra_link_args += ['-Wl,-Bsymbolic-functions', '-Wl,--as-needed']
         elif 'darwin' in sys.platform:
             ext.extra_compile_args += ['-Wno-unused-value', '-Wno-unused-private-field']
 

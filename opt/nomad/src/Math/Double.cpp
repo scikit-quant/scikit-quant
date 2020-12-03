@@ -6,13 +6,14 @@
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
 /*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural Science    */
-/*  and Engineering Research Council of Canada), INOVEE (Innovation en Energie     */
-/*  Electrique and IVADO (The Institute for Data Valorization)                     */
+/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
+/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
+/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -26,8 +27,6 @@
 /*    Polytechnique Montreal - GERAD                                               */
 /*    C.P. 6079, Succ. Centre-ville, Montreal (Quebec) H3C 3A7 Canada              */
 /*    e-mail: nomad@gerad.ca                                                       */
-/*    phone : 1-514-340-6053 #6928                                                 */
-/*    fax   : 1-514-340-5665                                                       */
 /*                                                                                 */
 /*  This program is free software: you can redistribute it and/or modify it        */
 /*  under the terms of the GNU Lesser General Public License as published by       */
@@ -53,6 +52,7 @@
  */
 #include <iomanip>  // For std::setprecision
 #include "../Math/Double.hpp"
+#include "../Util/defines.hpp"
 
 /*-----------------------------------*/
 /*   static members initialization   */
@@ -222,7 +222,7 @@ bool NOMAD::Double::atof(const std::string &ss)
     std::string s = ss;
     NOMAD::toupper(s);
 
-    if ( ss == NOMAD::Double::_undefStr 
+    if ( ss == NOMAD::Double::_undefStr
         || ss == NOMAD::DEFAULT_UNDEF_STR_1
         || ss == NOMAD::DEFAULT_UNDEF_STR_HYPHEN
         || ss == "-" + NOMAD::Double::_undefStr
@@ -523,7 +523,7 @@ std::string NOMAD::Double::display(const int prec, const size_t refWidth) const
             width = refWidth;
         }
 
-        // If the number of decimals in _value is greater then prec, then 
+        // If the number of decimals in _value is greater then prec, then
         // output it as is so it gets truncated.
         // Ex: 447.000774493 -> 447.000774
         // If it is smaller, use the string and complete with space padding.
@@ -893,7 +893,7 @@ const NOMAD::Double NOMAD::Double::sqrt ( void ) const
 // of Computation, 39(160):563–569, 1982. doi:10.1090/S0025-5718-1982-0669649-2.
 //
 // The error will be in [0;2]
-const NOMAD::Double NOMAD::Double::relErr ( const Double & x ) const
+const NOMAD::Double NOMAD::Double::relErr ( const NOMAD::Double & x ) const
 {
     if ( !_defined || !x._defined )
         throw NotDefined ( "Double.cpp" , __LINE__ ,
@@ -1009,52 +1009,3 @@ const NOMAD::Double NOMAD::Double::nextMult(const NOMAD::Double &granularity) co
 }
 
 
-/*---------------------------------------------------------------------*/
-/*  the same as operator < but with consideration of undefined values  */
-/*---------------------------------------------------------------------*/
-bool NOMAD::Double::compWithUndef ( const NOMAD::Double & d ) const
-{
-    if ( this == &d )
-        return false;
-
-    bool d1d = isDefined();
-    bool d2d = d.isDefined();
-
-    if ( !d1d && !d2d )
-        return false;
-
-    if ( !d1d )
-        return true;
-
-    if ( !d2d )
-        return false;
-
-    return ( *this < d );
-}
-
-/*------------------------------------*/
-/*  projection to mesh of size delta  */
-/*  ( *this = ref + k * delta )       */
-/*------------------------------------*/
-void NOMAD::Double::projectToMesh ( const NOMAD::Double & ref   ,
-                                     const NOMAD::Double & delta ,
-                                     const NOMAD::Double & lb    ,
-                                     const NOMAD::Double & ub      )
-{
-    if ( !_defined )
-        return;
-
-    NOMAD::Double v0 = ( ref._defined ) ? ref : 0.0;
-
-    if ( delta._defined && delta != 0.0 )
-    {
-
-        *this = v0 + ( (*this-v0) / delta).roundd() * delta;
-
-        if ( ub._defined && *this > ub )
-            *this = ub;
-
-        if ( lb._defined && *this < lb )
-            *this = lb;
-    }
-}

@@ -6,13 +6,14 @@
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
 /*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural Science    */
-/*  and Engineering Research Council of Canada), INOVEE (Innovation en Energie     */
-/*  Electrique and IVADO (The Institute for Data Valorization)                     */
+/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
+/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
+/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -26,8 +27,6 @@
 /*    Polytechnique Montreal - GERAD                                               */
 /*    C.P. 6079, Succ. Centre-ville, Montreal (Quebec) H3C 3A7 Canada              */
 /*    e-mail: nomad@gerad.ca                                                       */
-/*    phone : 1-514-340-6053 #6928                                                 */
-/*    fax   : 1-514-340-5665                                                       */
 /*                                                                                 */
 /*  This program is free software: you can redistribute it and/or modify it        */
 /*  under the terms of the GNU Lesser General Public License as published by       */
@@ -45,9 +44,10 @@
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
 
+#include "../../Algos/EvcInterface.hpp"
 #include "../../Algos/NelderMead/NMShrink.hpp"
-#include "../../Algos/NelderMead/NMIteration.hpp"
 #include "../../Algos/NelderMead/NMUpdate.hpp"
+#include "../../Output/OutputQueue.hpp"
 
 
 void NOMAD::NMShrink::init()
@@ -99,7 +99,7 @@ bool NOMAD::NMShrink::runImp()
 void NOMAD::NMShrink::endImp()
 {
     // From IterationUtils
-    postProcessing(getEvalType());
+    postProcessing(NOMAD::EvcInterface::getEvaluatorControl()->getEvalType());
 
 }
 
@@ -108,9 +108,10 @@ void NOMAD::NMShrink::generateTrialPoints ()
 {
 
     auto n = _pbParams->getAttributeValue<size_t>("DIMENSION");
-    size_t YSize = _nmY->size();
 
-    AddOutputInfo("Shrink simplex with " + _name +" (gamma=" + _gamma.tostring() +") with " + std::to_string(YSize) + " points.");
+    OUTPUT_INFO_START
+    AddOutputInfo("Shrink simplex with " + _name +" (gamma=" + _gamma.tostring() +") with " + std::to_string(_nmY->size()) + " points.");
+    OUTPUT_INFO_END
 
 
     // Shrink simplex Y
@@ -119,7 +120,9 @@ void NOMAD::NMShrink::generateTrialPoints ()
     int i=0;
     for ( ; it !=_nmY->end(); ++it, ++i )
     {
+        OUTPUT_INFO_START
         AddOutputInfo("y" + std::to_string(i) + ": " + (*it).display() );
+        OUTPUT_INFO_END
 
         NOMAD::Point yi(n,0);
         for (size_t k = 0 ; k < n ; ++k )
@@ -141,15 +144,19 @@ void NOMAD::NMShrink::generateTrialPoints ()
         // Add it to the list.
         bool inserted = insertTrialPoint(NOMAD::EvalPoint(y));
 
+        OUTPUT_INFO_START
         std::string s = "xr:";
         s += (inserted) ? " " : " not inserted: ";
         s += y.display();
         AddOutputInfo(s);
+        OUTPUT_INFO_END
 
         // Test for too small shrink (not the first point)
         if (i > 0 && y == yi )
         {
+            OUTPUT_INFO_START
             AddOutputInfo("Shrink point to close to simplex point.");
+            OUTPUT_INFO_END
             setStopReason( );
             clearTrialPoints();
             return;

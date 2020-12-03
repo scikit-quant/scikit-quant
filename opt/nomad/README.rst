@@ -10,7 +10,7 @@ result of costly computer simulations.
 
 This version of NOMAD was modified and redistributed under the rules of LGPL.
 
-Copyright of original (v4.0.0-beta):
+Copyright of original (v4.0.0-beta-2):
    * Sebastien Le Digabel, Polytechnique Montreal
    * Viviane Rochon Montplaisir, Polytechnique Montreal
    * Christophe Tribes, Polytechnique Montreal

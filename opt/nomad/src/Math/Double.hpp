@@ -6,13 +6,14 @@
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
 /*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural Science    */
-/*  and Engineering Research Council of Canada), INOVEE (Innovation en Energie     */
-/*  Electrique and IVADO (The Institute for Data Valorization)                     */
+/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
+/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
+/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -26,8 +27,6 @@
 /*    Polytechnique Montreal - GERAD                                               */
 /*    C.P. 6079, Succ. Centre-ville, Montreal (Quebec) H3C 3A7 Canada              */
 /*    e-mail: nomad@gerad.ca                                                       */
-/*    phone : 1-514-340-6053 #6928                                                 */
-/*    fax   : 1-514-340-5665                                                       */
 /*                                                                                 */
 /*  This program is free software: you can redistribute it and/or modify it        */
 /*  under the terms of the GNU Lesser General Public License as published by       */
@@ -382,32 +381,6 @@ public:
      \return    Reference to \c *this after dividing by \c d1.
      */
     const Double & operator /= ( const Double & d1 );
-
-    /// Comparison <.
-    /**
-     * The same as operator \c < but with consideration of undefined values.
-     * When comparing \c d1 and \c d2, \c (d1<d2) is equal to \c true for example
-     * if \c d1 is defined and if \c d2 is not.
-
-     \param d   Right-hand side of comparison -- \b IN.
-     \return    \c true if \c *this \c < \c d.
-     */
-    bool compWithUndef ( const Double & d ) const;
-
-    /// Projection to the mesh.
-    /**
-     * Projection to the mesh of size delta
-     * ( \c *this \c = \c ref \c + \c k \c * \c delta ).
-
-     \param ref    Reference for projection -- \b IN.
-     \param delta  Mesh size parameter -- \b IN.
-     \param lb     Lower bound -- \b IN.
-     \param ub     Upper bound -- \b IN.
-     */
-    void projectToMesh ( const Double & ref           ,
-                         const Double & delta         ,
-                         const Double & lb = Double() ,
-                         const Double & ub = Double()   );
 
     /// Weak comparison operator.
     /**
