@@ -13,7 +13,8 @@ independently on PyPI to allow their inclusion/exclusion as needed.
 Main scikit-quant code
 ----------------------
 
-The following license applies to the common scikit-quant code itself.
+The following license applies to the common scikit-quant code and any of our
+changes/additions.
 
 Copyright (c) 2019-2020, The Regents of the University of California,
 through Lawrence Berkeley National Laboratory (subject to receipt of

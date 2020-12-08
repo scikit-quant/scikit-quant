@@ -12,8 +12,8 @@ Scikit-Quant
 
 Scikit-quant is a collection of optimizers tuned for usage on Noisy
 Inter-mediate-Scale Quantum (NISQ) devices.
-Results for several VQE case studies are presented in this
-`arxiv paper`_.
+Results for several VQE and Hubbard model case studies are presented in this
+`arxiv paper`_ (final paper was presented at IEEE's QCE'20).
 This is the manual for the software used.
 
 

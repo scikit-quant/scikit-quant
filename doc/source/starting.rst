@@ -6,15 +6,15 @@ Trying it out
 This is a basic guide to using the optimizers mainly intended to test whether
 your installation works.
 If you are already familiar to using optimizers within a quantum programming
-framework, you may be better served using the component interfaces, such as
-the ones to :doc:`Qiskit <qiskit>` and :doc:`SciPy <scipy>`.
+framework, you may be better served using the interoperability interfaces, such
+as the ones to :doc:`Qiskit <qiskit>` and :doc:`SciPy <scipy>`.
 
 First, you need to have some objective function to optimize.
 All the optimizers are *minimizers* and expect to do simple "less than"
 comparisons on the result.
 Thus, if instead you need to maximize the result, simply add a minus sign.
 The objective function is expected to accept an evaluation point in the form
-of a numpy array of floating point values, or a list of such evaluation
+of a ``numpy`` array of floating point values, or a list of such evaluation
 points to allow evaluation in parallel.
 
 Example of an objective function:
@@ -38,7 +38,7 @@ For difficult problems, it may be necessary to refine bounds while switching
 optimizers to solve.
 Not all optimizers are equally sensitive to bounds.
 
-.. code-block:: python 
+.. code-block:: python
 
    # create a numpy array of bounds, one (low, high) for each parameter
    bounds = np.array([[-np.pi, np.pi], [-np.pi, np.pi]], dtype=float)
@@ -58,11 +58,11 @@ bounds.
 
 The objective function is considered expensive to calculate (running a
 circuit many times on the QPU).
-It is therefore better to consider a *budget* (number of allowed
-evaluations), rather than rely on convergence criteria, especially since
-tight tolerances can not be met in the case of large noise.
-The budget is an upper limit.
-If convergence happens earlier, the minimizer will stop.
+It is therefore important to consider a *budget* (number of allowed
+evaluations), rather than to rely solely on convergence criteria, especially
+since tight tolerances can not alway be met in the case of large noise.
+The budget is always an upper limit: if convergence happens earlier, the
+minimizer will stop.
 
 .. code-block:: python
 
@@ -78,6 +78,6 @@ The history object contains the full call history.
 
    from skquant.opt import minimize
 
-   # method can be ImFil, SnobFit, Orbit, or Bobyqa
+   # method can be ImFil, SnobFit, NOMAD, Orbit, or Bobyqa (case insensitive)
    result, history = \
        minimize(objective_function, x0, bounds, budget, method='imfil')

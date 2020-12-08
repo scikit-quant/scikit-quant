@@ -14,16 +14,25 @@ created directory ("WORK" in this example)::
   (WORK) $ python -m pip install scikit-quant
   (WORK) $
 
-If you use the ``--user`` option to ``pip`` and use ``pip`` directly on the
-command line, instead of through ``python``, make sure that the ``PATH``
-envar points to the bin directory that will contain the installed entry
-points during the installation, as the build process needs them.
+If you use ``pip`` directly on the command line, instead of through
+``python``, make sure that the ``PATH`` envar points to the bin directory
+that will contain the installed entry points during the installation, as the
+build process needs them.
 You may also need to install ``wheel`` first if you have an older version of
 ``pip`` and/or do not use virtualenv (which installs wheel by default).
+Older versions of ``pip`` may also require the ``--user`` option, if you do
+not have write access to the installation directory.
 Example::
 
- $ python -m pip install wheel --user
- $ PATH=$HOME/.local/bin:$PATH python -m pip install scikit-quant --user
+  $ python -m pip install wheel --user
+  $ PATH=$HOME/.local/bin:$PATH python -m pip install scikit-quant --user
+
+Alternatively, you can use ``pip`` from a ``conda`` environment::
+
+  $ conda create -n WORK
+  $ conda activate WORK
+  (WORK) $ python -m pip install scikit-quant
+  (WORK) $
 
 .. _`PyPI`: https://pypi.org/project/scikit-quant/
 .. _`virtualenv`: https://pypi.python.org/pypi/virtualenv
