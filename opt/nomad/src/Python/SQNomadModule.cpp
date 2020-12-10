@@ -308,9 +308,12 @@ static PyObject* minimize(PyObject* /* dummy */, PyObject* args, PyObject* kwds)
             x0[i] = par[i];
         params->setAttributeValue("X0", x0);
 
-    // get the bounds buffers
+    // get the bounds buffers, if provided
         double *lower = nullptr, *upper = nullptr;
         for (Py_ssize_t iarg : {2, 3}) {
+            if (PyTuple_GET_ITEM(args, iarg) == Py_None)
+                continue;
+
             void*& bounds = (void*&)(iarg == 2 ? lower : upper);
             Py_ssize_t nbounds = GetBuffer(PyTuple_GET_ITEM(args, iarg), 'd', sizeof(double), bounds, true);
             if (!bounds || nbounds == 0) {
@@ -319,34 +322,41 @@ static PyObject* minimize(PyObject* /* dummy */, PyObject* args, PyObject* kwds)
             }
 
             if (npar != nbounds) {
-                 PyErr_Format(PyExc_ValueError,
-                     "length of initial (" PY_SSIZE_T_FORMAT ") and %s bounds (" PY_SSIZE_T_FORMAT ") do not match",
-                     npar, (iarg == 2 ? "lower" : "upper"), nbounds);
-                 return nullptr;
+                PyErr_Format(PyExc_ValueError,
+                    "length of initial (" PY_SSIZE_T_FORMAT ") and %s bounds (" PY_SSIZE_T_FORMAT ") do not match",
+                    npar, (iarg == 2 ? "lower" : "upper"), nbounds);
+                return nullptr;
             }
         }
 
-        ArrayOfDouble lbounds(npar);
-        for (Py_ssize_t i = 0; i < npar; ++i)
-            lbounds[i] = lower[i];
-        params->setAttributeValue("LOWER_BOUND", lbounds);
-
-        ArrayOfDouble ubounds(npar);
-        for (Py_ssize_t i = 0; i < npar; ++i) {
-            ubounds[i] = upper[i];
-            if (ubounds[i] <= lbounds[i]) {
-                 PyErr_Format(PyExc_ValueError,
-                     "for element " PY_SSIZE_T_FORMAT ", upper bound(%d) is not larger than lower bound (%d)",
-                     i, ubounds[i].todouble(), lbounds[i].todouble());
-                 return nullptr;
-            }
+        if (lower) {
+            ArrayOfDouble lbounds(npar);
+            for (Py_ssize_t i = 0; i < npar; ++i)
+                lbounds[i] = lower[i];
+            params->setAttributeValue("LOWER_BOUND", lbounds);
         }
-        params->setAttributeValue("UPPER_BOUND", ubounds);
+
+        if (upper) {
+            ArrayOfDouble ubounds(npar);
+            for (Py_ssize_t i = 0; i < npar; ++i) {
+                if (lower && upper[i] <= lower[i]) {
+                    PyErr_Format(PyExc_ValueError,
+                        "for element " PY_SSIZE_T_FORMAT ", upper bound (%d) is smaller than lower bound (%d)",
+                        i, upper[i], lower[i]);
+                    return nullptr;
+                }
+                ubounds[i] = upper[i];
+            }
+            params->setAttributeValue("UPPER_BOUND", ubounds);
+        }
 
     // process known options (allow unknown options to pass as strings)
         std::vector<bool> options_ok{
-            true, /* all okay */
-            false /* BB_OUTPUT_TYPE */ };
+            true,  /* all okay */
+            false, /* have BB_OUTPUT_TYPE */
+            false, /* have DISPLAY_DEGREE */
+            false, /* have DISPLAY_ALL_EVAL */
+            false  /* have DIMENSION */ };
         PyObject* items = PyDict_Items(kwds);
         for (Py_ssize_t i = 0; i < PyList_GET_SIZE(items); ++i) {
             PyObject* pair = PyList_GET_ITEM(items, i);
@@ -374,6 +384,11 @@ static PyObject* minimize(PyObject* /* dummy */, PyObject* args, PyObject* kwds)
                 options_ok[1] = true;
                 params->setAttributeValue("BB_OUTPUT_TYPE", stringToBBOutputTypeList(value));
             } else {
+                if (strcmp(key, "BB_OUTPUT_TYPE") == 0)        options_ok[1] = true;
+                else if (strcmp(key, "DISPLAY_DEGREE") == 0)   options_ok[2] = true;
+                else if (strcmp(key, "DISPLAY_ALL_EVAL") == 0) options_ok[3] = true;
+                else if (strcmp(key, "DIMENSION") == 0)        options_ok[4] = true;
+
                 const char* value = PyCompat_PyText_AsString(PyTuple_GET_ITEM(pair, 1));
                 if (!value) {
                     PyErr_Format(PyExc_TypeError, "string expected for value of \'%s\'", key);
@@ -391,10 +406,14 @@ static PyObject* minimize(PyObject* /* dummy */, PyObject* args, PyObject* kwds)
     // add defaults/implied parameters
         if (!options_ok[1])
             params->setAttributeValue("BB_OUTPUT_TYPE", stringToBBOutputTypeList("OBJ"));
-        params->setAttributeValue("DISPLAY_DEGREE", 0);              // pending verbose flag
-        params->setAttributeValue("DISPLAY_ALL_EVAL", false);        // id.
-        params->setAttributeValue("DIMENSION", (size_t)npar);
-        RNG::resetPrivateSeedToDefault();
+        if (!options_ok[2]) params->setAttributeValue("DISPLAY_DEGREE", 0);
+        if (!options_ok[3]) params->setAttributeValue("DISPLAY_ALL_EVAL", false);
+        if (!options_ok[4]) params->setAttributeValue("DIMENSION", (size_t)npar);
+
+        params->getPbParams()->setAttributeValue("GRANULARITY", NOMAD::ArrayOfDouble(npar, 0.0000001));
+
+
+        RNG::resetPrivateSeedToDefault();        // TODO: allow user override
 
     // verify (should never fail at this point)
         params->checkAndComply();
@@ -457,7 +476,8 @@ static PyObject* minimize(PyObject* /* dummy */, PyObject* args, PyObject* kwds)
         return nullptr;
     }
 
-    PyErr_SetString(PyExc_RuntimeError, "NOMAD run failed");
+    if (!result && !PyErr_Occurred())
+        PyErr_SetString(PyExc_RuntimeError, "NOMAD run failed");
     return result;
 }
 
