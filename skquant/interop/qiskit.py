@@ -168,7 +168,7 @@ class NOMAD(Optimizer):
         """ Return support level dictionary """
         return {
             'gradient': Optimizer.SupportLevel.ignored,
-            'bounds': Optimizer.SupportLevel.required,
+            'bounds': Optimizer.SupportLevel.supported,
             'initial_point': Optimizer.SupportLevel.supported,
         }
 
