@@ -4,10 +4,12 @@
 #include "../Nomad/nomad.hpp"
 #include "../Cache/CacheBase.hpp"
 #include "../Type/BBOutputType.hpp"
+#include "../Algos/EvcInterface.hpp"
 #include "../Math/RNG.hpp"
 
-#include <stdexcept>
 #include <memory>
+#include <sstream>
+#include <stdexcept>
 #include <vector>
 
 #include <stdint.h>
@@ -27,12 +29,31 @@ namespace SQNomad {
 
 //- helpers ------------------------------------------------------------------
 namespace {
+
 class PyGILRAII {
     PyGILState_STATE m_GILState;
 public:
     PyGILRAII() : m_GILState(PyGILState_Ensure()) {}
     ~PyGILRAII() { PyGILState_Release(m_GILState); }
 };
+
+class PyUnGILRAII {
+    PyThreadState* m_ThreadState;
+public:
+    PyUnGILRAII() { m_ThreadState = PyEval_SaveThread(); }
+    ~PyUnGILRAII() { PyEval_RestoreThread(m_ThreadState); }
+};
+
+class EvcInterfaceReset {
+public:
+    ~EvcInterfaceReset() {
+    // resetting the evaluator control is necessary b/c it's implementation is a static
+    // shared_ptr: since the evaluator is user-provided, it may be destroyed after the
+    // user level library was already unloaded
+        EvcInterface::getEvaluatorControl()->setEvaluator(nullptr);
+    }
+};
+
 } // unnamed namespace
 
 
@@ -183,7 +204,7 @@ public:
         std::vector<bool> evalOk(np, false);
         countEval.resize(np, false);
 
-        auto bboutputl = stringToBBOutputTypeList("OBJ");
+        auto bbOutputType = _evalParams->getAttributeValue<NOMAD::BBOutputTypeList>("BB_OUTPUT_TYPE");
 
      // TODO: this code can be called in parallel by NOMAD; need to test whether
      // to place GIL acquisition inside the loop itself where needed, rathern than
@@ -203,18 +224,41 @@ public:
             double* buf = (double*)PyArray_DATA((PyArrayObject*)py_x);
             for (size_t j = 0; j < x->size(); ++j) buf[j] = (*x)[j].todouble();
             PyObject* res = PyObject_CallObject(m_callback, args);
-            evalOk[i] = (bool)res;
+            evalOk[i] = false;
             if (res) {
-                double dres = PyFloat_AsDouble(res);
-                if (!(dres == -1. && PyErr_Occurred())) {
-                    Eval e{};
-                    e.setF(dres);
-                    e.setH(Eval::defaultComputeH(e, bboutputl));
-                    x_ptr->setEval(e, EvalType::BB);
+                std::ostringstream sbbo;
+
+                if (PyTuple_Check(res)) {
+                    evalOk[i] = true;
+                    for (Py_ssize_t resi = 0; resi < PyTuple_GET_SIZE(res); ++resi) {
+                        double dres = PyFloat_AsDouble(PyTuple_GET_ITEM(res, resi));
+                        if (dres == -1. && PyErr_Occurred()) {
+                            evalOk[i] = false;
+                            break;
+                        }
+                        if (resi != 0)
+                            sbbo << " ";
+                        sbbo << dres;
+                    }
+                } else {
+                    double dres = PyFloat_AsDouble(res);
+                    if (!(dres == -1. && PyErr_Occurred())) {
+                        evalOk[i] = true;
+                        sbbo << dres;
+                    }
                 }
+
+                if (evalOk[i]) {
+                    const NOMAD::EvalType& evalType = getEvalType();
+                    x_ptr->setBBO(sbbo.str(), bbOutputType, evalType);
+                }
+
                 Py_DECREF(res);
-            } else
+            }
+
+            if (!evalOk[i])
                 PyErr_Print();        // TODO: fetch errors and reset on return
+
             countEval[i] = true;
         }
         Py_XDECREF(args);
@@ -254,8 +298,10 @@ static PyObject* minimize(PyObject* /* dummy */, PyObject* args, PyObject* kwds)
     // get initial
         double* par = nullptr;
         Py_ssize_t npar = GetBuffer(PyTuple_GET_ITEM(args, 1), 'd', sizeof(double), (void*&)par, true);
-        if (!par || npar == 0)
-            return nullptr;       // error already set
+        if (!par || npar == 0) {
+            PyErr_SetString(PyExc_TypeError, "unable to convert parameter array");
+            return nullptr;
+        }
 
         Point x0(npar);
         for (Py_ssize_t i = 0; i < npar; ++i)
@@ -267,8 +313,10 @@ static PyObject* minimize(PyObject* /* dummy */, PyObject* args, PyObject* kwds)
         for (Py_ssize_t iarg : {2, 3}) {
             void*& bounds = (void*&)(iarg == 2 ? lower : upper);
             Py_ssize_t nbounds = GetBuffer(PyTuple_GET_ITEM(args, iarg), 'd', sizeof(double), bounds, true);
-            if (!bounds || nbounds == 0)
-                return nullptr;       // error already set
+            if (!bounds || nbounds == 0) {
+                PyErr_SetString(PyExc_TypeError, "unable to convert bounds array");
+                return nullptr;
+            }
 
             if (npar != nbounds) {
                  PyErr_Format(PyExc_ValueError,
@@ -296,29 +344,40 @@ static PyObject* minimize(PyObject* /* dummy */, PyObject* args, PyObject* kwds)
         params->setAttributeValue("UPPER_BOUND", ubounds);
 
     // process known options (allow unknown options to pass as strings)
-        bool options_ok = true;
+        std::vector<bool> options_ok{
+            true, /* all okay */
+            false /* BB_OUTPUT_TYPE */ };
         PyObject* items = PyDict_Items(kwds);
         for (Py_ssize_t i = 0; i < PyList_GET_SIZE(items); ++i) {
             PyObject* pair = PyList_GET_ITEM(items, i);
 
             const char* key = PyCompat_PyText_AsString(PyTuple_GET_ITEM(pair, 0));
             if (!key) {
-                options_ok = false;
+                options_ok[0] = false;
                 break;
             }
 
             if (strcmp(key, "MAX_BB_EVAL") == 0) {
                 long budget = PyInt_AsLong(PyTuple_GET_ITEM(pair, 1));
                 if (budget == -1 && PyErr_Occurred()) {
-                    options_ok = false;
+                    options_ok[0] = false;
                     break;
                 }
                 params->setAttributeValue("MAX_BB_EVAL", (int)budget);
+            } else if (strcmp(key, "BB_OUTPUT_TYPE") == 0) {
+                const char* value = PyCompat_PyText_AsString(PyTuple_GET_ITEM(pair, 1));
+                if (!value) {
+                    PyErr_Format(PyExc_TypeError, "BB_OUTPUT_TYPE value field should be string");
+                    options_ok[0] = false;
+                    break;
+                }
+                options_ok[1] = true;
+                params->setAttributeValue("BB_OUTPUT_TYPE", stringToBBOutputTypeList(value));
             } else {
                 const char* value = PyCompat_PyText_AsString(PyTuple_GET_ITEM(pair, 1));
                 if (!value) {
                     PyErr_Format(PyExc_TypeError, "string expected for value of \'%s\'", key);
-                    options_ok = false;
+                    options_ok[0] = false;
                     break;
                 }
                 params->readParamLine(std::string(key) + " " + value);    // may fail on check later
@@ -326,11 +385,12 @@ static PyObject* minimize(PyObject* /* dummy */, PyObject* args, PyObject* kwds)
         }
         Py_DECREF(items);
 
-        if (!options_ok)
-            return nullptr;
+        if (!options_ok[0])
+            return nullptr;  // error already set
 
     // add defaults/implied parameters
-        params->setAttributeValue("BB_OUTPUT_TYPE", stringToBBOutputTypeList("OBJ"));
+        if (!options_ok[1])
+            params->setAttributeValue("BB_OUTPUT_TYPE", stringToBBOutputTypeList("OBJ"));
         params->setAttributeValue("DISPLAY_DEGREE", 0);              // pending verbose flag
         params->setAttributeValue("DISPLAY_ALL_EVAL", false);        // id.
         params->setAttributeValue("DIMENSION", (size_t)npar);
@@ -355,13 +415,14 @@ static PyObject* minimize(PyObject* /* dummy */, PyObject* args, PyObject* kwds)
             std::make_unique<PyCallback>(params->getEvalParams(), PyTuple_GET_ITEM(args, 0)));
 
         bool run_ok = false;
-        Py_BEGIN_ALLOW_THREADS
+        {
+        PyUnGILRAII m;
+        EvcInterfaceReset e;
 
         cnomad.start();
         run_ok = cnomad.run();
         cnomad.end();
-
-        Py_END_ALLOW_THREADS
+        }
 
         if (run_ok) {
             std::vector<EvalPoint> evpl;
@@ -385,14 +446,18 @@ static PyObject* minimize(PyObject* /* dummy */, PyObject* args, PyObject* kwds)
                 PyErr_SetString(PyExc_RuntimeError, "no feasible point");
         }
 
+    } catch (const NOMAD::Exception& e) {
+        PyErr_Format(PyExc_RuntimeError, "%s", e.what());
+        return nullptr;
     } catch (const std::exception& e) {
-        PyErr_Format(PyExc_TypeError, "C++ exception: %s", e.what());
+        PyErr_Format(PyExc_RuntimeError, "[C++] %s", e.what());
         return nullptr;
     } catch (...) {
-        PyErr_SetString(PyExc_TypeError, "Unknown C++ exception");
+        PyErr_SetString(PyExc_RuntimeError, "Unknown C++ exception");
         return nullptr;
     }
 
+    PyErr_SetString(PyExc_RuntimeError, "NOMAD run failed");
     return result;
 }
 

@@ -5,10 +5,15 @@ from SQCommon import Result, ObjectiveFunction
 import libsqnomad
 
 
-def minimize(f, x0, bounds, budget=100, optin=None, **optkwds):
+def minimize(f, x0, bounds, budget=100, options=None, **kwds):
     opts = {
         'MAX_BB_EVAL' : budget,
     }
+
+    if options:
+       opts.update(options)
+    if kwds:
+       opts.update(kwds)
 
     objfunc = ObjectiveFunction(f)
 

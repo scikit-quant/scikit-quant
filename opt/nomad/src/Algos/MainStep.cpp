@@ -400,11 +400,6 @@ void NOMAD::MainStep::endImp()
 #endif // TIME_STATS
 
     displayDetailedStats();
-
-// resetting the evaluator control is necessary b/c it's implementation is a static
-// shared_ptr: since the evaluator is user-provided, it may be destroyed after the
-// user level library was already unloaded
-    NOMAD::EvcInterface::getEvaluatorControl()->setEvaluator(nullptr);
 }
 
 
