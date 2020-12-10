@@ -25,7 +25,7 @@ copyright = '2020, Wim Lavrijsen'
 author = 'Wim Lavrijsen'
 
 # The full version, including alpha/beta/rc tags
-release = '0.7.0'
+release = '0.8.1'
 
 
 # -- General configuration ---------------------------------------------------
