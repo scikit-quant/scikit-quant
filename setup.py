@@ -13,7 +13,7 @@ requirements.append('SQSnobFit==0.4.5')
 
 # NOMAD is slow to build, so only add if requested
 extras_require = {
-    'NOMAD': 'SQNomad==0.2.0',
+    'NOMAD': 'SQNomad==0.2.1',
 }
 
 # external optimizers

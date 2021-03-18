@@ -3,8 +3,15 @@
 Changelog
 =========
 
-master: 0.8.0
--------------
+
+2021-03-17: 0.8.1
+-----------------
+
+* Make SQNomad optional (use option [NOMAD]) as it is rather slow to install
+
+
+2020-11-30: 0.8.0
+-----------------
 
 * Added SQNomand
 * Require rpy2 to be installed separately as ORBIT use is uncommon

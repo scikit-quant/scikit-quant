@@ -14,6 +14,12 @@ created directory ("WORK" in this example)::
   (WORK) $ python -m pip install scikit-quant
   (WORK) $
 
+Note that ``SQNomad`` is optional, as it may take a long time to build on
+machines with few cores.
+You can either install it directly, using ``pip``, or enable the option::
+
+  (WORK) $ python -m pip install scikit-quant[NOMAD]
+
 If you use ``pip`` directly on the command line, instead of through
 ``python``, make sure that the ``PATH`` envar points to the bin directory
 that will contain the installed entry points during the installation, as the
