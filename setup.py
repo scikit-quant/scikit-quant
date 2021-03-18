@@ -10,7 +10,11 @@ requirements = []
 requirements.append('SQCommon==0.3.2')
 requirements.append('SQImFil==0.3.7')
 requirements.append('SQSnobFit==0.4.5')
-requirements.append('SQNomad==0.1.0')
+
+# NOMAD is slow to build, so only add if requested
+extras_require = {
+    'NOMAD': 'SQNomad==0.2.0',
+}
 
 # external optimizers
 requirements.append('Py-BOBYQA>=1.1')
@@ -75,6 +79,8 @@ setup(
 
     setup_requires=setup_requirements,
     install_requires=requirements,
+
+    extras_require=extras_require,
 
     keywords='quantum computing optimizers',
 
