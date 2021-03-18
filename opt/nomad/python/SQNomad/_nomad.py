@@ -26,7 +26,7 @@ def minimize(f, x0, bounds=None, budget=100, options=None, **kwds):
 
     objfunc = ObjectiveFunction(f)
 
-    if bounds:
+    if bounds is not None:
         lower = bounds[:,0].flatten()
         upper = bounds[:,1].flatten()
     else:
