@@ -534,7 +534,18 @@ extern "C" void initlibsqnomad()
     using namespace SQNomad;
 
 // setup interpreter
-    PyEval_InitThreads();
+    if (!Py_IsInitialized()) {
+    // this happens if Cling comes in first
+#if PY_VERSION_HEX < 0x03020000
+        PyEval_InitThreads();
+#endif
+        Py_Initialize();
+#if PY_VERSION_HEX >= 0x03020000
+#if PY_VERSION_HEX < 0x03090000
+        PyEval_InitThreads();
+#endif
+#endif
+    }
 
 // force numpy
     import_array()
