@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 
-import codecs, os, sys, glob, re
+import codecs, os, sys, glob, re, tempfile
 from setuptools import setup, find_packages, Extension
 try:
+    from numpy.distutils.command.build import build as _build
     from numpy.distutils.command.build_ext import build_ext as _build_ext
 except ImportError:     # no numpy / no PEP517
+    from distutils.command.build import build as _build
     from distutils.command.build_ext import build_ext as _build_ext
+from distutils.util import get_platform
 from setuptools import Command
 from codecs import open
 
@@ -60,9 +63,12 @@ class my_build_extension(_build_ext):
 
 class my_build_src(Command):           # just needs to exist (used by numpy to build SWIG etc.)
     def initialize_options(self):
-        pass
+        self.build_src = None
 
     def finalize_options(self):
+        if self.build_src is None:
+            plat_specifier = ".{}-{}.{}".format(get_platform(), *sys.version_info[:2])
+            self.build_src = os.path.join(tempfile.gettempdir(), 'src'+plat_specifier)
         pass
 
     def run(self):
@@ -70,6 +76,7 @@ class my_build_src(Command):           # just needs to exist (used by numpy to b
 
 
 cmdclass = {
+    'build':     _build,
     'build_src': my_build_src,
     'build_ext': my_build_extension }
 
