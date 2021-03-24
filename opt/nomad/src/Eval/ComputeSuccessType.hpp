@@ -54,8 +54,9 @@
 #ifndef __NOMAD400_COMPUTESUCCESSTYPE__
 #define __NOMAD400_COMPUTESUCCESSTYPE__
 
-#include "../Eval/EvalPoint.hpp"
+#include "../config.hpp"
 
+#include "../Eval/EvalPoint.hpp"
 
 #include "../nomad_nsbegin.hpp"
 /// Definition for compute success type function.
@@ -127,7 +128,7 @@ public:
      */
     static SuccessType computeSuccessTypePhaseOne(const EvalPointPtr& evalPoint,
                                                   const EvalPointPtr& xInf,
-                                                  const Double& hMax __attribute__((unused)));
+                                                  const Double& NOMAD_UNUSED(hMax));
 
     /// Function to compute success type for a surrogate evaluation.
     /**

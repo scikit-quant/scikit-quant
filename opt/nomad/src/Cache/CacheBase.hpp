@@ -56,6 +56,8 @@
 #include <atomic>       // For atomic
 #include <vector>
 
+#include "../config.hpp"
+
 #include "../Eval/EvalPoint.hpp"
 #include "../Param/CacheParameters.hpp"
 
@@ -207,11 +209,12 @@ public:
        each EvalPoint may be processed in place. It is not needed
        to remove it from the cache, process it, and then put it back.
      */
-    virtual void processOnAllPoints(void (*func)(EvalPoint&) __attribute__((unused)))
+    typedef void (*EvalFunc_t)(EvalPoint&);
+    virtual void processOnAllPoints(EvalFunc_t NOMAD_UNUSED(func))
     {
         std::cerr << "Warning: processOnAllPoints is not implemented for this type of cache." << std::endl;
     }
-    virtual void processOnAllPoints(void (*func)(EvalPoint&) __attribute__((unused)), const int mainThreadNum __attribute__((unused)))
+    virtual void processOnAllPoints(EvalFunc_t NOMAD_UNUSED(func), const int NOMAD_UNUSED(mainThreadNum))
     {
         std::cerr << "Warning: processOnAllPoints is not implemented for this type of cache." << std::endl;
     }

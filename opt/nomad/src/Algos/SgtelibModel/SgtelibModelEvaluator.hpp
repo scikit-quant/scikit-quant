@@ -47,6 +47,8 @@
 #ifndef __NOMAD400_SGTELIB_MODEL_EVALUATION__
 #define __NOMAD400_SGTELIB_MODEL_EVALUATION__
 
+#include "../../config.hpp"
+
 #include "../../Algos/SgtelibModel/SgtelibModel.hpp"
 #include "../../Eval/Evaluator.hpp"
 #include "../../Type/SgtelibModelFeasibilityType.hpp"
@@ -78,7 +80,7 @@ public:
     virtual ~SgtelibModelEvaluator();
 
     bool eval_x(EvalPoint &x,
-                const Double &hMax __attribute__((unused)),
+                const Double & NOMAD_UNUSED(hMax),
                 bool &countEval) const override;
 
     static void evalH(const ArrayOfDouble& bbo,

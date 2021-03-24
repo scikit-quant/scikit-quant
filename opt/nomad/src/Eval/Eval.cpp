@@ -50,6 +50,7 @@
  \date   March 2017
  \see    Eval.hpp
  */
+
 #include "../Eval/Eval.hpp"
 
 // static member initialization
@@ -194,7 +195,7 @@ NOMAD::Double NOMAD::Eval::defaultComputeH(const NOMAD::Eval& eval, const NOMAD:
 
 
 /// Default computation of h component for a constraint (squared bbo for PB)
-NOMAD::Double NOMAD::Eval::defaultComputeHComponent( const NOMAD::BBOutputType & bbOutputType , size_t index __attribute__((unused)), const NOMAD::Double &bbo )
+NOMAD::Double NOMAD::Eval::defaultComputeHComponent( const NOMAD::BBOutputType & bbOutputType , size_t NOMAD_UNUSED(index), const NOMAD::Double &bbo )
 {
     if ( ! NOMAD::BBOutputTypeIsConstraint(bbOutputType) )
     {

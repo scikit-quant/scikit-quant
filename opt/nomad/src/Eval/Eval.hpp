@@ -56,6 +56,8 @@
 
 #include <functional>   // For std::function
 
+#include "../config.hpp"
+
 #include "../Eval/BBOutput.hpp"
 #include "../Param/EvalParameters.hpp"
 
@@ -230,7 +232,7 @@ public:
      \return              The component of h for constraint referred by index.
      */
     static Double defaultComputeHComponent( const BBOutputType & bbOutputType ,
-                                            size_t index __attribute__((unused)),
+                                            size_t NOMAD_UNUSED(index),
                                             const Double &bbo );
 
 
@@ -336,7 +338,7 @@ public:
      */
     static SuccessType computeSuccessTypePhaseOne(const Eval* eval1,
                                                   const Eval* eval2,
-                                                  const Double& hMax  __attribute__((unused)));
+                                                  const Double& NOMAD_UNUSED(hMax));
 
     /// Set which function should be used to compute success type
     static void setComputeSuccessTypeFunction(const std::function<SuccessType(

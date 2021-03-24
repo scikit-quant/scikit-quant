@@ -1,6 +1,7 @@
 // Copyright UC Regents
 
 #include "PyCompat.h"
+#include "../config.hpp"
 #include "../Nomad/nomad.hpp"
 #include "../Cache/CacheBase.hpp"
 #include "../Type/BBOutputType.hpp"
@@ -197,7 +198,7 @@ public:
 
 public:
     std::vector<bool> eval_block(Block& block,
-            __attribute__((unused)) const Double& hMax,
+            const Double& NOMAD_UNUSED(hMax),
             std::vector<bool>& countEval) const override {
 
         const size_t np = block.size();
