@@ -11,9 +11,9 @@
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural           */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation    */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)       */
+/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
+/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
+/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
