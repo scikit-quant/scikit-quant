@@ -57,7 +57,8 @@ class my_build_extension(_build_ext):
         if 'linux' in sys.platform or 'darwin' in sys.platform:
             ext.extra_compile_args += ['-std=c++14']
         elif 'win32' in sys.platform:
-            ext.extra_compile_args += ['/std:c++14']
+          # also define DLL_EXPORTS for sgtelib and NOMAD::Clock
+            ext.extra_compile_args += ['/std:c++14', '/DDLL_EXPORTS']
 
         return _build_ext.build_extension(self, ext)
 
