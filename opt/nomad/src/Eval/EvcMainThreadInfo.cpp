@@ -44,10 +44,9 @@
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
 
-#include <unistd.h> // For usleep
-
 #include "../Eval/EvcMainThreadInfo.hpp"
 #include "../Output/OutputQueue.hpp"
+#include "../Util/MicroSleep.hpp"
 
 /*-------------------------*/
 /* Class EvcMainThreadInfo */
@@ -238,7 +237,7 @@ std::vector<NOMAD::EvalPoint> NOMAD::EvcMainThreadInfo::retrieveAllEvaluatedPoin
             warningShown = true;
         }
         OUTPUT_INFO_END
-        usleep(10);
+        microsleep(10);
     }
 
     allEvaluatedPoints.insert(allEvaluatedPoints.end(),

@@ -51,7 +51,7 @@
 #include "../Output/OutputDirectToFile.hpp"
 #include "../Util/AllStopReasons.hpp"
 #include "../Util/Clock.hpp"
-#include <unistd.h> // For usleep
+#include "../Util/MicroSleep.hpp"
 
 /*------------------------*/
 /* Class EvaluatorControl */
@@ -999,7 +999,7 @@ NOMAD::SuccessType NOMAD::EvaluatorControl::run()
                 warningShown = true;
             }
             OUTPUT_INFO_END
-            usleep(10);
+            microsleep(10);
 
             // Update stopReason in case we found a success
             if (getOpportunisticEval(threadNum)

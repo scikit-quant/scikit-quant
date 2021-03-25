@@ -51,6 +51,7 @@
  \see    Double.hpp
  */
 #include <iomanip>  // For std::setprecision
+#include <cctype>   // for toupper
 #include "../Math/Double.hpp"
 #include "../Util/defines.hpp"
 
