@@ -110,7 +110,7 @@ bool NOMAD::EvcMainThreadInfo::getOpportunisticEval() const
         {
             return _evalContParams->getAttributeValue<bool>("OPPORTUNISTIC_EVAL");
         }
-        catch (NOMAD::ParameterToBeChecked &e)
+        catch (NOMAD::ParameterToBeChecked & /* e */)
         {
             // Exception due to parameters being in process of checkAndComply().
             // While will loop - Retry
@@ -134,7 +134,7 @@ bool NOMAD::EvcMainThreadInfo::getUseCache() const
         {
             return _evalContParams->getAttributeValue<bool>("USE_CACHE");
         }
-        catch (NOMAD::ParameterToBeChecked &e)
+        catch (NOMAD::ParameterToBeChecked & /* e */)
         {
             // Exception due to parameters being in process of checkAndComply().
             // While will loop - Retry
@@ -158,7 +158,7 @@ size_t NOMAD::EvcMainThreadInfo::getMaxBbEvalInSubproblem() const
         {
             return _evalContParams->getAttributeValue<size_t>("MAX_BB_EVAL_IN_SUBPROBLEM");
         }
-        catch (NOMAD::ParameterToBeChecked &e)
+        catch (NOMAD::ParameterToBeChecked & /* e */)
         {
             // Exception due to parameters being in process of checkAndComply().
             // While will loop - Retry

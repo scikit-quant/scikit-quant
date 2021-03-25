@@ -57,6 +57,7 @@
 #include <fstream>
 #include <iostream>
 
+
 // Init static members
 NOMAD::BBOutputTypeList NOMAD::CacheSet::_bbOutputType = NOMAD::BBOutputTypeList();
 std::unique_ptr<NOMAD::CacheBase> NOMAD::CacheBase::_single = nullptr;
@@ -481,11 +482,8 @@ size_t NOMAD::CacheSet::find(const NOMAD::Point & X,
         {
             if (!errSizeDisplayed)
             {
-                std::string err = "CacheSet: find: Looking for a point of size ";
-                err += X.size();
-                err += " but the cache points are of size ";
-                err += it->size();
-                std::cerr << "Warning: CacheSet: find: Looking for a point of size " << X.size() << " but found cache point of size " << it->size() << std::endl;
+                std::cerr << "Warning: CacheSet: find: Looking for a point of size " << X.size()
+                          << " but found cache point of size " << it->size() << std::endl;
                 errSizeDisplayed = true;
             }
             continue; // Points are in different dimensions -skip.

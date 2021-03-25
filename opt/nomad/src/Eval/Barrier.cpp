@@ -95,13 +95,13 @@ void NOMAD::Barrier::init(const NOMAD::Point& fixedVariable,
     {
         checkXFeas(evalType);
     }
-    catch (NOMAD::Exception &exceptionFeas)
+    catch (NOMAD::Exception & /* exceptionFeas */)
     {
         try
         {
             checkXInf();
         }
-        catch (NOMAD::Exception &exceptionInf)
+        catch (NOMAD::Exception & /* exceptionInf */)
         {
             std::string s = "Barrier constructor: xFeas or xInf must be evaluated.\n";
             if (_xFeas.size() >= 1)
@@ -162,7 +162,7 @@ void NOMAD::Barrier::checkCache()
     {
         NOMAD::CacheBase::getInstance();
     }
-    catch (NOMAD::Exception &e)
+    catch (NOMAD::Exception & /* e */)
     {
         throw NOMAD::Exception(__FILE__, __LINE__,
                                "Cache must be instantiated before initializing Barrier.");

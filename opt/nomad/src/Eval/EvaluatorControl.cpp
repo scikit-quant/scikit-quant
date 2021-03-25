@@ -620,7 +620,7 @@ bool NOMAD::EvaluatorControl::popBlock(NOMAD::BlockForEval &block)
             sgteBlockSize = _evalContGlobalParams->getAttributeValue<size_t>("SGTE_MAX_BLOCK_SIZE");
             gotBlockSize = true;
         }
-        catch (NOMAD::ParameterToBeChecked &e)
+        catch (NOMAD::ParameterToBeChecked & /* e */)
         {
             // While will loop - Retry
         }
@@ -1165,7 +1165,7 @@ bool NOMAD::EvaluatorControl::reachedMaxEval() const
         maxEval      = _evalContGlobalParams->getAttributeValue<size_t>("MAX_EVAL");
         maxBlockEval = _evalContGlobalParams->getAttributeValue<size_t>("MAX_BLOCK_EVAL");
     }
-    catch (NOMAD::ParameterToBeChecked &e)
+    catch (NOMAD::ParameterToBeChecked & /* e */)
     {
         // Early out. Ignore the test: return false.
         return false;
