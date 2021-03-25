@@ -53,7 +53,6 @@
 #include "../../Cache/CacheBase.hpp"
 #include "../../Output/OutputQueue.hpp"
 
-#include <unistd.h> // For usleep
 
 void NOMAD::MadsInitialization::init()
 {

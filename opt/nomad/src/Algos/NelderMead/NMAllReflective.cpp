@@ -44,6 +44,8 @@
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
 
+#include "../../config.hpp"
+
 #include "../../Algos/NelderMead/NMAllReflective.hpp"
 #include "../../Algos/NelderMead/NMReflective.hpp"
 
@@ -58,7 +60,7 @@ void NOMAD::NMAllReflective::startImp()
 
         // Generate REFLECT, EXPANSION, INSIDE_CONTRACTION, OUTSIDE_CONTRACTION (no SHRINK)
         // All points are generated before evaluation
-        verifyGenerateAllPointsBeforeEval(__PRETTY_FUNCTION__, true);
+        verifyGenerateAllPointsBeforeEval(NOMAD_PRETTY_FUNCTION, true);
 
         generateTrialPoints();
         verifyPointsAreOnMesh(getName());

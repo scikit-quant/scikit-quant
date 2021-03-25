@@ -44,6 +44,8 @@
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
 
+#include "../../config.hpp"
+
 #include "../../Algos/EvcInterface.hpp"
 #include "../../Algos/Mads/DoublePollMethod.hpp"
 #include "../../Algos/Mads/NP1UniPollMethod.hpp"
@@ -92,7 +94,7 @@ void NOMAD::Poll::init()
 void NOMAD::Poll::startImp()
 {
     // Sanity check.
-     verifyGenerateAllPointsBeforeEval(__PRETTY_FUNCTION__, false);
+     verifyGenerateAllPointsBeforeEval(NOMAD_PRETTY_FUNCTION, false);
 
 }
 
@@ -103,7 +105,7 @@ bool NOMAD::Poll::runImp()
     std::string s;
 
     // Sanity check. The runImp function should be called only when trial points are generated and evaluated for each search method separately.
-    verifyGenerateAllPointsBeforeEval(__PRETTY_FUNCTION__, false);
+    verifyGenerateAllPointsBeforeEval(NOMAD_PRETTY_FUNCTION, false);
 
     NOMAD::SuccessType bestSuccessYet = NOMAD::SuccessType::NOT_EVALUATED;
     NOMAD::SuccessType success = NOMAD::SuccessType::NOT_EVALUATED;
@@ -149,7 +151,7 @@ bool NOMAD::Poll::runImp()
 void NOMAD::Poll::endImp()
 {
     // Sanity check. The endImp function should be called only when trial points are generated and evaluated for each search method separately.
-    verifyGenerateAllPointsBeforeEval(__PRETTY_FUNCTION__, false);
+    verifyGenerateAllPointsBeforeEval(NOMAD_PRETTY_FUNCTION, false);
 
     postProcessing(NOMAD::EvcInterface::getEvaluatorControl()->getEvalType());
 }
@@ -164,7 +166,7 @@ void NOMAD::Poll::generateTrialPoints()
     // Sanity check. The generateTrialPoints function should be called only
     // when trial points are also generated for each search method (MegaSearchPoll).
     // After generation, all trials points evaluated at once.
-    verifyGenerateAllPointsBeforeEval(__PRETTY_FUNCTION__, true);
+    verifyGenerateAllPointsBeforeEval(NOMAD_PRETTY_FUNCTION, true);
 
     OUTPUT_INFO_START
     AddOutputInfo("Generate points for " + _name, true, false);

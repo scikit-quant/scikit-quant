@@ -46,6 +46,8 @@
 
 #include <algorithm>    // For std::merge and std::unique
 
+#include "../../config.hpp"
+
 #include "../../Algos/Mads/MadsIteration.hpp"
 #include "../../Algos/Mads/MadsMegaIteration.hpp"
 #include "../../Algos/Mads/Mads.hpp"
@@ -82,7 +84,7 @@ void NOMAD::MadsIteration::startImp()
 
 bool NOMAD::MadsIteration::runImp()
 {
-    verifyGenerateAllPointsBeforeEval(__PRETTY_FUNCTION__, false);
+    verifyGenerateAllPointsBeforeEval(NOMAD_PRETTY_FUNCTION, false);
 
     bool iterationSuccess = false;
     NOMAD::SuccessType bestSuccessYet = NOMAD::SuccessType::NOT_EVALUATED;
