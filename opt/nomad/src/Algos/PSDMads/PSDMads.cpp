@@ -52,8 +52,8 @@
 #include "../../Algos/PSDMads/PSDMadsMegaIteration.hpp"
 #include "../../Cache/CacheBase.hpp"
 #include "../../Output/OutputQueue.hpp"
+#include "../../Util/MicroSleep.hpp"
 
-#include <unistd.h> // For usleep
 
 #ifdef _OPENMP
 // Initialize static lock variable
@@ -104,7 +104,7 @@ void NOMAD::PSDMads::waitForBarrier() const
     // Wait until _barrier is initialized, at the beginning of run.
     while (nullptr == _barrier)
     {
-        usleep(10);
+        microsleep(10);
     }
 }
 
