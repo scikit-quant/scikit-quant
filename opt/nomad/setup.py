@@ -5,6 +5,7 @@ from setuptools import setup, find_packages, Extension
 try:
     from numpy.distutils.command.build import build as _build
     from numpy.distutils.command.build_ext import build_ext as _build_ext
+    from numpy.distutils.command.config_compiler import config_cc
 except ImportError:     # no numpy / no PEP517
     from distutils.command.build import build as _build
     from distutils.command.build_ext import build_ext as _build_ext
@@ -75,11 +76,26 @@ class my_build_src(Command):           # just needs to exist (used by numpy to b
     def run(self):
         pass
 
+class  my_config_fc(Command):          # dummify as fortran goes unused
+    def initialize_options(self):
+        pass
+    def finalize_options(self):
+        pass
+    def run(self):
+        pass
+
 
 cmdclass = {
     'build':     _build,
     'build_src': my_build_src,
     'build_ext': my_build_extension }
+
+try:
+    cmdclass.update({
+        'config_cc' : config_cc,
+        'config_fc' : my_config_fc })
+except NameError:
+    pass      # numpy not available
 
 
 setup(
