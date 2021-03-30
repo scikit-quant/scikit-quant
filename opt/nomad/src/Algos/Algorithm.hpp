@@ -78,7 +78,7 @@ protected:
     bool                             _forceAlgoComment; ///< When true, do not change comment until reset is called
 
     bool _endDisplay;
-    
+
     NOMAD::SuccessType               _algoBestSuccess ; ///< The best succes type of the algorithm (cannot always get this information from _megaIteration).
 
     bool                             _algoSuccessful;
