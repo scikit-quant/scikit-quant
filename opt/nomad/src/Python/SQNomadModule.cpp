@@ -358,48 +358,59 @@ static PyObject* minimize(PyObject* /* dummy */, PyObject* args, PyObject* kwds)
             false, /* have DISPLAY_DEGREE */
             false, /* have DISPLAY_ALL_EVAL */
             false  /* have DIMENSION */ };
-        PyObject* items = PyDict_Items(kwds);
-        for (Py_ssize_t i = 0; i < PyList_GET_SIZE(items); ++i) {
-            PyObject* pair = PyList_GET_ITEM(items, i);
+        if (kwds) {
+            PyObject* items = PyDict_Items(kwds);
+            for (Py_ssize_t i = 0; i < PyList_GET_SIZE(items); ++i) {
+                PyObject* pair = PyList_GET_ITEM(items, i);
 
-            const char* key = PyCompat_PyText_AsString(PyTuple_GET_ITEM(pair, 0));
-            if (!key) {
-                options_ok[0] = false;
-                break;
+                const char* key = PyCompat_PyText_AsString(PyTuple_GET_ITEM(pair, 0));
+                if (!key) {
+                    options_ok[0] = false;
+                    break;
+                }
+
+                if (strcmp(key, "MAX_BB_EVAL") == 0 || strcmp(key, "MAX_EVAL") == 0) {
+                    long budget = PyInt_AsLong(PyTuple_GET_ITEM(pair, 1));
+                    if (budget == -1 && PyErr_Occurred()) {
+                        options_ok[0] = false;
+                        break;
+                    }
+                    params->setAttributeValue("MAX_BB_EVAL", (int)budget);
+
+                // have to set MAX_EVAL along side MAX_BB_EVAL, unless overridden in options
+                    if (strcmp(key, "MAX_BB_EVAL") == 0) {
+                        PyObject* v = PyDict_GetItemString(kwds, "MAX_EVAL");
+                        if (!v) {
+                            PyErr_Clear();
+                            params->setAttributeValue("MAX_EVAL", (size_t)100*budget);
+                        }
+                    }
+                } else if (strcmp(key, "BB_OUTPUT_TYPE") == 0) {
+                    const char* value = PyCompat_PyText_AsString(PyTuple_GET_ITEM(pair, 1));
+                    if (!value) {
+                        PyErr_Format(PyExc_TypeError, "BB_OUTPUT_TYPE value field should be string");
+                        options_ok[0] = false;
+                        break;
+                    }
+                    options_ok[1] = true;
+                    params->setAttributeValue("BB_OUTPUT_TYPE", stringToBBOutputTypeList(value));
+                } else {
+                    if (strcmp(key, "BB_OUTPUT_TYPE") == 0)        options_ok[1] = true;
+                    else if (strcmp(key, "DISPLAY_DEGREE") == 0)   options_ok[2] = true;
+                    else if (strcmp(key, "DISPLAY_ALL_EVAL") == 0) options_ok[3] = true;
+                    else if (strcmp(key, "DIMENSION") == 0)        options_ok[4] = true;
+
+                    const char* value = PyCompat_PyText_AsString(PyTuple_GET_ITEM(pair, 1));
+                    if (!value) {
+                        PyErr_Format(PyExc_TypeError, "string expected for value of \'%s\'", key);
+                        options_ok[0] = false;
+                        break;
+                    }
+                    params->readParamLine(std::string(key) + " " + value);    // may fail on check later
+                }
             }
-
-            if (strcmp(key, "MAX_BB_EVAL") == 0) {
-                long budget = PyInt_AsLong(PyTuple_GET_ITEM(pair, 1));
-                if (budget == -1 && PyErr_Occurred()) {
-                    options_ok[0] = false;
-                    break;
-                }
-                params->setAttributeValue("MAX_BB_EVAL", (int)budget);
-            } else if (strcmp(key, "BB_OUTPUT_TYPE") == 0) {
-                const char* value = PyCompat_PyText_AsString(PyTuple_GET_ITEM(pair, 1));
-                if (!value) {
-                    PyErr_Format(PyExc_TypeError, "BB_OUTPUT_TYPE value field should be string");
-                    options_ok[0] = false;
-                    break;
-                }
-                options_ok[1] = true;
-                params->setAttributeValue("BB_OUTPUT_TYPE", stringToBBOutputTypeList(value));
-            } else {
-                if (strcmp(key, "BB_OUTPUT_TYPE") == 0)        options_ok[1] = true;
-                else if (strcmp(key, "DISPLAY_DEGREE") == 0)   options_ok[2] = true;
-                else if (strcmp(key, "DISPLAY_ALL_EVAL") == 0) options_ok[3] = true;
-                else if (strcmp(key, "DIMENSION") == 0)        options_ok[4] = true;
-
-                const char* value = PyCompat_PyText_AsString(PyTuple_GET_ITEM(pair, 1));
-                if (!value) {
-                    PyErr_Format(PyExc_TypeError, "string expected for value of \'%s\'", key);
-                    options_ok[0] = false;
-                    break;
-                }
-                params->readParamLine(std::string(key) + " " + value);    // may fail on check later
-            }
+            Py_DECREF(items);
         }
-        Py_DECREF(items);
 
         if (!options_ok[0])
             return nullptr;  // error already set
