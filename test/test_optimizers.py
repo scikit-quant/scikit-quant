@@ -50,7 +50,7 @@ class TestOPTIMIZERS:
 
         # ImFil
         result, history = \
-             skqopt.minimize(f_easy_simple, x0, bounds, budget, method='imfil')
+            skqopt.minimize(f_easy_simple, x0, bounds, budget, method='imfil')
         assert type(result.optpar) == np.ndarray
         assert np.round(sum(result.optpar)-sum(ref_results[f_easy_simple]['imfil']), 8) == 0.0
 
@@ -58,13 +58,13 @@ class TestOPTIMIZERS:
         from SQSnobFit import optset
         options = optset(maxmp=len(x0)+6)
         result, history = \
-             skqopt.minimize(f_easy_simple, [], bounds, budget, method='snobfit', options=options)
+            skqopt.minimize(f_easy_simple, [], bounds, budget, method='snobfit', options=options)
         assert type(result.optpar) == np.ndarray
         assert np.round(sum(result.optpar)-sum(ref_results[f_easy_simple]['snobfit']), 8) == 0.0
 
         # NOMAD
         result, history = \
-             skqopt.minimize(f_easy_simple, x0, bounds, budget, method='nomad')
+            skqopt.minimize(f_easy_simple, x0, bounds, budget, method='nomad')
         assert type(result.optpar) == np.ndarray
         assert np.round(sum(result.optpar)-sum(ref_results[f_easy_simple]['nomad']), 8) == 0.0
         result, history = \
@@ -72,7 +72,7 @@ class TestOPTIMIZERS:
 
         # Py-BOBYQA
         result, history = \
-             skqopt.minimize(f_easy_simple, x0, bounds, budget, method='bobyqa')
+            skqopt.minimize(f_easy_simple, x0, bounds, budget, method='bobyqa')
         assert type(result.optpar) == np.ndarray
         assert np.round(sum(result.optpar), 5) == 0
 
@@ -81,7 +81,7 @@ class TestOPTIMIZERS:
             randstate = 1
             np.random.seed(randstate)
             result, history = \
-                 skqopt.minimize(f_easy_simple, x0, bounds, budget, method='orbit')
+                skqopt.minimize(f_easy_simple, x0, bounds, budget, method='orbit')
             assert type(result.optpar) == np.ndarray
             assert np.round(sum(result.optpar)-sum((0.00076624, 0.00060909)), 7) == 0
 
