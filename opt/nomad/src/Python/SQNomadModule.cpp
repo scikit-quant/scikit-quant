@@ -48,9 +48,9 @@ public:
 class EvcInterfaceReset {
 public:
     ~EvcInterfaceReset() {
-    // resetting the evaluator control is necessary b/c it's implementation is a static
-    // shared_ptr: since the evaluator is user-provided, it may be destroyed after the
-    // user level library was already unloaded
+    // resetting the evaluator is necessary b/c it's implementation is a static
+    // shared_ptr: since the evaluator is user-provided, it may be destroyed after
+    // the user level library was already unloaded
         EvcInterface::getEvaluatorControl()->setEvaluator(nullptr);
     }
 };
@@ -179,7 +179,7 @@ private:
 public:
     PyCallback(std::shared_ptr<EvalParameters> ep, PyObject* f) :
             Evaluator(ep) {
-        Py_INCREF(f); Py_INCREF(f);
+        Py_INCREF(f);
         m_callback = f;
     }
     PyCallback(const PyCallback& pc) : Evaluator(pc) {
@@ -452,6 +452,10 @@ static PyObject* minimize(PyObject* /* dummy */, PyObject* args, PyObject* kwds)
         } catch (...) {
         // non-existent / nothing to clear
         }
+
+    // resetting the evaluator control is necessary as MainStep will otherwise not
+    // re-initialize it, leaving the old "stop reasons" in place, failing the run
+        EvcInterface::setEvaluatorControl(nullptr);
 
     // create and configure NOMAD instance (outside of thread blocks b/c it will own a Python object)
         MainStep cnomad;

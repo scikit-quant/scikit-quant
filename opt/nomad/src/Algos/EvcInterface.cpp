@@ -89,7 +89,6 @@ void NOMAD::EvcInterface::verifyEvaluatorControlNotNull()
 void NOMAD::EvcInterface::setEvaluatorControl(const std::shared_ptr<NOMAD::EvaluatorControl>& evaluatorControl)
 {
     _evaluatorControl = evaluatorControl;
-    verifyEvaluatorControlNotNull();
 }
 
 
