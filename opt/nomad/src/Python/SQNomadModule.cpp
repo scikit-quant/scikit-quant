@@ -357,7 +357,8 @@ static PyObject* minimize(PyObject* /* dummy */, PyObject* args, PyObject* kwds)
             false, /* have BB_OUTPUT_TYPE */
             false, /* have DISPLAY_DEGREE */
             false, /* have DISPLAY_ALL_EVAL */
-            false  /* have DIMENSION */ };
+            false, /* have DIMENSION */
+            false  /* have SEED */ };
         if (kwds) {
             PyObject* items = PyDict_Items(kwds);
             for (Py_ssize_t i = 0; i < PyList_GET_SIZE(items); ++i) {
@@ -394,6 +395,19 @@ static PyObject* minimize(PyObject* /* dummy */, PyObject* args, PyObject* kwds)
                     }
                     options_ok[1] = true;
                     params->setAttributeValue("BB_OUTPUT_TYPE", stringToBBOutputTypeList(value));
+                } else if (strcmp(key, "SEED") == 0) {
+                    const char* value = PyCompat_PyText_AsString(PyTuple_GET_ITEM(pair, 1));
+                    if (!value) {
+                        PyErr_Clear();
+                        long seed = PyInt_AsLong(PyTuple_GET_ITEM(pair, 1));
+                        if (seed == -1 && PyErr_Occurred()) {
+                             options_ok[0] = false;
+                             break;
+                        }
+                        params->setAttributeValue("SEED", (int)seed);
+                    } else
+                        params->readParamLine(std::string(key) + " " + value);
+                    options_ok[5] = true;
                 } else {
                     if (strcmp(key, "BB_OUTPUT_TYPE") == 0)        options_ok[1] = true;
                     else if (strcmp(key, "DISPLAY_DEGREE") == 0)   options_ok[2] = true;
@@ -424,8 +438,8 @@ static PyObject* minimize(PyObject* /* dummy */, PyObject* args, PyObject* kwds)
 
         params->getPbParams()->setAttributeValue("GRANULARITY", NOMAD::ArrayOfDouble(npar, 0.0000001));
 
-
-        RNG::resetPrivateSeedToDefault();        // TODO: allow user override
+        if (!options_ok[5])
+            RNG::resetPrivateSeedToDefault();
 
     // verify (should never fail at this point)
         params->checkAndComply();
