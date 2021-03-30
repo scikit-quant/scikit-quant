@@ -60,6 +60,15 @@
 // Initialize statics
 std::vector<std::string> NOMAD::Evaluator::_tmpFiles = std::vector<std::string>();
 
+namespace {
+
+   struct TmpFilesCleanup {
+      ~TmpFilesCleanup() { NOMAD::Evaluator::removeTmpFiles(); }
+   } _TmpFilesCleanup;
+
+}
+
+
 //
 // Constructor
 //

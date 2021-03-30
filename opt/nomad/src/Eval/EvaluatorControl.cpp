@@ -117,9 +117,6 @@ void NOMAD::EvaluatorControl::destroy()
         }
     }
 
-    // Remove tmp files, clean up after ourselves
-    NOMAD::Evaluator::removeTmpFiles();
-
 #ifdef _OPENMP
     omp_destroy_lock(&_evalQueueLock);
 #endif // _OPENMP
