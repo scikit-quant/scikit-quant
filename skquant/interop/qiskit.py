@@ -4,6 +4,10 @@ import logging
 import skquant.opt as skqopt
 
 from qiskit.aqua.components.optimizers import Optimizer
+try:
+    OptimizerSupportLevel = Optimizer.SupportLevel
+except AttributeError:
+    from qiskit.aqua.components.optimizers import OptimizerSupportLevel
 
 __all__ = [
     'ImFil',
@@ -52,9 +56,9 @@ class ImFil(Optimizer):
     def get_support_level(self):
         """ Return support level dictionary """
         return {
-            'gradient': Optimizer.SupportLevel.ignored,
-            'bounds': Optimizer.SupportLevel.required,
-            'initial_point': Optimizer.SupportLevel.supported,
+            'gradient': OptimizerSupportLevel.ignored,
+            'bounds': OptimizerSupportLevel.required,
+            'initial_point': OptimizerSupportLevel.supported,
         }
 
     def optimize(self, num_vars, objective_function, gradient_function=None,
@@ -109,9 +113,9 @@ class SnobFit(Optimizer):
     def get_support_level(self):
         """ Return support level dictionary """
         return {
-            'gradient': Optimizer.SupportLevel.ignored,
-            'bounds': Optimizer.SupportLevel.required,
-            'initial_point': Optimizer.SupportLevel.supported,
+            'gradient': OptimizerSupportLevel.ignored,
+            'bounds': OptimizerSupportLevel.required,
+            'initial_point': OptimizerSupportLevel.supported,
         }
 
     def optimize(self, num_vars, objective_function, gradient_function=None,
@@ -167,9 +171,9 @@ class NOMAD(Optimizer):
     def get_support_level(self):
         """ Return support level dictionary """
         return {
-            'gradient': Optimizer.SupportLevel.ignored,
-            'bounds': Optimizer.SupportLevel.supported,
-            'initial_point': Optimizer.SupportLevel.supported,
+            'gradient': OptimizerSupportLevel.ignored,
+            'bounds': OptimizerSupportLevel.supported,
+            'initial_point': OptimizerSupportLevel.supported,
         }
 
     def optimize(self, num_vars, objective_function, gradient_function=None,
@@ -224,9 +228,9 @@ class PyBobyqa(Optimizer):
     def get_support_level(self):
         """ Return support level dictionary """
         return {
-            'gradient': Optimizer.SupportLevel.ignored,
-            'bounds': Optimizer.SupportLevel.required,
-            'initial_point': Optimizer.SupportLevel.required,
+            'gradient': OptimizerSupportLevel.ignored,
+            'bounds': OptimizerSupportLevel.required,
+            'initial_point': OptimizerSupportLevel.required,
         }
 
     def optimize(self, num_vars, objective_function, gradient_function=None,
