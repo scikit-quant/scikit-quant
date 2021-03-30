@@ -4,6 +4,15 @@ Changelog
 =========
 
 
+2021-03-29: 0.8.2
+-----------------
+
+* Update Qiskit interop to new Optimizer class interface
+* Port SQNomad to Windows
+* Support more options directly in SQNomad's Python interface
+* Set PyBobyqa's minimum version to 1.2
+
+
 2021-03-17: 0.8.1
 -----------------
 
