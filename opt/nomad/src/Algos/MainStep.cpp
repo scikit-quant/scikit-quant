@@ -387,7 +387,8 @@ bool NOMAD::MainStep::runImp()
         }
      }
 
-    return ret;
+
+     return ret;
 }
 
 
