@@ -17,7 +17,7 @@ ref_results = {
     f_easy_simple : {
         'imfil'   : (-0.00681757,  0.00880743),
         'snobfit' : (-0.00112,    -0.00078),
-        'nomad'   : (0.,          -0.01),
+        'nomad'   : (2.77555756e-17, -0.),
         'bobyqa'  : (-2.3883e-10, -1.3548e-10),
     }
 }
@@ -64,11 +64,14 @@ class TestOPTIMIZERS:
 
         # NOMAD
         result, history = \
-            skqopt.minimize(f_easy_simple, x0, bounds, budget, method='nomad')
+            skqopt.minimize(f_easy_simple, x0, bounds, budget, method='nomad', SEED=1)
         assert type(result.optpar) == np.ndarray
         assert np.round(sum(result.optpar)-sum(ref_results[f_easy_simple]['nomad']), 8) == 0.0
+
+      # 2nd run to make sure internal history gets erased
         result, history = \
-             skqopt.minimize(f_easy_simple, x0, bounds, budget, method='nomad')
+             skqopt.minimize(f_easy_simple, x0, bounds, budget, method='nomad', SEED=1)
+        assert np.round(sum(result.optpar)-sum(ref_results[f_easy_simple]['nomad']), 8) == 0.0
 
         # Py-BOBYQA
         result, history = \
@@ -119,6 +122,7 @@ class TestOPTIMIZERS:
         from skquant.interop.qiskit import NOMAD
 
         optimizer = NOMAD(maxfun=budget)
+        optimizer.set_options(**{'SEED' : 1 })
 
         ret = optimizer.optimize(num_vars=len(x0), objective_function=f_easy_simple, \
                                  variable_bounds=bounds, initial_point=x0)
@@ -164,7 +168,7 @@ class TestOPTIMIZERS:
         from skquant.interop.scipy import nomad
 
         result = scipy.optimize.minimize(f_easy_simple, x0, method=nomad, bounds=bounds,
-                                         options={'budget' : budget})
+                                         options={'budget' : budget, 'SEED' : 1})
         assert type(result) == scipy.optimize.OptimizeResult
         assert np.round(sum(result.x)-sum(ref_results[f_easy_simple]['nomad']), 8) == 0.0
 
