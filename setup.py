@@ -2,7 +2,7 @@ import codecs, glob, os, re, subprocess, sys
 from setuptools import setup, find_packages
 from distutils import log
 
-setup_requirements = []
+setup_requirements = ['wheel']
 add_pkg = []
 requirements = []
 
@@ -13,11 +13,11 @@ requirements.append('SQSnobFit==0.4.5')
 
 # NOMAD is slow to build, so only add if requested
 extras_require = {
-    'NOMAD': 'SQNomad==0.2.1',
+    'NOMAD': 'SQNomad==0.2.2',
 }
 
 # external optimizers
-requirements.append('Py-BOBYQA>=1.1')
+requirements.append('Py-BOBYQA>=1.2')
 
 
 here = os.path.abspath(os.path.dirname(__file__))
