@@ -438,7 +438,7 @@ static PyObject* minimize(PyObject* /* dummy */, PyObject* args, PyObject* kwds)
 
         params->getPbParams()->setAttributeValue("GRANULARITY", NOMAD::ArrayOfDouble(npar, 0.0000001));
 
-        if (!options_ok[5])
+        //if (!options_ok[5])
             RNG::resetPrivateSeedToDefault();
 
     // verify (should never fail at this point)
