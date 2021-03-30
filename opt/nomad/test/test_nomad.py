@@ -26,8 +26,8 @@ class TestNOMAD:
         budget = 40
         x0 = np.array([0.5, 0.5])
 
-        result, history = SQNomad.minimize(f_easy_simple, x0, bounds, budget)
+        result, history = SQNomad.minimize(f_easy_simple, x0, bounds, budget, SEED=1)
 
       # problem is symmetric, so values may have switched: just check the sum
         assert type(result.optpar) == np.ndarray
-        assert np.round(sum(result.optpar)-sum([0., -0.01]), 8) == 0
+        assert np.round(sum(result.optpar)-sum([2.77555756e-17, -0.]), 8) == 0
