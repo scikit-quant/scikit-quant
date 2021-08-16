@@ -14,7 +14,7 @@ Website: http://scikit-quant.org
 Installation
 ------------
 
-   pip install sckit-quant
+   pip install scikit-quant
 
 
 Usage
