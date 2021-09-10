@@ -3,12 +3,12 @@ Prerequisites
 
 The the following packages should be installed to follow this tutorial:
 
-    o BQSKit
-    o Scikit-Quant
-    o Qiskit
-    o OpenFermion
-    o SciPy
-    o Jupyter
+    - BQSKit
+    - Scikit-Quant
+    - Qiskit
+    - OpenFermion
+    - SciPy
+    - Jupyter
 
 The easiest way to install them is to use `pip`, howver on Macbook's with
 an M1 chip, Qiskit can not be installed natively due to inline assembly code.
