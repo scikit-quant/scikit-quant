@@ -48,12 +48,12 @@ The reason for requiring an Intel install is that Qiskit uses inline assembly
 for Intel x86_64 chips. This will, obviously, fail when trying to install
 natively for M1, but works fine through Rosetta. By choosing a full Intel 64b
 install through Anaconda, it is guaranteed that all tools are Intel only. This
-way, not platform mixing occurs, preventing spurious clashes.
+way, no platform mixing occurs, preventing spurious clashes.
 
-There are also still outstanding problems with installing SciPy and Numpy from
-PyPI on M1. Although these can easily be resolved by installing from a Mac
+There are also still outstanding problems with installing SciPy and NumPy from
+PyPI on M1. Although these can easily be resolved by installing through a Mac
 packager (such as MacPorts or Fink) instead, use of Anaconda will side-step
-these issues as well.
+these installation issues as well.
 
 Linux and Macs with an Intel chip
 ---------------------------------
@@ -69,7 +69,7 @@ Windows
 -------
 
 Install Python (https://www.python.org/downloads/windows/) if not already
-available on your system. On the command prompt, create and setup a virtual
+available on your system. On a command prompt, create and setup a virtual
 environment, then install::
 
     $ python3 -m venv TUTORIAL
