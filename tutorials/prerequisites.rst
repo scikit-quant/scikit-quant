@@ -5,6 +5,7 @@ Different parts of the tutorial require some or all of the following packages:
 
     - BQSKit
     - Scikit-Quant
+    - pyDOE
     - Qiskit
     - OpenFermion
     - SciPy
@@ -40,7 +41,7 @@ create a new conda project named "TUTORIAL"::
 
     (base) $ conda create -n TUTORIAL python=3.9
     (TUTORIAL) $ conda activate TUTORIAL
-    (TUTORIAL) $ python -m pip install bqskit scikit-quant qiskit openfermion scipy jupyter
+    (TUTORIAL) $ python -m pip install bqskit scikit-quant pyDOE qiskit openfermion scipy jupyter
 
 If the system asks to install Apple's Rosetta, accept the install.
 
@@ -62,7 +63,7 @@ Create and activate a virtual environment for Python, then install::
 
     $ python3 -m venv TUTORIAL
     $ source TUTORIAL/bin/activate
-    (TUTORIAL) $ python -m pip install bqskit scikit-quant qiskit openfermion scipy jupyter
+    (TUTORIAL) $ python -m pip install bqskit scikit-quant pyDOE qiskit openfermion scipy jupyter
 
 
 Windows
@@ -74,4 +75,4 @@ environment, then install::
 
     $ python3 -m venv TUTORIAL
     $ TUTORIAL\Scripts\activate
-    (TUTORIAL) $ python -m pip install bqskit scikit-quant qiskit openfermion scipy jupyter
+    (TUTORIAL) $ python -m pip install bqskit scikit-quant pyDOE qiskit openfermion scipy jupyter
