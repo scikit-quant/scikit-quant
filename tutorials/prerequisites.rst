@@ -10,6 +10,7 @@ Different parts of the tutorial require some or all of the following packages:
     - OpenFermion
     - SciPy
     - Jupyter
+    - matplotlib
 
 These install easily on most platforms using Python's `pip` and `venv`, with
 the exception of Macbooks with an M1 chip, where Anaconda
@@ -41,7 +42,7 @@ create a new conda project named "TUTORIAL"::
 
     (base) $ conda create -n TUTORIAL python=3.9
     (TUTORIAL) $ conda activate TUTORIAL
-    (TUTORIAL) $ python -m pip install bqskit scikit-quant pyDOE qiskit openfermion scipy jupyter
+    (TUTORIAL) $ python -m pip install bqskit scikit-quant pyDOE qiskit openfermion scipy jupyter matplotlib
 
 If the system asks to install Apple's Rosetta, accept the install.
 
@@ -63,7 +64,7 @@ Create and activate a virtual environment for Python, then install::
 
     $ python3 -m venv TUTORIAL
     $ source TUTORIAL/bin/activate
-    (TUTORIAL) $ python -m pip install bqskit scikit-quant pyDOE qiskit openfermion scipy jupyter
+    (TUTORIAL) $ python -m pip install bqskit scikit-quant pyDOE qiskit openfermion scipy jupyter matplotlib
 
 
 Windows
@@ -75,4 +76,4 @@ environment, then install::
 
     $ python3 -m venv TUTORIAL
     $ TUTORIAL\Scripts\activate
-    (TUTORIAL) $ python -m pip install bqskit scikit-quant pyDOE qiskit openfermion scipy jupyter
+    (TUTORIAL) $ python -m pip install bqskit scikit-quant pyDOE qiskit openfermion scipy jupyter matplotlib
