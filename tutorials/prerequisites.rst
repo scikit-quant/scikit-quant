@@ -20,7 +20,8 @@ download and install of Apple's Rosetta if that was not already enabled, it is
 highly recommended to pre-install these packages before attending the tutorial.
 
 The following lists the platform-specific instructions to setup Python and a
-virtual environment, as well as to install all packages.
+virtual environment, as well as to install all packages. (Upgrading pip is
+always recommended, but may not be necessary.)
 
 Note: the NOMAD optimizer is a C++ library that requires a local build and
 thus a local C++ compiler to install. It is therefore not provided by default
@@ -42,6 +43,7 @@ create a new conda project named "TUTORIAL"::
 
     (base) $ conda create -n TUTORIAL python=3.9
     (TUTORIAL) $ conda activate TUTORIAL
+    (TUTORIAL) $ python -m pip install --upgrade pip
     (TUTORIAL) $ python -m pip install bqskit scikit-quant pyDOE qiskit openfermion scipy jupyter matplotlib
 
 If the system asks to install Apple's Rosetta, accept the install.
@@ -57,6 +59,7 @@ PyPI on M1. Although these can easily be resolved by installing through a Mac
 packager (such as MacPorts or Fink) instead, use of Anaconda will side-step
 these installation issues as well.
 
+
 Linux and Macs with an Intel chip
 ---------------------------------
 
@@ -64,6 +67,7 @@ Create and activate a virtual environment for Python, then install::
 
     $ python3 -m venv TUTORIAL
     $ source TUTORIAL/bin/activate
+    (TUTORIAL) $ python -m pip install --upgrade pip
     (TUTORIAL) $ python -m pip install bqskit scikit-quant pyDOE qiskit openfermion scipy jupyter matplotlib
 
 
@@ -76,4 +80,5 @@ environment, then install::
 
     $ python3 -m venv TUTORIAL
     $ TUTORIAL\Scripts\activate
+    (TUTORIAL) $ python -m pip install --upgrade pip
     (TUTORIAL) $ python -m pip install bqskit scikit-quant pyDOE qiskit openfermion scipy jupyter matplotlib
