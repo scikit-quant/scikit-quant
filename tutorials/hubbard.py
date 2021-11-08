@@ -98,20 +98,33 @@ class EnergyObjective:
         self._trotter_steps = trotter_steps
 
       # Create the simulator
-        self._noise_model = noise_model
         self._expectation = qk_opflow.PauliExpectation()
         if shots <= 0 and noise_model is None:
             self._simulator = None
             self._meas_components = None
         else:
-            if self._noise_model is None:
+            if noise_model is None:
                 backend = qk.Aer.get_backend('qasm_simulator')
             else:
               # nominally, options should pass through kwargs of get_backend, however,
               # this does not appear to work for Aer, so set the noise_model option
               # explicitly on the retrieved backend
-                backend = qk.Aer.get_backend('aer_simulator', noise_model=noise_model)
-                backend.set_options(noise_model=noise_model)
+                if type(noise_model) == str:
+                  # use an existing, named, IBM backend from the qiskit test suite to
+                  # create a realistic noise model; if 'realistic' default to Montreal
+                    if noise_model.lower() == 'realistic':
+                        noise_model = 'Montreal'
+
+                    import qiskit.test.mock as qk_mock
+                    import qiskit.providers.aer as qk_aer_provides
+
+                    fake_backend = 'Fake'+noise_model[0].upper()+noise_model[1:]
+                    fake_device  = getattr(qk_mock, fake_backend)()
+
+                    backend = qk_aer_provides.AerSimulator.from_backend(fake_device)
+                else:
+                    backend = qk.Aer.get_backend('aer_simulator', noise_model=noise_model)
+                    backend.set_options(noise_model=noise_model)
 
                 if shots <= 0:
                   # if not simulating sampling, use the AerPauliExpectation, which computes
