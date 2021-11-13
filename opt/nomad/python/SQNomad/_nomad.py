@@ -3,6 +3,7 @@
 from SQCommon import Result, ObjectiveFunction
 
 import libsqnomad
+import numpy as np
 
 
 def minimize(f, x0, bounds=None, budget=100, options=None, **kwds):
@@ -11,6 +12,10 @@ def minimize(f, x0, bounds=None, budget=100, options=None, **kwds):
        opts.update(options)
     if kwds:
        opts.update(kwds)
+
+  # ensure the use of numpy arrays
+    if x0 is not None and not isinstance(x0, np.ndarray):
+        x0 = np.array(x0)
 
   # TODO: processing of unknown keyworks is all string-based; should parse
   # the .txt files in src/Attributes instead and take up their types
@@ -27,6 +32,8 @@ def minimize(f, x0, bounds=None, budget=100, options=None, **kwds):
     objfunc = ObjectiveFunction(f)
 
     if bounds is not None:
+        if not isinstance(bounds, np.ndarray):
+            bounds = np.array(bounds)
         lower = bounds[:,0].flatten()
         upper = bounds[:,1].flatten()
     else:
