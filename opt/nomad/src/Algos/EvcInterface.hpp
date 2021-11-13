@@ -64,7 +64,7 @@ private:
     const Step* _step;      ///< Step that uses the EvaluatorControl
     Point _fixedVariable;   ///< Full dimension point including fixed variables
 
-    DLL_ALGO_API static std::shared_ptr<EvaluatorControl> _evaluatorControl; ///< Static EvaluatorControl
+    static std::shared_ptr<EvaluatorControl> _evaluatorControl; ///< Static EvaluatorControl
 
 public:
     /// Constructor

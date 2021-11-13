@@ -90,7 +90,7 @@ protected:
      *   It could be a set (CacheSet), an unordered_set (CacheSet with
      *   precompiler option USE_UNORDEREDSET) map, multimap, SQL database, etc.
     */
-    DLL_EVAL_API static std::atomic<size_t> _nbCacheHits;
+    static std::atomic<size_t> _nbCacheHits;
 
     /// Name of the file to write or read cache to.
     /**
@@ -109,7 +109,7 @@ protected:
     /// The cache parameters used by the cache
     std::shared_ptr<CacheParameters> _cacheParams;
 
-    DLL_EVAL_API static std::unique_ptr<CacheBase> _single; ///< The singleton
+    static std::unique_ptr<CacheBase> _single; ///< The singleton
 
     /// Dimension of the points in the cache.
     /**

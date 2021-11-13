@@ -61,6 +61,8 @@ class my_build_extension(_build_ext):
         if 'linux' in sys.platform or 'darwin' in sys.platform:
             ext.extra_compile_args += ['-std=c++14']
         elif 'win32' in sys.platform:
+            if not 'NOOMP' in os.environ:
+                ext.extra_compile_args += ['/openmp']
           # also define DLL_EXPORTS for sgtelib and NOMAD::Clock
             ext.extra_compile_args += ['/std:c++14', '/DDLL_EXPORTS']
 
@@ -128,12 +130,10 @@ setup(
 
         'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
 
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
 
         'Natural Language :: English'
     ],

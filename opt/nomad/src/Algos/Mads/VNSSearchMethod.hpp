@@ -58,11 +58,11 @@ class VNSSearchMethod final: public SearchMethodAlgo
 private:
     OutputLevel _displayLevel;
 
-    DLL_ALGO_API static Point   _refFrameCenter;    ///< The reference frame center. If frame center same as reference, do not perform search
-    DLL_ALGO_API static size_t  _bbEvalByVNS;       ///< Counter of VNS evals, used to trigger VNS.
-    
-    DLL_ALGO_API static size_t  _nbVNSSearchRuns;   ///< Counter of VNS runs (for display).
-    
+    static Point   _refFrameCenter;    ///< The reference frame center. If frame center same as reference, do not perform search
+    static size_t  _bbEvalByVNS;       ///< Counter of VNS evals, used to trigger VNS.
+
+    static size_t  _nbVNSSearchRuns;   ///< Counter of VNS runs (for display).
+
 /*----------------------------------------------------------------------*/
 
 

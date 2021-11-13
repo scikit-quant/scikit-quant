@@ -74,11 +74,11 @@ private:
 
     /// Lock for multithreading
 #ifdef _OPENMP
-    DLL_EVAL_API static omp_lock_t  _cacheLock;
+    static omp_lock_t  _cacheLock;
 #endif // _OPENMP
 
-    DLL_EVAL_API static BBOutputTypeList    _bbOutputType;  ///< Corresponds to parameter BB_OUTPUT_TYPE used for this cache
-    DLL_EVAL_API static ArrayOfDouble       _bbEvalFormat;  ///< Used to write cache correctly
+    static BBOutputTypeList    _bbOutputType;  ///< Corresponds to parameter BB_OUTPUT_TYPE used for this cache
+    static ArrayOfDouble       _bbEvalFormat;  ///< Used to write cache correctly
 
     EvalPointSet _cache;  ///< The set of points that constitutes the cache.
 

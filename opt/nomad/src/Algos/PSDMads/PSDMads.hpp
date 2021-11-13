@@ -67,7 +67,7 @@ private:
     std::atomic<bool>           _lastMadsSuccessful;    ///< Used as indication to enlarge or refine the mesh. Updated by all Mads.
 
 #ifdef _OPENMP
-    DLL_ALGO_API static omp_lock_t  _psdMadsLock;       ///< Lock access to the previous elements when they are updated.
+    static omp_lock_t  _psdMadsLock;       ///< Lock access to the previous elements when they are updated.
 #endif
 
 public:
