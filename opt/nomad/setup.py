@@ -63,8 +63,8 @@ class my_build_extension(_build_ext):
         elif 'win32' in sys.platform:
             if not 'NOOMP' in os.environ:
                 ext.extra_compile_args += ['/openmp']
-          # also define DLL_EXPORTS for sgtelib and NOMAD::Clock
-            ext.extra_compile_args += ['/std:c++14', '/DDLL_EXPORTS']
+          # define symbol exports for sgtelib and NOMAD::Clock
+            ext.extra_compile_args += ['/std:c++14', '/DDLL_EXPORTS', '/DDLL_UTIL_EXPORTS']
 
         return _build_ext.build_extension(self, ext)
 
