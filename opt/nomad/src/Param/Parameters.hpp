@@ -149,7 +149,7 @@ protected:
     /*---------*/
     /* Members */
     /*---------*/
-    DLL_UTIL_API static ParameterEntries _paramEntries; ///< The set of entries obtained when reading a parameter file.
+    static ParameterEntries _paramEntries; ///< The set of entries obtained when reading a parameter file.
 
     std::string _typeName; ///< The type of parameters: ex. Problem, Run
 
@@ -165,7 +165,7 @@ protected:
      Map of attribute names and type name as string.
      Static to the class.
      */
-    DLL_UTIL_API static std::map<std::string,std::string> _typeOfAttributes;
+    static std::map<std::string,std::string> _typeOfAttributes;
 
     /// Constructors
     /**

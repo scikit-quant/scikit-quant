@@ -171,7 +171,7 @@ public:
         _y = y;
         _z = z;
     }
-    
+
     /// Reset seed to given values provided as a single string.
     /**
      Used to set back RNG in a known state.
@@ -191,19 +191,15 @@ public:
             _z = ps;
 
     }
-    
 
 private:
 
-    DLL_UTIL_API static uint32_t x_def, y_def, z_def;    ///< Initial values for the random number generator
-    DLL_UTIL_API static uint32_t _x, _y, _z;             ///< Current values for the random number generator
+    static uint32_t x_def, y_def, z_def;    ///< Initial values for the random number generator
+    static uint32_t _x, _y, _z;             ///< Current values for the random number generator
 
-    DLL_UTIL_API static int _s;
-
-
+    static int _s;
 };
 
 #include "../nomad_nsend.hpp"
-
 
 #endif // __NOMAD_4_0_RNG__

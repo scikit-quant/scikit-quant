@@ -178,12 +178,12 @@ private:
     // NOTE It does not seem relevant for the lock to be static,
     // because OutputQueue is a singleton anyway. If staticity causes problems,
     // we could remove the static keyword.
-    DLL_UTIL_API static omp_lock_t      _s_queue_lock;
+    static omp_lock_t      _s_queue_lock;
 #endif // _OPENMP
 
-    DLL_UTIL_API static bool            _hasBeenInitialized;    ///< Flag for initialization (initialization cannot be performed more than once).
+    static bool            _hasBeenInitialized;    ///< Flag for initialization (initialization cannot be performed more than once).
 
-    DLL_UTIL_API static std::unique_ptr<OutputQueue>    _single;                ///< The singleton
+    static std::unique_ptr<OutputQueue>    _single;                ///< The singleton
 
     /// Queue of all the OutputInfo we have to print.
     std::vector<OutputInfo>             _queue;
