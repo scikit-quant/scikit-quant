@@ -2,7 +2,7 @@
 /*  sgtelib - A surrogate model library for derivative-free optimization               */
 /*  Version 2.0.2                                                                      */
 /*                                                                                     */
-/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */
+/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */ 
 /*                           Bastien Talgorn - McGill University, Montreal             */
 /*                                                                                     */
 /*  Author: Bastien Talgorn                                                            */
@@ -32,8 +32,8 @@
 SGTELIB::Surrogate_Kriging::Surrogate_Kriging ( SGTELIB::TrainingSet & trainingset,
                                                 SGTELIB::Surrogate_Parameters param) :
   SGTELIB::Surrogate ( trainingset , param ),
-  _R                 ( "R",0,0             ),
-  _Ri                ( "Ri",0,0            ),
+  _R                 ( "R",0,0             ),  
+  _Ri                ( "Ri",0,0            ),  
   _H                 ( "H",0,0             ),
   _alpha             ( "alpha",0,0         ),
   _beta              ( "beta",0,0          ),
@@ -56,7 +56,7 @@ SGTELIB::Surrogate_Kriging::~Surrogate_Kriging ( void ) {
 /*          display           */
 /*----------------------------*/
 void SGTELIB::Surrogate_Kriging::display_private ( std::ostream & out ) const {
-  //_alpha.display(out);
+  //_alpha.display(out);  
   _beta.display(out);
   _var.display(out);
 }//
@@ -78,10 +78,9 @@ bool SGTELIB::Surrogate_Kriging::init_private ( void ) {
 /*--------------------------------------*/
 bool SGTELIB::Surrogate_Kriging::build_private ( void ) {
 
-  // The build mainly consists of computing alpha
+  // The build mainly consists of computing alpha  
 
   // Compute scaling distance for each training point
-  const int mvar = _trainingset.get_mvar();
   const int nvar = _trainingset.get_nvar();
   const SGTELIB::Matrix & Zs = get_matrix_Zs();
 
@@ -103,25 +102,28 @@ bool SGTELIB::Surrogate_Kriging::build_private ( void ) {
 
   _beta.set_name("beta");
   _alpha.set_name("alpha");
-
-  _var = SGTELIB::Matrix("var",1,mvar);
+  
+  _var = SGTELIB::Matrix("var",1,_m);
   double v;
   SGTELIB::Matrix Zj;
   SGTELIB::Matrix Vj;
-  for (int j=0 ; j<mvar ; j++){
+  for (int j=0 ; j<_m ; j++){
     Zj = Zs.get_col(j);
     Zj = (Zj-_H*_beta.get_col(j));
     Vj = Zj.transpose() * _Ri * Zj;
     v = Vj.get(0,0) / (_p-nvar);
     if (v<0) return false;
     _var.set(0,j,v);
-
+    
   }
 
   _ready = true;
-  return true;
-
+  return true;    
+  
 }//
+
+
+
 
 
 /*--------------------------------------*/
@@ -148,7 +150,7 @@ const SGTELIB::Matrix SGTELIB::Surrogate_Kriging::compute_covariance_matrix ( co
       R.set(i1,i2,cov);
     }
   }
-
+  
   return R;
 }//
 
@@ -169,7 +171,7 @@ void SGTELIB::Surrogate_Kriging::predict_private ( const SGTELIB::Matrix & XXs,
 
 void SGTELIB::Surrogate_Kriging::predict_private (const SGTELIB::Matrix & XXs,
                                                 SGTELIB::Matrix * ZZs,
-                                                SGTELIB::Matrix * std,
+                                                SGTELIB::Matrix * std, 
                                                 SGTELIB::Matrix * ei ,
                                                 SGTELIB::Matrix * cdf) {
   check_ready(__FILE__,__FUNCTION__,__LINE__);
@@ -259,7 +261,7 @@ bool SGTELIB::Surrogate_Kriging::compute_cv_values (void){
   const SGTELIB::Matrix RiH = _Ri*_H;
   const SGTELIB::Matrix Q = _Ri - RiH*( _H.transpose()*_Ri*_H)*RiH.transpose();
   const SGTELIB::Matrix dQ = Q.diag_inverse();
-
+  
   // Init matrices
   if ( !  _Zvs){
     _Zvs = new SGTELIB::Matrix;
@@ -267,7 +269,7 @@ bool SGTELIB::Surrogate_Kriging::compute_cv_values (void){
     _Zvs->replace_nan(+INF);
     _Zvs->set_name("Zvs");
   }
-
+    
   if ( !  _Svs){
     _Svs = new SGTELIB::Matrix ("Svs",_p,_m);
     double q;
@@ -314,3 +316,9 @@ void SGTELIB::Surrogate_Kriging::compute_metric_linv (void){
   }
 
 }//
+
+
+
+
+
+

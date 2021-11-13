@@ -2,7 +2,7 @@
 /*  sgtelib - A surrogate model library for derivative-free optimization               */
 /*  Version 2.0.2                                                                      */
 /*                                                                                     */
-/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */
+/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */ 
 /*                           Bastien Talgorn - McGill University, Montreal             */
 /*                                                                                     */
 /*  Author: Bastien Talgorn                                                            */
@@ -45,7 +45,7 @@ namespace SGTELIB {
     METRIC_ARMSECV, // Agregate Leave-one-out cross-validation
     METRIC_OE,  // Order error on the training points
     METRIC_OECV,  // Order error on the cross-validation output
-    METRIC_AOE,  // Agregate Order error
+    METRIC_AOE,  // Agregate Order error 
     METRIC_AOECV,  // Agregate Order error on the cross-validation output
     METRIC_EFIOE,  // Order error on the cross-validation output
     METRIC_EFIOECV,  // Agregate Order error on the cross-validation output
@@ -66,6 +66,7 @@ namespace SGTELIB {
   // Convert a metric to another metric that returns only 1 obj.
   SGTELIB::metric_t metric_convert_single_obj ( const SGTELIB::metric_t mt );
 
-}
 
+
+}
 #endif

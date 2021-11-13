@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -61,8 +62,8 @@ void NOMAD::QuadModelSinglePass::generateTrialPoints ()
     // Model Update is handled in start().
     if (!_stopReasons->checkTerminate() && updateSuccess && getModel()->is_ready() )
     {
-        // Clear sgte value info from cache. For each pass we suppose we have a different quatric model and Sgte value must be re-evaluated.
-        NOMAD::CacheBase::getInstance()->clearSgte(NOMAD::getThreadNum());
+        // Clear model value info from cache. For each pass we suppose we have a different quatric model and MODEL value must be re-evaluated.
+        NOMAD::CacheBase::getInstance()->clearModelEval(NOMAD::getThreadNum());
 
         // Optimize to generate oracle points on this model
         // Initialize optimize member - model optimizer on sgte

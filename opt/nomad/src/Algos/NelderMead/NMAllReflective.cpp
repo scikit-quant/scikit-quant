@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -44,11 +45,9 @@
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
 
-#include "../../config.hpp"
-
 #include "../../Algos/NelderMead/NMAllReflective.hpp"
 #include "../../Algos/NelderMead/NMReflective.hpp"
-
+#include "../../Algos/SubproblemManager.hpp"
 
 
 void NOMAD::NMAllReflective::startImp()
@@ -64,58 +63,69 @@ void NOMAD::NMAllReflective::startImp()
 
         generateTrialPoints();
         verifyPointsAreOnMesh(getName());
-        updatePointsWithFrameCenter();
-
     }
 }
+
 
 void NOMAD::NMAllReflective::generateTrialPoints ()
 {
     NOMAD::NMReflective reflect( this );
 
     // Need to set the current step type before starting
-    reflect.setCurrentNMStepType( NMStepType::REFLECT );
+    reflect.setCurrentNMStepType( NOMAD::StepType::NM_REFLECT );
 
     // Create trial points but no evaluation
     reflect.start();
     reflect.end();
     auto trialPts = reflect.getTrialPoints();
-    for ( const auto & pt : trialPts )
-        insertTrialPoint( pt );
+    for (auto evalPoint : trialPts)
+    {
+        evalPoint.addGenStep(getStepType());
+        insertTrialPoint(evalPoint);
+    }
 
     // Expand simplex
     if ( ! _stopReasons->checkTerminate() )
     {
-        reflect.setCurrentNMStepType( NMStepType::EXPAND );
+        reflect.setCurrentNMStepType( NOMAD::StepType::NM_EXPAND );
         reflect.start();
         reflect.end();
         trialPts = reflect.getTrialPoints();
-        for ( const auto & pt : trialPts )
-            insertTrialPoint( pt );
+        for (auto evalPoint : trialPts)
+        {
+            evalPoint.addGenStep(getStepType());
+            insertTrialPoint(evalPoint);
+        }
 
     }
 
     // Inside contraction of simplex
     if ( ! _stopReasons->checkTerminate() )
     {
-        reflect.setCurrentNMStepType( NMStepType::INSIDE_CONTRACTION );
+        reflect.setCurrentNMStepType( NOMAD::StepType::NM_INSIDE_CONTRACTION );
         reflect.start();
         reflect.end();
         trialPts = reflect.getTrialPoints();
-        for ( const auto & pt : trialPts )
-            insertTrialPoint( pt );
+        for (auto evalPoint : trialPts)
+        {
+            evalPoint.addGenStep(getStepType());
+            insertTrialPoint(evalPoint);
+        }
 
     }
 
     // Outside contraction of simplex
     if ( ! _stopReasons->checkTerminate() )
     {
-        reflect.setCurrentNMStepType( NMStepType::OUTSIDE_CONTRACTION );
+        reflect.setCurrentNMStepType( NOMAD::StepType::NM_OUTSIDE_CONTRACTION );
         reflect.start();
         reflect.end();
         trialPts = reflect.getTrialPoints();
-        for ( const auto & pt : trialPts )
-            insertTrialPoint( pt );
+        for (auto evalPoint : trialPts)
+        {
+            evalPoint.addGenStep(getStepType());
+            insertTrialPoint(evalPoint);
+        }
 
     }
 
@@ -125,5 +135,4 @@ void NOMAD::NMAllReflective::generateTrialPoints ()
         auto nmStopReason = NOMAD::AlgoStopReasons<NOMAD::NMStopType>::get ( getAllStopReasons() );
         nmStopReason->set(NOMAD::NMStopType::NM_SINGLE_COMPLETED);
     }
-
 }

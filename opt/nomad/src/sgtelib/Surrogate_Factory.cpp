@@ -2,7 +2,7 @@
 /*  sgtelib - A surrogate model library for derivative-free optimization               */
 /*  Version 2.0.2                                                                      */
 /*                                                                                     */
-/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */
+/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */ 
 /*                           Bastien Talgorn - McGill University, Montreal             */
 /*                                                                                     */
 /*  Author: Bastien Talgorn                                                            */
@@ -56,51 +56,52 @@ SGTELIB::Surrogate * SGTELIB::Surrogate_Factory ( SGTELIB::TrainingSet & TS,
 
   SGTELIB::Surrogate * S;
   SGTELIB::Surrogate_Parameters p ( s );
+  
 
 
   switch ( p.get_type() ) {
 
-  case SGTELIB::SVN:
+  case SGTELIB::SVN: 
     throw SGTELIB::Exception ( __FILE__ , __LINE__ ,
       "Surrogate_Factory: not implemented yet! \""+s+"\"" );
 
-  case SGTELIB::PRS:
+  case SGTELIB::PRS: 
     S = new Surrogate_PRS(TS,p);
     break;
 
-  case SGTELIB::PRS_EDGE:
+  case SGTELIB::PRS_EDGE: 
     S = new Surrogate_PRS_EDGE(TS,p);
     break;
 
-  case SGTELIB::PRS_CAT:
+  case SGTELIB::PRS_CAT: 
     S = new Surrogate_PRS_CAT(TS,p);
     break;
 
-  case SGTELIB::KS:
+  case SGTELIB::KS: 
     S = new Surrogate_KS(TS,p);
     break;
 
-  case SGTELIB::CN:
+  case SGTELIB::CN: 
     S = new Surrogate_CN(TS,p);
     break;
 
-  case SGTELIB::RBF:
+  case SGTELIB::RBF: 
     S = new Surrogate_RBF(TS,p);
     break;
 
-  case SGTELIB::LOWESS:
+  case SGTELIB::LOWESS: 
     S = new Surrogate_LOWESS(TS,p);
     break;
 
-  case SGTELIB::ENSEMBLE:
+  case SGTELIB::ENSEMBLE: 
     S = new Surrogate_Ensemble(TS,p);
     break;
 
-  case SGTELIB::KRIGING:
+  case SGTELIB::KRIGING: 
     S = new Surrogate_Kriging(TS,p);
     break;
 
-  default:
+  default: 
     throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"Undefined type" );
   }
 
@@ -129,3 +130,4 @@ void SGTELIB::surrogate_delete ( SGTELIB::Surrogate * S ){
     S = NULL;
   }
 }//
+

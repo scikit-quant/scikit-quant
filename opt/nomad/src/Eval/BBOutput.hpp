@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -51,13 +52,12 @@
  \see    BBOutput.cpp
  */
 
-#ifndef __NOMAD400_BB_OUTPUT__
-#define __NOMAD400_BB_OUTPUT__
+
+#ifndef __NOMAD_4_0_BB_OUTPUT__
+#define __NOMAD_4_0_BB_OUTPUT__
 
 #include "../Type/BBOutputType.hpp"
 #include "../Math/ArrayOfDouble.hpp"
-#include "../Math/Double.hpp"
-#include "../Util/ArrayOfString.hpp"
 
 #include "../nomad_nsbegin.hpp"
 
@@ -169,6 +169,6 @@ std::ostream& operator<<(std::ostream& os, const BBOutput &bbo);
 /// Read bbo that has been written by BBOutput display operator.
 std::istream& operator>>(std::istream& is, BBOutput &bbo);
 
-#include "../nomad_nsend.hpp"
 
-#endif // __NOMAD400_BB_OUTPUT__
+#include "../nomad_nsend.hpp"
+#endif // __NOMAD_4_0_BB_OUTPUT__

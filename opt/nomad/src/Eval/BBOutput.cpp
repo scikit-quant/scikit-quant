@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -91,10 +92,12 @@ bool NOMAD::BBOutput::getCountEval(const BBOutputTypeList &bbOutputType) const
     return countEval;
 }
 
+
 bool NOMAD::BBOutput::isComplete(const NOMAD::BBOutputTypeList &bbOutputType) const
 {
     NOMAD::ArrayOfString array(_rawBBO);
-    if (checkSizeMatch(bbOutputType))
+    bool itIsComplete = true;
+    if (!bbOutputType.empty() && checkSizeMatch(bbOutputType))
     {
         for (size_t i = 0; i < array.size(); i++)
         {
@@ -106,27 +109,28 @@ bool NOMAD::BBOutput::isComplete(const NOMAD::BBOutputTypeList &bbOutputType) co
                 outValue.atof(array[i]);
                 if (!outValue.isDefined())
                 {
-                    return false;
+                    itIsComplete = false;
+                    break;
                 }
             }
         }
     }
     else
     {
-        return false;
+        itIsComplete = false;
     }
 
-    return true;
+    return itIsComplete;
 }
 
 
 NOMAD::Double NOMAD::BBOutput::getObjective(const NOMAD::BBOutputTypeList &bbOutputType) const
 {
-    NOMAD::ArrayOfString array(_rawBBO);
     NOMAD::Double obj;
 
-    if (checkSizeMatch(bbOutputType))
+    if (_evalOk && !bbOutputType.empty() && checkSizeMatch(bbOutputType))
     {
+        NOMAD::ArrayOfString array(_rawBBO);
         for (size_t i = 0; i < array.size(); i++)
         {
             if (NOMAD::BBOutputType::OBJ == bbOutputType[i])
@@ -142,11 +146,11 @@ NOMAD::Double NOMAD::BBOutput::getObjective(const NOMAD::BBOutputTypeList &bbOut
 
 NOMAD::ArrayOfDouble NOMAD::BBOutput::getConstraints(const NOMAD::BBOutputTypeList &bbOutputType) const
 {
-    NOMAD::ArrayOfString array(_rawBBO);
     NOMAD::ArrayOfDouble constraints;
 
-    if (checkSizeMatch(bbOutputType))
+    if (_evalOk && !bbOutputType.empty() && checkSizeMatch(bbOutputType))
     {
+        NOMAD::ArrayOfString array(_rawBBO);
         for (size_t i = 0; i < array.size(); i++)
         {
             if ( NOMAD::BBOutputTypeIsConstraint(bbOutputType[i]) )
@@ -189,6 +193,7 @@ bool NOMAD::BBOutput::checkSizeMatch(const NOMAD::BBOutputTypeList &bbOutputType
 
     if (bbOutputType.size() != array.size())
     {
+        /*
         std::string err = "Error: Parameter BB_OUTPUT_TYPE has " + NOMAD::itos(bbOutputType.size());
         err += " type";
         if (bbOutputType.size() > 1)
@@ -204,6 +209,7 @@ bool NOMAD::BBOutput::checkSizeMatch(const NOMAD::BBOutputTypeList &bbOutputType
         err += ":\n";
         err += _rawBBO;
         std::cerr << err << std::endl;
+        */
         ret = false;
     }
 
@@ -257,3 +263,8 @@ std::istream& NOMAD::operator>>(std::istream& is, NOMAD::BBOutput &bbo)
 
     return is;
 }
+
+
+
+
+

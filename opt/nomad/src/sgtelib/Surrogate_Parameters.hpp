@@ -2,7 +2,7 @@
 /*  sgtelib - A surrogate model library for derivative-free optimization               */
 /*  Version 2.0.2                                                                      */
 /*                                                                                     */
-/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */
+/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */ 
 /*                           Bastien Talgorn - McGill University, Montreal             */
 /*                                                                                     */
 /*  Author: Bastien Talgorn                                                            */
@@ -44,9 +44,9 @@ namespace SGTELIB {
     const model_t _type;
 
     // Degree
-    int _degree;
+    int _degree; 
     SGTELIB::param_status_t _degree_status;
-    // Kernel type
+    // Kernel type 
     kernel_t _kernel_type;
     SGTELIB::param_status_t _kernel_type_status;
     // Kernel coef
@@ -55,7 +55,7 @@ namespace SGTELIB {
     // Use ridge
     double _ridge;
     SGTELIB::param_status_t _ridge_status;
-    // Distance
+    // Distance 
     distance_t _distance_type;
     SGTELIB::param_status_t _distance_type_status;
     // Ensemble weights
@@ -94,7 +94,7 @@ namespace SGTELIB {
     static SGTELIB::model_t read_model_type ( const std::string & model_description);
     static std::string to_standard_field_name (const std::string& field);
 
-    // Check
+    // Check    
     void check (void);
 
     // Get

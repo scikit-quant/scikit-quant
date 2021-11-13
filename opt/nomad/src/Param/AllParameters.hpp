@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -43,10 +44,12 @@
 /*                                                                                 */
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
-#ifndef __NOMAD400_ALLPARAMETERS__
-#define __NOMAD400_ALLPARAMETERS__
+#ifndef __NOMAD_4_0_ALLPARAMETERS__
+#define __NOMAD_4_0_ALLPARAMETERS__
+
 
 #include "../Param/CacheParameters.hpp"
+#include "../Param/DeprecatedParameters.hpp"
 #include "../Param/DisplayParameters.hpp"
 #include "../Param/EvalParameters.hpp"
 #include "../Param/EvaluatorControlGlobalParameters.hpp"
@@ -76,7 +79,8 @@ class AllParameters
 private:
 
 
-    // Developper: When adding a new type of NOMAD parameters update the code
+    // Developer: When adding a new type of NOMAD parameters update the code
+    std::shared_ptr<DeprecatedParameters>        _deprecatedParams;
     std::shared_ptr<RunParameters>               _runParams;
     std::shared_ptr<PbParameters>                _pbParams;
     std::shared_ptr<CacheParameters>             _cacheParams;
@@ -89,7 +93,8 @@ private:
 public:
     /// Constructor
     explicit AllParameters()
-      : _runParams(std::make_shared<RunParameters>()),
+      : _deprecatedParams(std::make_shared<DeprecatedParameters>()),
+        _runParams(std::make_shared<RunParameters>()),
         _pbParams(std::make_shared<PbParameters>()),
         _cacheParams(std::make_shared<CacheParameters>()),
         _dispParams(std::make_shared<DisplayParameters>()),
@@ -159,6 +164,11 @@ public:
         {
             _cacheParams->setAttributeValue<T>(name, value);
         }
+        else if (_deprecatedParams->isRegisteredAttribute(name))
+        {
+            std::string err = "setAttributeValue: attribute " + name + " is  deprecated";
+            throw Exception(__FILE__, __LINE__, err);
+        }
         else
         {
             // At this point, Verify att is non-null.
@@ -216,6 +226,7 @@ public:
     }
 
     const std::shared_ptr<CacheParameters>&             getCacheParams() const { return _cacheParams; }
+    const std::shared_ptr<DeprecatedParameters>&        getDeprecatedParams() const { return _deprecatedParams; }
     const std::shared_ptr<DisplayParameters>&           getDispParams() const { return _dispParams; }
     const std::shared_ptr<EvalParameters>&              getEvalParams() const { return _evalParams; }
     const std::shared_ptr<EvaluatorControlParameters>&  getEvaluatorControlParams() const { return _evaluatorControlParams; }
@@ -242,6 +253,8 @@ public:
      */
     void readParamLine(const std::string &line);
 
+    static void eraseAllEntries();
+
     /**
      Compare the compatibility of the current set of parameters with a given set of parameters. The compatibility concerns only parameters influencing the execution of the algorithms (that is those with Attribute::_algoCompatibilityCheck == true). This function is used by the Runner.
      */
@@ -263,4 +276,5 @@ public:
 
 #include "../nomad_nsend.hpp"
 
-#endif // __NOMAD400_ALLPARAMETERS__
+
+#endif // __NOMAD_4_0_ALLPARAMETERS__

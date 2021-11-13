@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -44,8 +45,8 @@
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
 
-#ifndef __NOMAD400_SUBPROBLEMMANAGER__
-#define __NOMAD400_SUBPROBLEMMANAGER__
+#ifndef __NOMAD_4_0_SUBPROBLEMMANAGER__
+#define __NOMAD_4_0_SUBPROBLEMMANAGER__
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -64,16 +65,35 @@
 class SubproblemManager
 {
 private:
-    static std::map<const Algorithm*, const Subproblem> _map;
+    std::map<const Algorithm*, const Subproblem> _map;
+
 #ifdef _OPENMP
-    static omp_lock_t _mapLock;
+    DLL_ALGO_API static omp_lock_t _mapLock;
 #endif // _OPENMP
 
-public:
+    DLL_ALGO_API static std::unique_ptr<SubproblemManager> _single; ///< The singleton
+
     /// Constructor
     explicit SubproblemManager()
     {
         init();
+    }
+
+    /// Helper for constructor
+    void init();
+
+    /// Helper for destructor
+    void destroy();
+
+public:
+
+    static const std::unique_ptr<SubproblemManager> & getInstance()
+    {
+        if (_single == nullptr)
+        {
+            _single = std::unique_ptr<NOMAD::SubproblemManager>(new SubproblemManager()) ;
+        }
+        return _single;
     }
 
     /// Destructor
@@ -82,24 +102,24 @@ public:
         destroy();
     }
 
-    static const Subproblem& getSubproblem(const Step* step);
+    /// Copy constructor not available
+    SubproblemManager ( SubproblemManager const & ) = delete;
 
-    static const Point& getSubFixedVariable(const Step* step);
+    /// Operator= not available
+    SubproblemManager & operator= ( SubproblemManager const & ) = delete;
 
-    static void addSubproblem(const Algorithm* algo, const Subproblem& subproblem);
+    const Subproblem& getSubproblem(const Step* step);
 
-    static void removeSubproblem(const Algorithm* algo);
+    const Point& getSubFixedVariable(const Step* step);
 
-    static void reset();
+    void addSubproblem(const Algorithm* algo, const Subproblem& subproblem);
 
-private:
-    /// Helper for constructor
-    void init();
+    void removeSubproblem(const Algorithm* algo);
+    void reset();
 
-    /// Helper for destructor
-    void destroy();
+
 };
 
 #include "../nomad_nsend.hpp"
 
-#endif // __NOMAD400_SUBPROBLEMMANAGER__
+#endif // __NOMAD_4_0_SUBPROBLEMMANAGER__

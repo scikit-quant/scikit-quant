@@ -36,8 +36,8 @@ std::string SGTELIB::metric_type_to_str ( const SGTELIB::metric_t mt ) {
     case SGTELIB::METRIC_RMSECV : return "RMSECV" ;
     case SGTELIB::METRIC_ARMSE  : return "ARMSE"  ;
     case SGTELIB::METRIC_ARMSECV: return "ARMSECV";
-    case SGTELIB::METRIC_OE     : return "OE"     ;
-    case SGTELIB::METRIC_OECV   : return "OECV"   ;
+    case SGTELIB::METRIC_OE     : return "OE"     ; 
+    case SGTELIB::METRIC_OECV   : return "OECV"   ; 
     case SGTELIB::METRIC_AOE    : return "AOE"    ;
     case SGTELIB::METRIC_AOECV  : return "AOECV"  ;
     case SGTELIB::METRIC_EFIOE  : return "EFIOE"  ;
@@ -52,13 +52,13 @@ std::string SGTELIB::metric_type_to_str ( const SGTELIB::metric_t mt ) {
 SGTELIB::norm_t SGTELIB::metric_type_to_norm_type ( const SGTELIB::metric_t mt ){
 /*----------------------------------------------------------*/
   switch (mt){
-    case SGTELIB::METRIC_EMAX   :
-    case SGTELIB::METRIC_EMAXCV :
+    case SGTELIB::METRIC_EMAX   : 
+    case SGTELIB::METRIC_EMAXCV : 
       return SGTELIB::NORM_INF;
-    case SGTELIB::METRIC_RMSE   :
+    case SGTELIB::METRIC_RMSE   : 
     case SGTELIB::METRIC_RMSECV :
-    case SGTELIB::METRIC_ARMSE   :
-    case SGTELIB::METRIC_ARMSECV :
+    case SGTELIB::METRIC_ARMSE   : 
+    case SGTELIB::METRIC_ARMSECV :  
       return SGTELIB::NORM_2;
     default:
       throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"This metric does not have an associated norm" );
@@ -69,20 +69,20 @@ SGTELIB::norm_t SGTELIB::metric_type_to_norm_type ( const SGTELIB::metric_t mt )
 bool SGTELIB::one_metric_value_per_bbo ( const SGTELIB::metric_t mt ) {
 /*----------------------------------------------------------*/
   switch (mt){
-    case SGTELIB::METRIC_EMAX   :
-    case SGTELIB::METRIC_EMAXCV :
-    case SGTELIB::METRIC_RMSE   :
-    case SGTELIB::METRIC_RMSECV :
-    case SGTELIB::METRIC_OE     :
-    case SGTELIB::METRIC_OECV   :
-    case SGTELIB::METRIC_LINV   :
+    case SGTELIB::METRIC_EMAX   : 
+    case SGTELIB::METRIC_EMAXCV : 
+    case SGTELIB::METRIC_RMSE   : 
+    case SGTELIB::METRIC_RMSECV : 
+    case SGTELIB::METRIC_OE     : 
+    case SGTELIB::METRIC_OECV   : 
+    case SGTELIB::METRIC_LINV   : 
       return true;
-    case SGTELIB::METRIC_ARMSE  :
-    case SGTELIB::METRIC_ARMSECV:
-    case SGTELIB::METRIC_AOE    :
-    case SGTELIB::METRIC_AOECV  :
-    case SGTELIB::METRIC_EFIOE    :
-    case SGTELIB::METRIC_EFIOECV  :
+    case SGTELIB::METRIC_ARMSE  : 
+    case SGTELIB::METRIC_ARMSECV: 
+    case SGTELIB::METRIC_AOE    : 
+    case SGTELIB::METRIC_AOECV  : 
+    case SGTELIB::METRIC_EFIOE    : 
+    case SGTELIB::METRIC_EFIOECV  : 
       return false;
     default:
       throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"Undefined metric" );
@@ -93,20 +93,20 @@ bool SGTELIB::one_metric_value_per_bbo ( const SGTELIB::metric_t mt ) {
 bool SGTELIB::metric_uses_cv ( const SGTELIB::metric_t mt ) {
 /*----------------------------------------------------------*/
   switch (mt){
-    case SGTELIB::METRIC_EMAXCV :
-    case SGTELIB::METRIC_RMSECV :
-    case SGTELIB::METRIC_OECV   :
-    case SGTELIB::METRIC_ARMSECV:
-    case SGTELIB::METRIC_AOECV  :
-    case SGTELIB::METRIC_EFIOECV  :
+    case SGTELIB::METRIC_EMAXCV : 
+    case SGTELIB::METRIC_RMSECV : 
+    case SGTELIB::METRIC_OECV   : 
+    case SGTELIB::METRIC_ARMSECV: 
+    case SGTELIB::METRIC_AOECV  : 
+    case SGTELIB::METRIC_EFIOECV  : 
       return true;
-    case SGTELIB::METRIC_EMAX   :
-    case SGTELIB::METRIC_RMSE   :
-    case SGTELIB::METRIC_OE     :
-    case SGTELIB::METRIC_LINV   :
-    case SGTELIB::METRIC_ARMSE  :
-    case SGTELIB::METRIC_AOE    :
-    case SGTELIB::METRIC_EFIOE    :
+    case SGTELIB::METRIC_EMAX   : 
+    case SGTELIB::METRIC_RMSE   : 
+    case SGTELIB::METRIC_OE     : 
+    case SGTELIB::METRIC_LINV   : 
+    case SGTELIB::METRIC_ARMSE  : 
+    case SGTELIB::METRIC_AOE    : 
+    case SGTELIB::METRIC_EFIOE    : 
       return false;
     default:
       throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"Undefined metric" );
@@ -119,26 +119,26 @@ SGTELIB::metric_t SGTELIB::metric_convert_single_obj ( const SGTELIB::metric_t m
 /*----------------------------------------------------------*/
   switch (mt){
     // Metric that do not have a "Single obj" equivalent
-    case SGTELIB::METRIC_EMAX   :
-    case SGTELIB::METRIC_EMAXCV :
-    case SGTELIB::METRIC_LINV   :
+    case SGTELIB::METRIC_EMAX   : 
+    case SGTELIB::METRIC_EMAXCV : 
+    case SGTELIB::METRIC_LINV   : 
       return SGTELIB::METRIC_AOECV;
     // Metric that have a "single obj" equivalent
-    case SGTELIB::METRIC_RMSE   :
+    case SGTELIB::METRIC_RMSE   : 
       return SGTELIB::METRIC_ARMSE;
-    case SGTELIB::METRIC_RMSECV :
+    case SGTELIB::METRIC_RMSECV : 
       return SGTELIB::METRIC_ARMSECV;
-    case SGTELIB::METRIC_OE     :
+    case SGTELIB::METRIC_OE     : 
       return SGTELIB::METRIC_AOE;
-    case SGTELIB::METRIC_OECV   :
+    case SGTELIB::METRIC_OECV   : 
       return SGTELIB::METRIC_AOECV;
     // Metric that are "single obj"
-    case SGTELIB::METRIC_ARMSE  :
-    case SGTELIB::METRIC_ARMSECV:
-    case SGTELIB::METRIC_AOE    :
-    case SGTELIB::METRIC_AOECV  :
-    case SGTELIB::METRIC_EFIOE  :
-    case SGTELIB::METRIC_EFIOECV:
+    case SGTELIB::METRIC_ARMSE  : 
+    case SGTELIB::METRIC_ARMSECV: 
+    case SGTELIB::METRIC_AOE    : 
+    case SGTELIB::METRIC_AOECV  : 
+    case SGTELIB::METRIC_EFIOE  : 
+    case SGTELIB::METRIC_EFIOECV: 
       return mt;
     default:
       throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"Undefined metric" );

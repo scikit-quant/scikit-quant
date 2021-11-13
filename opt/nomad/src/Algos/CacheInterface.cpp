@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -51,14 +52,14 @@
 
 void NOMAD::CacheInterface::init()
 {
-    _fixedVariable = NOMAD::SubproblemManager::getSubFixedVariable(_step);
+    _fixedVariable = NOMAD::SubproblemManager::getInstance()->getSubFixedVariable(_step);
 
 }
 
 
 bool NOMAD::CacheInterface::smartInsert(const NOMAD::EvalPoint &evalPoint,
                                         const short maxNumberEval,
-                                        const EvalType& evalType)
+                                        const NOMAD::EvalType& evalType)
 {
     // Always insert full dimension points.
     NOMAD::EvalPoint evalPointFull = evalPoint.makeFullSpacePointFromFixed(_fixedVariable);
@@ -82,13 +83,14 @@ size_t NOMAD::CacheInterface::find(const NOMAD::Point& x,
 
 
 size_t NOMAD::CacheInterface::findBestFeas(std::vector<NOMAD::EvalPoint> &evalPointList,
-                                           const EvalType& evalType,
-                                           const Eval* refeval) const
+                                           const NOMAD::EvalType& evalType,
+                                           const NOMAD::ComputeType& computeType,
+                                           const NOMAD::Eval* refeval) const
 {
     // Cache holds the full dimension points.
     // Return a list of sub dimension points.
     NOMAD::CacheBase::getInstance()->findBestFeas(evalPointList, _fixedVariable,
-                                                  evalType, refeval);
+                                                  evalType, computeType, refeval);
 
     NOMAD::convertPointListToSub(evalPointList, _fixedVariable);
 
@@ -98,14 +100,15 @@ size_t NOMAD::CacheInterface::findBestFeas(std::vector<NOMAD::EvalPoint> &evalPo
 
 size_t NOMAD::CacheInterface::findBestInf(std::vector<NOMAD::EvalPoint>& evalPointList,
                                           const NOMAD::Double& hMax,
-                                          const EvalType& evalType,
-                                          const Eval* refeval) const
+                                          const NOMAD::EvalType& evalType,
+                                          const NOMAD::ComputeType& computeType,
+                                          const NOMAD::Eval* refeval) const
 {
     // Cache holds the full dimension points.
     // Return a list of sub dimension points.
     NOMAD::CacheBase::getInstance()->findBestInf(evalPointList, hMax,
                                                  _fixedVariable, evalType,
-                                                 refeval);
+                                                 computeType, refeval);
 
     NOMAD::convertPointListToSub(evalPointList, _fixedVariable);
 
@@ -120,10 +123,10 @@ size_t NOMAD::CacheInterface::find(std::function<bool(const NOMAD::EvalPoint&)> 
     if ( findInSubspace )
     {
         // Lambda function to test if an eval point is in the current subspace (its  variables are consistent with the fixed values in this interface)
-        auto critSubSpace1 = [&](const EvalPoint& evalPoint){return evalPoint.hasFixed(_fixedVariable);};
+        auto critSubSpace1 = [&](const NOMAD::EvalPoint& evalPoint){return evalPoint.hasFixed(_fixedVariable);};
 
         // Make sure to convert an eval point coming from cache into subspace before calling crit1 function.
-        auto critSubSpace2 = [&](const EvalPoint& evalPoint){ const NOMAD::EvalPoint & xSub = evalPoint.makeSubSpacePointFromFixed(_fixedVariable); return crit1(xSub);};
+        auto critSubSpace2 = [&](const NOMAD::EvalPoint& evalPoint){ const NOMAD::EvalPoint & xSub = evalPoint.makeSubSpacePointFromFixed(_fixedVariable); return crit1(xSub);};
 
         NOMAD::CacheBase::getInstance()->find(critSubSpace1, critSubSpace2, evalPointList);
 

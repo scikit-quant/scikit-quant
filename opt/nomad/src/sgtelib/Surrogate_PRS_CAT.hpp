@@ -2,7 +2,7 @@
 /*  sgtelib - A surrogate model library for derivative-free optimization               */
 /*  Version 2.0.2                                                                      */
 /*                                                                                     */
-/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */
+/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */ 
 /*                           Bastien Talgorn - McGill University, Montreal             */
 /*                                                                                     */
 /*  Author: Bastien Talgorn                                                            */
@@ -39,7 +39,7 @@ namespace SGTELIB {
     std::set<double> _cat; // Categories
     int _nb_cat; // Number of categories
 
-    virtual const SGTELIB::Matrix compute_design_matrix ( const SGTELIB::Matrix& Monomes,
+    virtual const SGTELIB::Matrix compute_design_matrix ( const SGTELIB::Matrix& Monomes, 
                                                           const SGTELIB::Matrix & Xs ) override;
     // build model (private):
     virtual bool build_private (void) override;
@@ -47,7 +47,7 @@ namespace SGTELIB {
   public:
 
     // Constructor
-    Surrogate_PRS_CAT ( SGTELIB::TrainingSet & trainingset ,
+    Surrogate_PRS_CAT ( SGTELIB::TrainingSet & trainingset ,   
                         SGTELIB::Surrogate_Parameters param) ;
 
     // destructor:

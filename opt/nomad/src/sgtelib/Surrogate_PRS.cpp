@@ -2,7 +2,7 @@
 /*  sgtelib - A surrogate model library for derivative-free optimization               */
 /*  Version 2.0.2                                                                      */
 /*                                                                                     */
-/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */
+/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */ 
 /*                           Bastien Talgorn - McGill University, Montreal             */
 /*                                                                                     */
 /*  Author: Bastien Talgorn                                                            */
@@ -62,9 +62,9 @@ void SGTELIB::Surrogate_PRS::display_private ( std::ostream & out ) const {
 /*               build                  */
 /*--------------------------------------*/
 bool SGTELIB::Surrogate_PRS::build_private ( void ) {
-
-  const int pvar = _trainingset.get_pvar();
-  const int nvar = _trainingset.get_nvar();
+  
+  const int pvar = _trainingset.get_pvar(); 
+  const int nvar = _trainingset.get_nvar(); 
 
   // Get the number of basis functions.
   _q = Surrogate_PRS::get_nb_PRS_monomes(nvar,_param.get_degree());
@@ -82,14 +82,14 @@ bool SGTELIB::Surrogate_PRS::build_private ( void ) {
   // Compute alpha
   if ( !  compute_alpha()) return false;
 
-  _ready = true;
+  _ready = true; 
   return true;
 }//
 
 /*--------------------------------------*/
 /*          Compute PRS matrix          */
 /*--------------------------------------*/
-const SGTELIB::Matrix SGTELIB::Surrogate_PRS::compute_design_matrix ( const SGTELIB::Matrix& Monomes,
+const SGTELIB::Matrix SGTELIB::Surrogate_PRS::compute_design_matrix ( const SGTELIB::Matrix& Monomes, 
                                                                       const SGTELIB::Matrix & Xs ) {
 
   const int n = Xs.get_nb_cols(); // Nb of points in the matrix X given in argument
@@ -99,7 +99,7 @@ const SGTELIB::Matrix SGTELIB::Surrogate_PRS::compute_design_matrix ( const SGTE
 
   const int nbMonomes = Monomes.get_nb_rows();
 
-  // Init the design matrix
+  // Init the design matrix  
   SGTELIB::Matrix H("H",p,nbMonomes);
   // Current basis function (vector column to construct 1 basis function)
   SGTELIB::Matrix h("h",p,1);
@@ -115,7 +115,7 @@ const SGTELIB::Matrix SGTELIB::Surrogate_PRS::compute_design_matrix ( const SGTE
     // Loop on the input variables
     for (j=0 ; j<n ; j++){
       if (_trainingset.get_X_nbdiff(j)>1){
-        exponent = int(Monomes.get(k,jj));
+        exponent = int(Monomes.get(k,jj)); 
         if (exponent>0){
           for (i=0 ; i<p ; i++){
             v = h.get(i,0);
@@ -182,7 +182,7 @@ const SGTELIB::Matrix * SGTELIB::Surrogate_PRS::get_matrix_Zvs (void){
     const SGTELIB::Matrix & Zs = get_matrix_Zs();
     SGTELIB::Matrix dPiPZs = SGTELIB::Matrix::get_matrix_dPiPZs(_Ai,_H,Zs);
 
-    // dPi is the inverse of the diag of P
+    // dPi is the inverse of the diag of P 
     // Compute _Zv = Zs - dPi*P*Zs
     *_Zvs = Zs - dPiPZs;
     _Zvs->replace_nan(+INF);
@@ -190,6 +190,7 @@ const SGTELIB::Matrix * SGTELIB::Surrogate_PRS::get_matrix_Zvs (void){
   }
   return _Zvs;
 }//
+
 
 
 /*-----------------------------------------*/
@@ -205,6 +206,7 @@ int SGTELIB::Surrogate_PRS::get_nb_PRS_monomes(const int nvar, const int degree)
   }
   return S;
 }//
+
 
 
 /*----------------------------------*/
@@ -223,12 +225,12 @@ SGTELIB::Matrix SGTELIB::Surrogate_PRS::get_PRS_monomes(const int nvar, const in
   // We start with the monomes with only one non-null term.
   for (int c=1 ; c<=std::min(degree,nvar) ; c++){
     for (int d=c ; d<=degree ; d++){
-
+          
       // First monome (c,d)
       z[0] = d-c+1;
-      for (i=1 ; i<c ; i++)
+      for (i=1 ; i<c ; i++) 
         z[i] = 1;
-      for (i=c ; i<nvar ; i++)
+      for (i=c ; i<nvar ; i++) 
         z[i] = 0;
 
       continuer = true;
@@ -270,3 +272,7 @@ SGTELIB::Matrix SGTELIB::Surrogate_PRS::get_PRS_monomes(const int nvar, const in
   delete [] z;
   return M;
 }//
+
+
+
+

@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -43,8 +44,8 @@
 /*                                                                                 */
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
-#ifndef __NOMAD400_POLLMETHODBASE__
-#define __NOMAD400_POLLMETHODBASE__
+#ifndef __NOMAD_4_0_POLLMETHODBASE__
+#define __NOMAD_4_0_POLLMETHODBASE__
 
 #include "../../Algos/IterationUtils.hpp"
 #include "../../Algos/Step.hpp"
@@ -56,71 +57,102 @@
 /// Class for generic poll method of MADS. Run by Poll.
 /**
  */
-class PollMethodBase: public Step , public IterationUtils
+class PollMethodBase: public Step, public IterationUtils
 {
 private:
-
-    std::string _comment; ///<  Comment shown when a poll method is used
+    const EvalPoint _frameCenter;
+    const bool _hasNPlus1;      // Second pass for Ortho N+1 methods
 
 public:
     /// Constructor
     /**
      /param parentStep      The parent of this poll step -- \b IN.
      */
-    explicit PollMethodBase( const Step* parentStep )
-      : Step( parentStep ),
-        IterationUtils ( parentStep )
+    explicit PollMethodBase(const Step* parentStep,
+                            const EvalPoint& frameCenter,
+                            const bool hasNPlus1 = false)
+      : Step(parentStep),
+        IterationUtils(parentStep),
+        _frameCenter(frameCenter),
+        _hasNPlus1(hasNPlus1)
     {
         init();
     }
 
-    /// Implementation of endImp. Intermediate function called to generate the trial points
+    bool hasNPlus1() const { return _hasNPlus1; }
+    
+    
+    /// Implementation of startImp.
     /**
-     - Call for the intermediate base PollMethodBase::generateTrialPoints (call generateTrialPointsImp, snap on bounds and mesh).
-     - Sanity check on generated trial points
-     - Update the points with frame center
+      Do nothing.
+      Point generation is done in Poll.
      */
-    void startImp() override;
+    void startImp() override {}
 
-    /// Implementation of endImp. Function called to evaluate the trial points
+    /// Implementation of endImp.
     /**
-     - Evaluate the trial points and update the barrier.
-     - The projection of trial points on bounds and on mesh is performed before this function is called and after the function PollMethodBase::generateTrialPointsImp is called.
+      Do nothing.
+      Evaluation is done in Poll.
      */
-    bool runImp() override;
+    bool runImp() override { return true; }
 
     /// Implementation of endImp
     /**
-        Call to the postProcessing function to update the Barrier
+      Do nothing.
+      postProcessing is done in Poll.
     */
-    void endImp() override ;
+    void endImp() override {}
 
-    /// Intermediate function (not yet the  implementation that generate the trial points)
+    /// Intermediate function used by generateTrialPoints
+    std::list<NOMAD::Direction> generateFullSpaceScaledDirections(bool isNPlus1, std::shared_ptr<NOMAD::MeshBase> mesh = nullptr);
+    
+    /// Intermediate function (not yet the implementation that generates the trial points)
     /**
      - Display before and after generation comments.
-     - Launches the implementation of the poll method to generate the trial points (::generateTrialPointsImp).
+     - Launch the implementation of the poll method to generate the trial points (::generateTrialPointsImp).
      - Snap the points to bounds and mesh.
      */
     void generateTrialPoints() override;
+    
+    /// Intermediate function to compute N+1th point, to be used when _hasNPlus1 is true.
+    /*
+       \param inputTrialPoints  Trial points generated from the "N" part, evaluated, and
+                                not successful.
+    */
+    virtual void generateTrialPointsNPlus1(const NOMAD::EvalPointSet& inputTrialPoints);
 
     /// Generate poll directions on a unitary frame. See derived classes (Ortho2nPollMethod, Np1UniPollMethod,...) for implementations.
-    virtual void generateUnitPollDirections(std::list<Direction> &directions, size_t dim) const = 0 ;
+    virtual void generateUnitPollDirections(std::list<Direction> &directions, const size_t dim) const = 0;
 
 protected:
     void init();
+    
+    /// Compute 2n directions (from which n directions will be chosen).
+    /// Used in Ortho 2N and in Ortho N+1.
+    /**
+     \param directions  The 2n directions obtained for this poll -- \b OUT.
+     \param n           The dimension of the variable space  -- \b IN.
+      */
+    void generate2NDirections(std::list<NOMAD::Direction> &directions, size_t n) const;
+    
+    /// Generate n+1th direction. Optionally reimplemented (in Ortho N+1).
+    virtual void generateNPlus1Direction(std::list<Direction> &directions) const {};
 
 private:
-
+    
+    /// Private method to handle general case and also N+1 case
+    void generateTrialPointsInternal(const bool isNPlus1 = false);
+    
     /// Scale and project on mesh poll directions.
     /**
      /param dirs      The unit directions to be scaled and projected on mesh -- \b IN/OUT.
      */
-    void scaleAndProjectOnMesh(std::list<Direction> & dirs);
+    void scaleAndProjectOnMesh(std::list<Direction> & dirs, std::shared_ptr<NOMAD::MeshBase> mesh = nullptr );
 
 
 };
 
 #include "../../nomad_nsend.hpp"
 
-#endif // __NOMAD400_POLLMETHODBASE__
+#endif // __NOMAD_4_0_POLLMETHODBASE__
 

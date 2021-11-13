@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -43,7 +44,6 @@
 /*                                                                                 */
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
-
 #include "../Algos/MeshBase.hpp"
 
 NOMAD::MeshBase::MeshBase(const std::shared_ptr<NOMAD::PbParameters> pbParams)
@@ -52,7 +52,9 @@ NOMAD::MeshBase::MeshBase(const std::shared_ptr<NOMAD::PbParameters> pbParams)
         _initialMeshSize(pbParams->getAttributeValue<NOMAD::ArrayOfDouble>("INITIAL_MESH_SIZE")),
         _minMeshSize(pbParams->getAttributeValue<NOMAD::ArrayOfDouble>("MIN_MESH_SIZE")),
         _initialFrameSize(pbParams->getAttributeValue<NOMAD::ArrayOfDouble>("INITIAL_FRAME_SIZE")),
-        _minFrameSize(pbParams->getAttributeValue<NOMAD::ArrayOfDouble>("MIN_FRAME_SIZE"))
+        _minFrameSize(pbParams->getAttributeValue<NOMAD::ArrayOfDouble>("MIN_FRAME_SIZE")),
+        _lowerBound(pbParams->getAttributeValue<NOMAD::ArrayOfDouble>("LOWER_BOUND")),
+        _upperBound(pbParams->getAttributeValue<NOMAD::ArrayOfDouble>("UPPER_BOUND"))
 {
     init();
 }
@@ -156,15 +158,23 @@ bool NOMAD::MeshBase::verifyPointIsOnMesh(const NOMAD::Point& point, const NOMAD
         NOMAD::Double centerI = center[i];
         NOMAD::Double deltaI = getdeltaMeshSize(i);
 
-        if (!centerI.isMultipleOf(deltaI))
+        if (   (_lowerBound[i].isDefined() && _lowerBound[i] == pointRebaseI)
+            || (_upperBound[i].isDefined() && _upperBound[i] == pointRebaseI))
         {
-            // Rebase point on the mesh centered on center Point
-            pointRebaseI -= centerI;
+            isOnMesh = true;
         }
-        if (!pointRebaseI.isMultipleOf(deltaI))
+        else
         {
-            isOnMesh = false;
-            break;
+            if (!centerI.isMultipleOf(deltaI))
+            {
+                // Rebase point on the mesh centered on center Point
+                pointRebaseI -= centerI;
+            }
+            if (!pointRebaseI.isMultipleOf(deltaI))
+            {
+                isOnMesh = false;
+                break;
+            }
         }
     }
 

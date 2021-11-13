@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -44,8 +45,8 @@
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
 
-#ifndef __NOMAD400_ALGORITHM__
-#define __NOMAD400_ALGORITHM__
+#ifndef __NOMAD_4_0_ALGORITHM__
+#define __NOMAD_4_0_ALGORITHM__
 
 #include "../Algos/Initialization.hpp"
 #include "../Algos/MegaIteration.hpp"
@@ -73,26 +74,17 @@ protected:
     std::unique_ptr<Termination>     _termination;      ///< To verify termination conditions
     std::shared_ptr<MegaIteration>   _megaIteration;    ///< MegaIteration used to keep information between steps
 
-    std::string                      _algoComment;   ///< Comment to appear in the stats, e.g. "Phase One"
-    std::vector<std::string>         _prevAlgoComment; ///< Pile of previous comments, used when going back to the main algo after running a sub-algo.
-    bool                             _forceAlgoComment; ///< When true, do not change comment until reset is called
+    bool                             _endDisplay;
 
-    bool _endDisplay;
-
-    NOMAD::SuccessType               _algoBestSuccess ; ///< The best succes type of the algorithm (cannot always get this information from _megaIteration).
+    SuccessType                      _algoBestSuccess ; ///< The best succes type of the algorithm (cannot always get this information from _megaIteration).
 
     bool                             _algoSuccessful;
-
 
 #ifdef TIME_STATS
     size_t _totalRealAlgoTime;
     double _startTime;
     double _totalCPUAlgoTime;
 #endif // TIME_STATS
-
-#ifdef _OPENMP
-    static omp_lock_t _algoCommentLock;
-#endif // _OPENMP
 
 public:
     /// Constructor
@@ -110,9 +102,6 @@ public:
         _initialization(nullptr),
         _termination(nullptr),
         _megaIteration(nullptr),
-        _algoComment(""),
-        _prevAlgoComment(),
-        _forceAlgoComment(false),
         _endDisplay(true)
 #ifdef TIME_STATS
         ,_totalRealAlgoTime(0),
@@ -132,12 +121,7 @@ public:
     const std::shared_ptr<MegaIteration>& getMegaIteration() const { return _megaIteration; }
     void setMegaIteration(const std::shared_ptr<MegaIteration> megaIteration) { _megaIteration = megaIteration; }
 
-    void setAlgoComment(const std::string& algoComment, const bool force = false) override;
-    void resetPreviousAlgoComment(const bool force = false) override;
-    std::string getAlgoComment() const override;
-
-    void setEndDisplay( bool endDisplay ) {_endDisplay = endDisplay; }
-
+    void setEndDisplay( bool endDisplay ) { _endDisplay = endDisplay; }
 
 protected:
 
@@ -207,4 +191,4 @@ std::istream& operator>>(std::istream& is, Algorithm& algo);
 
 #include "../nomad_nsend.hpp"
 
-#endif // __NOMAD400_ALGORITHM__
+#endif // __NOMAD_4_0_ALGORITHM__

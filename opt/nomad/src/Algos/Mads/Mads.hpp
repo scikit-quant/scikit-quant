@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -44,8 +45,8 @@
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
 
-#ifndef __NOMAD400_MADS__
-#define __NOMAD400_MADS__
+#ifndef __NOMAD_4_0_MADS__
+#define __NOMAD_4_0_MADS__
 
 #include "../../Algos/Algorithm.hpp"
 #include "../../Algos/AlgoStopReasons.hpp"
@@ -68,22 +69,31 @@ public:
      \param stopReasons         The stop reasons for MADS -- \b IN.
      \param runParams           The run parameters that control MADS -- \b IN.
      \param pbParams            The problem parameters that control MADS -- \b IN.
+     \param barrierInitializedFromCache  Flag to initialize barrier from cache or not -- \b IN.
      */
     explicit Mads(const Step* parentStep,
                   std::shared_ptr<AlgoStopReasons<MadsStopType>> stopReasons,
                   const std::shared_ptr<RunParameters>& runParams,
-                  const std::shared_ptr<PbParameters>& pbParams)
+                  const std::shared_ptr<PbParameters>& pbParams,
+                  bool barrierInitializedFromCache = true )
       : Algorithm(parentStep, stopReasons, runParams, pbParams)
     {
-        init();
+        init(barrierInitializedFromCache);
     }
 
     /// Helper for hot restart
     void hotRestartOnUserInterrupt() override;
+    
+    NOMAD::ArrayOfPoint suggest() override;
+    
+    void observe(const std::vector<NOMAD::EvalPoint>& evalPointList) override;
 
 private:
     ///  Initialization of class, to be used by Constructor.
-    void init();
+    /**
+    \param barrierInitializedFromCache  Flag to initialized barrier from cache or not -- \b IN.
+    */
+    void init(bool barrierInitializedFromCache);
 
     /// Algorithm execution for single-objective.
     /**
@@ -98,4 +108,4 @@ private:
 
 #include "../../nomad_nsend.hpp"
 
-#endif // __NOMAD400_MADS__
+#endif // __NOMAD_4_0_MADS__

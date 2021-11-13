@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -44,8 +45,8 @@
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
 
-#ifndef __NOMAD400_ITERATIONUTILS__
-#define __NOMAD400_ITERATIONUTILS__
+#ifndef __NOMAD_4_0_ITERATIONUTILS__
+#define __NOMAD_4_0_ITERATIONUTILS__
 
 #include <stdexcept>
 
@@ -144,10 +145,9 @@ public:
     /**
      Post-processing of the points after evaluation.
      For instance, computation of a new hMax and update of the MegaIteration's Barrier.
-     Use evaluations of the type given by input parameter evalType.
      \return \c true if some value changed (ex. Barrier, hMax), \c false if nothing happened.
      */
-    virtual bool postProcessing(const EvalType& evalType);
+    virtual bool postProcessing();
 
     /// Helper for start task
     /**
@@ -156,40 +156,28 @@ public:
      */
     void verifyPointsAreOnMesh(const std::string& name) const;
 
-//    /// Snap a given trial point to the bounds
-//    /**
-//     * Used by classes that generate points: SearchMethods, Poll, etc,
-//     * to make the point satisfy the bounds before sending it to evaluation.
-//     \param point        The point to process
-//     \param lowerBound   The lower bounds.
-//     \param upperBound   The upper bounds
-//     \return             \c true if the function worked, the point is now on mesh and inside bounds
-//     */
-//    bool snapPointToBounds(Point& point,
-//                            const ArrayOfDouble& lowerBound,
-//                            const ArrayOfDouble& upperBound);
-
     /// Snap a given trial point to the bounds and project on mesh
     /**
      * Used by classes that generate points: SearchMethods, Poll, etc,
      * to make the point satisfy the bounds and mesh requisites,
      * before sending it to evaluation.
-     \param point        The point to process
+     \param evalPoint    The point to process
      \param lowerBound   The lower bounds.
      \param upperBound   The upper bounds
      \return             \c true if the function worked, the point is now on mesh and inside bounds
      */
-    bool snapPointToBoundsAndProjectOnMesh(Point& point,
-                                                  const ArrayOfDouble& lowerBound,
-                                                  const ArrayOfDouble& upperBound);
+    bool snapPointToBoundsAndProjectOnMesh(EvalPoint& evalPoint,
+                                           const ArrayOfDouble& lowerBound,
+                                           const ArrayOfDouble& upperBound);
 
     /// Start evaluation of the trial points
     /**
      * Called by run.
      \param step    Current step.
+     \param keepN   Number of points to keep (by default keep all)
      \return true if a success was found, false otherwise.
      */
-    bool evalTrialPoints(Step* step);
+    bool evalTrialPoints(const Step* step, const size_t keepN = INF_SIZE_T, const StepType& removeStepType = StepType::UNDEFINED);
 
     /// Get the number of evaluation points in the queue for evaluation
     size_t getNbEvalPointsThatNeededEval() const { return _nbEvalPointsThatNeedEval; }
@@ -199,17 +187,12 @@ public:
      */
     virtual void generateTrialPoints() = 0;
 
-    /// Add current frame center as originator of each point in trialPoints
-    void updatePointsWithFrameCenter();
-
 private:
 
     /// Helper for constructor
     void init();
-
-
 };
 
 #include "../nomad_nsend.hpp"
 
-#endif // __NOMAD400_ITERATIONUTILS__
+#endif // __NOMAD_4_0_ITERATIONUTILS__

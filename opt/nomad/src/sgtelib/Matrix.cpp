@@ -2,7 +2,7 @@
 /*  sgtelib - A surrogate model library for derivative-free optimization               */
 /*  Version 2.0.2                                                                      */
 /*                                                                                     */
-/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */
+/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */ 
 /*                           Bastien Talgorn - McGill University, Montreal             */
 /*                                                                                     */
 /*  Author: Bastien Talgorn                                                            */
@@ -24,15 +24,13 @@
 /*-------------------------------------------------------------------------------------*/
 
 #include "Matrix.hpp"
-#include <math.h>
-#include <random>
 
 /*---------------------------*/
 /*        constructor 1      */
 /*---------------------------*/
 SGTELIB::Matrix::Matrix ( const std::string & name ,
                           int                 nbRows    ,
-                          int                 nbCols    ) :
+                          int                 nbCols    ) : 
                _name   ( name ) ,
                _nbRows ( nbRows    ) ,
                _nbCols ( nbCols    )   {
@@ -64,7 +62,7 @@ SGTELIB::Matrix::Matrix ( const std::string & name ,
                _nbCols    ( nbCols    )   {
 #ifdef SGTELIB_DEBUG
   if ( _nbRows < 0 || _nbCols < 0 )
-    throw SGTELIB::Exception ( __FILE__ , __LINE__ ,
+    throw SGTELIB::Exception ( __FILE__ , __LINE__ , 
               "Matrix::constructor 2: bad dimensions" );
 #endif
 
@@ -81,7 +79,7 @@ SGTELIB::Matrix::Matrix ( const std::string & name ,
 /*---------------------------*/
 /*        constructor 3      */
 /*---------------------------*/
-SGTELIB::Matrix::Matrix ( const std::string & file_name ) :
+SGTELIB::Matrix::Matrix ( const std::string & file_name ) : 
                   _name ( "no_name" ) ,
                   _nbRows    ( 0         ) ,
                   _nbCols    ( 0         ) ,
@@ -93,7 +91,7 @@ SGTELIB::Matrix::Matrix ( const std::string & file_name ) :
 /*---------------------------*/
 /*        constructor 4      */
 /*---------------------------*/
-SGTELIB::Matrix::Matrix (void) :
+SGTELIB::Matrix::Matrix (void) : 
                _name ( "" ) ,
                _nbRows    ( 0   ) ,
                _nbCols    ( 0   ) {
@@ -103,7 +101,7 @@ SGTELIB::Matrix::Matrix (void) :
 /*---------------------------*/
 /*        constructor 5      */
 /*---------------------------*/
-SGTELIB::Matrix::Matrix (double v) :
+SGTELIB::Matrix::Matrix (double v) : 
                _name ( "double" ) ,
                _nbRows    ( 1   ) ,
                _nbCols    ( 1   ) {
@@ -119,7 +117,7 @@ SGTELIB::Matrix::Matrix (double v) :
 /*---------------------------*/
 /*      copy constructor     */
 /*---------------------------*/
-SGTELIB::Matrix::Matrix ( const SGTELIB::Matrix & A ) :
+SGTELIB::Matrix::Matrix ( const SGTELIB::Matrix & A ) : 
                           _name ( A._name ) ,
                           _nbRows    ( A._nbRows    ) ,
                           _nbCols    ( A._nbCols    ) {
@@ -139,7 +137,7 @@ SGTELIB::Matrix::Matrix ( const SGTELIB::Matrix & A ) :
 /*    affectation operator   */
 /*---------------------------*/
 SGTELIB::Matrix & SGTELIB::Matrix::operator = ( const SGTELIB::Matrix & A ) {
-
+  
   if ( this == &A )
     return *this;
 
@@ -166,7 +164,7 @@ SGTELIB::Matrix & SGTELIB::Matrix::operator = ( const SGTELIB::Matrix & A ) {
       for ( j = 0 ; j < _nbCols ; ++j )
         _X[i][j] = A._X[i][j];
   }
-
+    
   _name = A._name;
 
   return *this;
@@ -353,7 +351,7 @@ SGTELIB::Matrix::~Matrix ( void ) {
   */
   for ( int i = 0 ; i < _nbRows ; ++i )
     delete [] _X[i];
-  delete [] _X;
+  delete [] _X; 
   /*
   #ifdef SGTELIB_DEBUG
     std::cout << "Deleted.\n";
@@ -374,7 +372,7 @@ void SGTELIB::Matrix::add_row  ( const double * row ) {
   new_X[_nbRows] = new double [_nbCols];
   for ( int j = 0 ; j < _nbCols ; ++j )
     new_X[_nbRows][j] = row[j];
-
+  
   delete [] _X;
   _X = new_X;
   ++_nbRows;
@@ -664,14 +662,14 @@ double SGTELIB::Matrix::get ( const int k ) const {
 
 const double & SGTELIB::Matrix::operator [] ( int k ) const {
   int i = 0 , j = 0;
-  if (_nbRows==1) j=k;
+  if (_nbRows==1) j=k; 
   else if (_nbCols==1) i=k;
   else throw SGTELIB::Exception ( __FILE__ , __LINE__ , "Matrix::[k]: the matrix is not a vector" );
   return _X[i][j];
 }//
 double & SGTELIB::Matrix::operator [] ( int k ){
   int i = 0 , j = 0;
-  if (_nbRows==1) j=k;
+  if (_nbRows==1) j=k; 
   else if (_nbCols==1) i=k;
   else throw SGTELIB::Exception ( __FILE__ , __LINE__ , "Matrix::[k]: the matrix is not a vector" );
   return _X[i][j];
@@ -770,7 +768,7 @@ SGTELIB::Matrix SGTELIB::Matrix::get_rows (const std::list<int> & list_rows) con
   const int nbRows = static_cast<int>(list_rows.size());
   const int nbCols = _nbCols;
   SGTELIB::Matrix A (_name+"_get_rows",nbRows,nbCols);
-
+  
   std::list<int>::const_iterator it;
 
   int k=0;
@@ -797,7 +795,7 @@ SGTELIB::Matrix SGTELIB::Matrix::get_cols (const std::list<int> & list_cols) con
   const int nbRows = _nbRows;
   const int nbCols = static_cast<int>(list_cols.size());
   SGTELIB::Matrix A (_name+"_get_cols",nbRows,nbCols);
-
+  
   std::list<int>::const_iterator it;
 
   int k=0;
@@ -862,7 +860,7 @@ void SGTELIB::Matrix::write ( const std::string & file_name ) const {
   std::ofstream output_file;
   output_file.open (file_name.c_str());
   display(output_file);
-  output_file.close();
+  output_file.close();  
 }//
 
 /*-------------------------------*/
@@ -879,7 +877,7 @@ SGTELIB::Matrix SGTELIB::Matrix::col_vector ( const double * v,
                                               const int n     )  {
   if ( ! v){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ , "Matrix::column_vector: v is null" );
-  }
+  }  
   SGTELIB::Matrix V("V",n,1);
   for (int i=0 ; i<n ; i++){
     V._X[i][0] = v[i];
@@ -894,7 +892,7 @@ SGTELIB::Matrix SGTELIB::Matrix::row_vector ( const double * v,
                                               const int n     )  {
   if ( ! v){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ , "Matrix::column_vector: v is null" );
-  }
+  }  
   SGTELIB::Matrix V("V",1,n);
   for (int i=0 ; i<n ; i++){
     V._X[0][i] = v[i];
@@ -913,7 +911,7 @@ SGTELIB::Matrix SGTELIB::Matrix::product ( const SGTELIB::Matrix & A,
       std::cout << "A (" << A.get_name() << ") : " << A.get_nb_rows() << " , " << A.get_nb_cols() << "\n";
       std::cout << "B (" << B.get_name() << ") : " << B.get_nb_rows() << " , " << B.get_nb_cols() << "\n";
       throw SGTELIB::Exception ( __FILE__ , __LINE__ , "Matrix::product(A,B): dimension error" );
-    }
+    }  
     // Init matrix
     SGTELIB::Matrix C(A.get_name()+"*"+B.get_name(),A.get_nb_rows(),B.get_nb_cols());
   #else
@@ -941,14 +939,14 @@ SGTELIB::Matrix SGTELIB::Matrix::product ( const SGTELIB::Matrix & A,
 
 /*---------------------------*/
 SGTELIB::Matrix SGTELIB::Matrix::product ( const SGTELIB::Matrix & A,
-                                           const SGTELIB::Matrix & B,
+                                           const SGTELIB::Matrix & B, 
                                            const SGTELIB::Matrix & C){
   return product(A,product(B,C));
 }//
 /*---------------------------*/
 SGTELIB::Matrix SGTELIB::Matrix::product ( const SGTELIB::Matrix & A,
                                            const SGTELIB::Matrix & B,
-                                           const SGTELIB::Matrix & C,
+                                           const SGTELIB::Matrix & C, 
                                            const SGTELIB::Matrix & D){
   return product(product(A,B),product(C,D));
 }//
@@ -974,7 +972,7 @@ SGTELIB::Matrix SGTELIB::Matrix::subset_product (const SGTELIB::Matrix & A,
   // Otherwise, need to check the number of rows.
   else if (A.get_nb_rows()<p){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ , "Matrix::subset_product: dimension error" );
-  }
+  }  
 
   // Default q value
   if ( (q==-1) & (A.get_nb_cols()==B.get_nb_rows()) ){
@@ -984,10 +982,10 @@ SGTELIB::Matrix SGTELIB::Matrix::subset_product (const SGTELIB::Matrix & A,
     // Check for q
     if (A.get_nb_cols()<q){
       throw SGTELIB::Exception ( __FILE__ , __LINE__ , "Matrix::subset_product: dimension error" );
-    }
+    }  
     if (B.get_nb_rows()<q){
       throw SGTELIB::Exception ( __FILE__ , __LINE__ , "Matrix::subset_product: dimension error" );
-    }
+    }  
   }
 
   // Default r value
@@ -997,14 +995,14 @@ SGTELIB::Matrix SGTELIB::Matrix::subset_product (const SGTELIB::Matrix & A,
   else if (B.get_nb_cols()<r){
     // Check for r
     throw SGTELIB::Exception ( __FILE__ , __LINE__ , "Matrix::subset_product: dimension error" );
-  }
+  }  
 
   SGTELIB::Matrix C("A*B",p,r);
   for (int i=0 ; i<p ; i++){
     for (int j=0 ; j<r ; j++){
       for (int k=0 ; k<q ; k++){
         C._X[i][j] += A._X[i][k]*B._X[k][j];
-      }
+      } 
     }
   }
   return C;
@@ -1022,10 +1020,10 @@ SGTELIB::Matrix SGTELIB::Matrix::hadamard_product ( const SGTELIB::Matrix & A,
 
   if (B.get_nb_rows()!=nb_rows){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ , "Matrix::hadamard_product(A,B): dimension error" );
-  }
+  }  
   if (B.get_nb_cols()!=nb_cols){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ , "Matrix::hadamard_product(A,B): dimension error" );
-  }
+  }  
 
   // Init matrix
   SGTELIB::Matrix C(A.get_name()+".*"+B.get_name(),nb_rows,nb_cols);
@@ -1207,7 +1205,7 @@ SGTELIB::Matrix SGTELIB::Matrix::diagA_product ( const SGTELIB::Matrix & A,
     std::cout << "A (" << A.get_name() << ") : " << A.get_nb_rows() << " , " << A.get_nb_cols() << "\n";
     std::cout << "B (" << B.get_name() << ") : " << B.get_nb_rows() << " , " << B.get_nb_cols() << "\n";
     throw SGTELIB::Exception ( __FILE__ , __LINE__ , "Matrix::diagA_product(A,B): dimension error" );
-  }
+  }  
 
 }//
 
@@ -1263,8 +1261,7 @@ SGTELIB::Matrix SGTELIB::Matrix::diagB_product ( const SGTELIB::Matrix & A,
     std::cout << "A (" << A.get_name() << ") : " << A.get_nb_rows() << " , " << A.get_nb_cols() << "\n";
     std::cout << "B (" << B.get_name() << ") : " << B.get_nb_rows() << " , " << B.get_nb_cols() << "\n";
     throw SGTELIB::Exception ( __FILE__ , __LINE__ , "Matrix::diagB_product(A,B): dimension error" );
-  }
-
+  }  
 }//
 
 
@@ -1277,7 +1274,7 @@ SGTELIB::Matrix SGTELIB::Matrix::transposeA_product ( const SGTELIB::Matrix & A,
 
   if (A.get_nb_rows()!=B.get_nb_rows()){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ , "Matrix::transposeA_product(A,B): dimension error" );
-  }
+  }  
 
   // Init matrix
   SGTELIB::Matrix C(A.get_name()+"'*"+B.get_name(),A.get_nb_cols(),B.get_nb_cols());
@@ -1337,7 +1334,7 @@ SGTELIB::Matrix SGTELIB::Matrix::get_matrix_dPi ( const SGTELIB::Matrix & Ai,
 
   for ( int i = 0 ; i < p ; ++i ) {
     h = H.get_row(i);
-    v = (h*Ai*h.transpose()).get(0,0);
+    v = (h*Ai*h.transpose()).get(0,0);    
     v = 1.0/( 1.0 - v );
     dPi.set(i,i,v);
   }
@@ -1414,7 +1411,7 @@ double SGTELIB::Matrix::get_trace_P ( const SGTELIB::Matrix & Ai,
 
   for ( int i = 0 ; i < p ; ++i ) {
     h = H.get_row(i);
-    v = (h*Ai*h.transpose()).get(0,0);
+    v = (h*Ai*h.transpose()).get(0,0);    
     trace += v;
   }
   return trace;
@@ -1429,11 +1426,11 @@ SGTELIB::Matrix SGTELIB::Matrix::add ( const SGTELIB::Matrix & A,
   if (A.get_nb_cols()!=B.get_nb_cols()){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ ,
              "Matrix::add(A,B): dimension error" );
-  }
+  }  
   if (A.get_nb_rows()!=B.get_nb_rows()){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ ,
              "Matrix::add(A,B): dimension error" );
-  }
+  }  
 
   const int nb_rows = A.get_nb_rows();
   const int nb_cols = A.get_nb_cols();
@@ -1458,10 +1455,10 @@ void SGTELIB::Matrix::add ( const SGTELIB::Matrix & B ) {
 
   if ( _nbCols != B.get_nb_cols() ){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"Matrix::add(B): dimension error" );
-  }
+  }  
   if ( _nbRows != B.get_nb_rows() ){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"Matrix::add(B): dimension error" );
-  }
+  }  
 
   // Compute
   int i,j;
@@ -1508,11 +1505,11 @@ SGTELIB::Matrix SGTELIB::Matrix::sub ( const SGTELIB::Matrix & A,
   if (A.get_nb_cols()!=B.get_nb_cols()){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ ,
              "Matrix::sub(A,B): dimension error" );
-  }
+  }  
   if (A.get_nb_rows()!=B.get_nb_rows()){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ ,
              "Matrix::sub(A,B): dimension error" );
-  }
+  }  
 
   int nb_rows = A.get_nb_rows();
   int nb_cols = A.get_nb_cols();
@@ -1537,10 +1534,10 @@ void SGTELIB::Matrix::sub ( const SGTELIB::Matrix & B ) {
 
   if ( _nbCols != B.get_nb_cols() ){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"Matrix::sub(B): dimension error" );
-  }
+  }  
   if ( _nbRows != B.get_nb_rows() ){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"Matrix::sub(B): dimension error" );
-  }
+  }  
 
   // Compute
   int i,j;
@@ -1584,7 +1581,7 @@ SGTELIB::Matrix SGTELIB::Matrix::ones ( const int nbRows , const int nbCols ) {
 SGTELIB::Matrix SGTELIB::Matrix::rank ( void ) const {
 
   // TODO: use faster method...
-  if ((_nbRows>1) && (_nbCols>1))
+  if ((_nbRows>1) && (_nbCols>1)) 
     throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"Matrix::rank: dimension error" );
 
   SGTELIB::Matrix R;
@@ -1694,7 +1691,7 @@ void SGTELIB::Matrix::normalize_cols ( void ){
 /*  compute the norm of each column         */
 /*------------------------------------------*/
 SGTELIB::Matrix SGTELIB::Matrix::col_norm ( const norm_t nt ) const {
-
+  
   SGTELIB::Matrix N = SGTELIB::Matrix("Norm",1,_nbCols);
 
   int i,j;
@@ -1757,7 +1754,7 @@ SGTELIB::Matrix SGTELIB::Matrix::sum ( const int direction ) const{
 
   double v;
   int i,j;
-
+  
   if (direction == 1){
     SGTELIB::Matrix S ("S",1,_nbCols);
     for ( j = 0 ; j < _nbCols ; ++j ){
@@ -1947,7 +1944,7 @@ SGTELIB::Matrix SGTELIB::Matrix::cholesky_inverse ( double * det ) const {
 /*-----------------------------------------*/
 /*  Solve Upper Triangular Linear system   */
 /*-----------------------------------------*/
-SGTELIB::Matrix SGTELIB::Matrix::triu_solve( const SGTELIB::Matrix & U ,
+SGTELIB::Matrix SGTELIB::Matrix::triu_solve( const SGTELIB::Matrix & U , 
                                             const SGTELIB::Matrix & b ){
   const int n = U.get_nb_rows();
   if (n!=U.get_nb_cols()){
@@ -1962,7 +1959,7 @@ SGTELIB::Matrix SGTELIB::Matrix::triu_solve( const SGTELIB::Matrix & U ,
     throw SGTELIB::Exception ( __FILE__ , __LINE__ ,
              "Matrix::triu_solve(): dimension error" );
   }
-
+  
   SGTELIB::Matrix x = b;
 
   for (int i=n-1 ; i>=0 ; i--){
@@ -1979,10 +1976,10 @@ SGTELIB::Matrix SGTELIB::Matrix::triu_solve( const SGTELIB::Matrix & U ,
 /*    Inverse Lower Triangular Matrix      */
 /*-----------------------------------------*/
 SGTELIB::Matrix SGTELIB::Matrix::tril_inverse( const SGTELIB::Matrix & L ){
-  const int n = L.get_nb_rows();
+  const int n = L.get_nb_rows(); 
   SGTELIB::Matrix Li = L;
   SGTELIB::Matrix b ("b",n,1);
-
+  
   for (int i=0 ; i<n ; i++){
     b.set(i,0,1.0);
     Li.set_col( SGTELIB::Matrix::tril_solve(L,b) , i);
@@ -1995,7 +1992,7 @@ SGTELIB::Matrix SGTELIB::Matrix::tril_inverse( const SGTELIB::Matrix & L ){
 /*-----------------------------------------*/
 /*  Solve Lower Triangular Linear system   */
 /*-----------------------------------------*/
-SGTELIB::Matrix SGTELIB::Matrix::tril_solve( const SGTELIB::Matrix & L ,
+SGTELIB::Matrix SGTELIB::Matrix::tril_solve( const SGTELIB::Matrix & L , 
                                              const SGTELIB::Matrix & b ){
   const int n = L.get_nb_rows();
   if (n!=L.get_nb_cols()){
@@ -2010,7 +2007,7 @@ SGTELIB::Matrix SGTELIB::Matrix::tril_solve( const SGTELIB::Matrix & L ,
     throw SGTELIB::Exception ( __FILE__ , __LINE__ ,
              "Matrix::tril_solve(): dimension error" );
   }
-
+  
   SGTELIB::Matrix x = b;
 
   for (int i=0 ; i<n ; i++){
@@ -2038,7 +2035,7 @@ SGTELIB::Matrix SGTELIB::Matrix::cholesky_solve ( const SGTELIB::Matrix & A ,
 /*        SVD inverse        */
 /*---------------------------*/
 SGTELIB::Matrix SGTELIB::Matrix::SVD_inverse ( void ) const {
-
+  
   if (get_nb_rows()!=get_nb_cols()){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ ,
              "Matrix::SVD_inverse(): dimension error" );
@@ -2057,7 +2054,7 @@ SGTELIB::Matrix SGTELIB::Matrix::SVD_inverse ( void ) const {
   for (int i=0 ; i<W->get_nb_rows() ; i++){
     W->set(i,i,1/W->get(i,i));
   }
-
+  
   *U = U->transpose();
   SGTELIB::Matrix INVERSE (product ( *V , *W , *U ));
   INVERSE.set_name("inv("+_name+")");
@@ -2071,7 +2068,7 @@ SGTELIB::Matrix SGTELIB::Matrix::SVD_inverse ( void ) const {
 /*        transpose          */
 /*---------------------------*/
 SGTELIB::Matrix SGTELIB::Matrix::transpose ( void ) const{
-  SGTELIB::Matrix A (_name+"'",_nbCols,_nbRows);
+  SGTELIB::Matrix A (_name+"'",_nbCols,_nbRows); 
   for (int i=0 ; i<_nbCols ; i++){
     for (int j=0 ; j<_nbRows ; j++){
       A.set(i,j,_X[j][i]);
@@ -2087,12 +2084,12 @@ SGTELIB::Matrix SGTELIB::Matrix::diag ( void ) const{
 
   SGTELIB::Matrix A;
   if (_nbCols==_nbRows){
-    A = SGTELIB::Matrix("A",_nbRows,1);
+    A = SGTELIB::Matrix("A",_nbRows,1);   
     for (int i=0 ; i<_nbCols ; i++) A.set(i,0,_X[i][i]);
   }
   else if ( (_nbCols==1) || (_nbRows==1) ){
     const int n=std::max(_nbCols,_nbRows);
-    A = SGTELIB::Matrix("A",_nbRows,1);
+    A = SGTELIB::Matrix("A",_nbRows,1);   
     for (int i=0 ; i<n ; i++) A.set(i,i,get(i));
   }
   else{
@@ -2157,15 +2154,15 @@ bool SGTELIB::Matrix::SVD_decomposition ( std::string & error_msg ,
   // Fill matrices
   for (int i=0 ; i<nbRows ; i++){
     for (int j=0 ; j<nbCols ; j++){
-      MAT_U->set(i,j,U[i][j]);
+      MAT_U->set(i,j,U[i][j]); 
     }
   }
   for (int i=0 ; i<nbCols ; i++){
     for (int j=0 ; j<nbCols ; j++){
-      MAT_V->set(i,j,V[i][j]);
-      MAT_W->set(i,j,0.0);
+      MAT_V->set(i,j,V[i][j]); 
+      MAT_W->set(i,j,0.0); 
     }
-    MAT_W->set(i,i,W[i]);
+    MAT_W->set(i,i,W[i]); 
   }
 
   // Delete U, V, W
@@ -2189,7 +2186,7 @@ bool SGTELIB::Matrix::SVD_decomposition ( std::string & error_msg ,
             int           max_mpn     ) const {
   const int nbRows = _nbRows;
   const int nbCols = _nbCols;
-
+  
   error_msg.clear();
 
   if ( max_mpn > 0 && nbRows+nbCols > max_mpn ) {
@@ -2380,7 +2377,7 @@ bool SGTELIB::Matrix::SVD_decomposition ( std::string & error_msg ,
       g  = rv1[nm];
       h  = rv1[k];
       f  = ( (y-z) * (y+z) + (g-h) * (g+h) ) / ( 2.0 * h * y );
-
+      
       absf = fabs(f);
       g    = ( absf > 1.0 ) ?
   absf * sqrt ( 1.0 + pow ( 1.0/absf , 2.0 ) ) :
@@ -2500,7 +2497,7 @@ int SGTELIB::Matrix::get_max_index (void ) {
   int i,j,k=0,kmax=0;
   double vmax = -SGTELIB::INF;
   // We use the same mono-indexation as in matlab:
-  //   1 4
+  //   1 4 
   //   2 5
   //   3 6
   for ( j = 0 ; j < _nbCols ; ++j ){
@@ -2543,17 +2540,17 @@ double SGTELIB::Matrix::max (void) {
 /*-------------------------------------------------*/
 /* min and max of two matrices                     */
 /*-------------------------------------------------*/
-SGTELIB::Matrix SGTELIB::Matrix::max ( const SGTELIB::Matrix & A ,
+SGTELIB::Matrix SGTELIB::Matrix::max ( const SGTELIB::Matrix & A , 
                                        const SGTELIB::Matrix & B ){
   const int nb_rows = A.get_nb_rows();
   const int nb_cols = A.get_nb_cols();
 
   if (B.get_nb_rows()!=nb_rows){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ , "Matrix::max(A,B): dimension error" );
-  }
+  }  
   if (B.get_nb_cols()!=nb_cols){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ , "Matrix::max(A,B): dimension error" );
-  }
+  }  
 
   // Init matrix
   SGTELIB::Matrix C("max("+A.get_name()+";"+B.get_name()+")",nb_rows,nb_cols);
@@ -2568,17 +2565,17 @@ SGTELIB::Matrix SGTELIB::Matrix::max ( const SGTELIB::Matrix & A ,
   return C;
 }//
 
-SGTELIB::Matrix SGTELIB::Matrix::min ( const SGTELIB::Matrix & A ,
+SGTELIB::Matrix SGTELIB::Matrix::min ( const SGTELIB::Matrix & A , 
                                        const SGTELIB::Matrix & B ){
   const int nb_rows = A.get_nb_rows();
   const int nb_cols = A.get_nb_cols();
 
   if (B.get_nb_rows()!=nb_rows){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ , "Matrix::min(A,B): dimension error" );
-  }
+  }  
   if (B.get_nb_cols()!=nb_cols){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ , "Matrix::min(A,B): dimension error" );
-  }
+  }  
 
   // Init matrix
   SGTELIB::Matrix C("min("+A.get_name()+";"+B.get_name()+")",nb_rows,nb_cols);
@@ -2600,7 +2597,7 @@ int SGTELIB::Matrix::get_min_index (void ) {
   int i,j,k=0,kmin=0;
   double vmin = +SGTELIB::INF;
   // We use the same mono-indexation as in matlab:
-  //   1 4
+  //   1 4 
   //   2 5
   //   3 6
   for ( j = 0 ; j < _nbCols ; ++j ){
@@ -2648,7 +2645,7 @@ int SGTELIB::Matrix::get_min_index_col ( const int j ) {
 /*-------------------------------------------------*/
 /* Return NORM2 distance                           */
 /*-------------------------------------------------*/
-SGTELIB::Matrix SGTELIB::Matrix::get_distances_norm2 ( const SGTELIB::Matrix & A ,
+SGTELIB::Matrix SGTELIB::Matrix::get_distances_norm2 ( const SGTELIB::Matrix & A , 
                                                        const SGTELIB::Matrix & B ){
   const int n = A.get_nb_cols();
   if ( B.get_nb_cols()!=n ){
@@ -2678,7 +2675,7 @@ SGTELIB::Matrix SGTELIB::Matrix::get_distances_norm2 ( const SGTELIB::Matrix & A
 /*-------------------------------------------------*/
 /* Return NORM1 distance                           */
 /*-------------------------------------------------*/
-SGTELIB::Matrix SGTELIB::Matrix::get_distances_norm1 ( const SGTELIB::Matrix & A ,
+SGTELIB::Matrix SGTELIB::Matrix::get_distances_norm1 ( const SGTELIB::Matrix & A , 
                                                        const SGTELIB::Matrix & B ){
   const int n = A.get_nb_cols();
   if ( B.get_nb_cols()!=n ){
@@ -2707,7 +2704,7 @@ SGTELIB::Matrix SGTELIB::Matrix::get_distances_norm1 ( const SGTELIB::Matrix & A
 /*-------------------------------------------------*/
 /* Return NORMINF distance                         */
 /*-------------------------------------------------*/
-SGTELIB::Matrix SGTELIB::Matrix::get_distances_norminf ( const SGTELIB::Matrix & A ,
+SGTELIB::Matrix SGTELIB::Matrix::get_distances_norminf ( const SGTELIB::Matrix & A , 
                                                          const SGTELIB::Matrix & B ){
   const int n = A.get_nb_cols();
   if ( B.get_nb_cols()!=n ){
@@ -2744,16 +2741,16 @@ int SGTELIB::Matrix::find_row (SGTELIB::Matrix & R){
   if (_nbRows==0) return -1;
 
   // Then, check dimensions.
-  if (R.get_nb_rows()!=1)
+  if (R.get_nb_rows()!=1) 
     throw SGTELIB::Exception ( __FILE__ , __LINE__ , "find_row: dimension error" );
   if (R.get_nb_cols()!=_nbCols)
     throw SGTELIB::Exception ( __FILE__ , __LINE__ , "find_row: dimension error" );
 
-  // Look for the row.
+  // Look for the row. 
   int i,j;
   bool diff;
   for (i=0 ; i<_nbRows ; i++){
-    diff = false;
+    diff = false;    
     for (j=0 ; j<_nbCols ; j++){
       if (_X[i][j]!=R._X[0][j]){
         diff = true;
@@ -2964,12 +2961,12 @@ SGTELIB::Matrix SGTELIB::Matrix::lu_inverse ( double * det ) const{
     }
     *det = v;
   }
-
+  
   // Triangular inversion for each column of Ai.
   SGTELIB::Matrix y;
   for (k=0 ; k<N; k++){
     y = Ai.get_col(k);
-
+    
     // Tri-L solve
     for (i=0 ; i<N ; i++){
       for (j=0 ; j<i ; j++){
@@ -2989,7 +2986,7 @@ SGTELIB::Matrix SGTELIB::Matrix::lu_inverse ( double * det ) const{
   }
 
   delete [] P;
-
+  
   Ai.set_name(_name+"^-1");
   return Ai;
 

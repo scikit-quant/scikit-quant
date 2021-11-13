@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -56,18 +57,12 @@
 #include "../Util/fileutils.hpp"
 
 #ifdef TIME_STATS
-#include "../Algos/Mads/MadsIteration.hpp"
-#include "../Algos/Mads/Search.hpp"
 #include "../Util/Clock.hpp"
 #endif // TIME_STATS
 
-#ifdef _OPENMP
-omp_lock_t NOMAD::Algorithm::_algoCommentLock;
-#endif // _OPENMP
-
 void NOMAD::Algorithm::init()
 {
-    _name = "AGenericAlgorithmHasNoName";
+    //_name = "AGenericAlgorithmHasNoName";
 
     // Verifications that throw Exceptions to the Constructor if not validated.
     verifyParentNotNull();
@@ -88,10 +83,6 @@ void NOMAD::Algorithm::init()
         throw NOMAD::StepException(__FILE__, __LINE__,
                                "Valid stop reasons must be provided to the Algorithm constructor.", this);
 
-#ifdef _OPENMP
-    omp_init_lock(&_algoCommentLock);
-#endif // _OPENMP
-
     // Check pbParams if needed, ex. if a copy of PbParameters was given to the Algorithm constructor.
     _pbParams->checkAndComply();
 
@@ -100,10 +91,10 @@ void NOMAD::Algorithm::init()
 
     // Update SubproblemManager
     NOMAD::Point fullFixedVariable = isRootAlgo() ? _pbParams->getAttributeValue<NOMAD::Point>("FIXED_VARIABLE")
-                                   : NOMAD::SubproblemManager::getSubFixedVariable(_parentStep);
+                                   : NOMAD::SubproblemManager::getInstance()->getSubFixedVariable(_parentStep);
 
     NOMAD::Subproblem subproblem(_pbParams, fullFixedVariable);
-    NOMAD::SubproblemManager::addSubproblem(this, subproblem);
+    NOMAD::SubproblemManager::getInstance()->addSubproblem(this, subproblem);
     _pbParams = subproblem.getPbParams();
     _pbParams->checkAndComply();
 
@@ -119,98 +110,7 @@ void NOMAD::Algorithm::init()
 
 NOMAD::Algorithm::~Algorithm()
 {
-    NOMAD::SubproblemManager::removeSubproblem(this);
-#ifdef _OPENMP
-    omp_destroy_lock(&_algoCommentLock);
-#endif // _OPENMP
-}
-
-
-// Set _algoComment, and push the current algo comment to _prevAlgoComment pile.
-// Do not push an empty string on an empty pile, it is irrelevant.
-// If force = true, do not set a new algo comment until this comment is reset.
-void NOMAD::Algorithm::setAlgoComment(const std::string& algoComment, const bool force)
-{
-    if (isSubAlgo())
-    {
-        auto rootAlgo = const_cast<NOMAD::Algorithm*>(getRootAlgorithm());
-        rootAlgo->setAlgoComment(algoComment, force);
-    }
-    else
-    {
-#ifdef _OPENMP
-        omp_set_lock(&_algoCommentLock);
-#endif // _OPENMP
-        if (!_forceAlgoComment)
-        {
-            // Push algo comment to _prevAlgoComment
-            if (!_prevAlgoComment.empty() || !_algoComment.empty())
-            {
-                _prevAlgoComment.push_back(_algoComment);
-            }
-            _algoComment = algoComment;
-        }
-        if (force)
-        {
-            _forceAlgoComment = true;
-        }
-#ifdef _OPENMP
-        omp_unset_lock(&_algoCommentLock);
-#endif // _OPENMP
-    }
-}
-
-
-// Pop the previous algo comment from the _prevAlgoComment pile.
-void NOMAD::Algorithm::resetPreviousAlgoComment(const bool force)
-{
-    if (isSubAlgo())
-    {
-        auto rootAlgo = const_cast<NOMAD::Algorithm*>(getRootAlgorithm());
-        rootAlgo->resetPreviousAlgoComment(force);
-    }
-    else
-    {
-#ifdef _OPENMP
-        omp_set_lock(&_algoCommentLock);
-#endif // _OPENMP
-        if (!_forceAlgoComment || force)
-        {
-            if (_prevAlgoComment.empty())
-            {
-                _algoComment = "";
-            }
-            else
-            {
-                // Remove last element, simulate a "pop".
-                _algoComment = std::move(_prevAlgoComment[_prevAlgoComment.size()-1]);
-                _prevAlgoComment.erase(_prevAlgoComment.end()-1);
-            }
-            if (_forceAlgoComment)
-            {
-                _forceAlgoComment = false;
-            }
-        }
-#ifdef _OPENMP
-        omp_unset_lock(&_algoCommentLock);
-#endif // _OPENMP
-    }
-}
-
-
-std::string NOMAD::Algorithm::getAlgoComment() const
-{
-    std::string algoComment;
-    if (isSubAlgo())
-    {
-        algoComment = getRootAlgorithm()->getAlgoComment();
-    }
-    else
-    {
-        algoComment = _algoComment;
-    }
-
-    return algoComment;
+    NOMAD::SubproblemManager::getInstance()->removeSubproblem(this);
 }
 
 
@@ -222,9 +122,6 @@ void NOMAD::Algorithm::startImp()
         _startTime = NOMAD::Clock::getCPUTime();
     }
 #endif // TIME_STATS
-    // Comment to appear at the end of stats lines
-    // By default, nothing is added
-    setAlgoComment("");
 
     // All stop reasons are reset.
     _stopReasons->setStarted();
@@ -243,7 +140,7 @@ void NOMAD::Algorithm::startImp()
     // By default reset the lap counter for BbEval and set the lap maxBbEval to INF
     NOMAD::EvcInterface::getEvaluatorControl()->resetLapBbEval();
     NOMAD::EvcInterface::getEvaluatorControl()->setLapMaxBbEval( NOMAD::INF_SIZE_T );
-    NOMAD::EvcInterface::getEvaluatorControl()->resetSgteEval();
+    NOMAD::EvcInterface::getEvaluatorControl()->resetModelEval();
 
     if (nullptr == _megaIteration)
     {
@@ -329,9 +226,6 @@ void NOMAD::Algorithm::endImp()
         saveInformationForHotRestart();
         NOMAD::CacheBase::getInstance()->setStopWaiting(true);
     }
-
-    // Reset stats comment
-    resetPreviousAlgoComment();
 }
 
 
@@ -390,8 +284,15 @@ void NOMAD::Algorithm::displayBestSolutions() const
     // Output level is info if this algorithm is a sub part of another algorithm.
     NOMAD::OutputLevel outputLevel = isSubAlgo() ? NOMAD::OutputLevel::LEVEL_INFO
                                                  : NOMAD::OutputLevel::LEVEL_VERY_HIGH;
-    NOMAD::OutputInfo displaySolFeas(_name, sFeas, outputLevel);
-    auto fixedVariable = NOMAD::SubproblemManager::getSubFixedVariable(this);
+    auto solFormat = NOMAD::OutputQueue::getInstance()->getSolFormat();
+    auto computeType = NOMAD::EvcInterface::getEvaluatorControl()->getComputeType();
+    auto surrogateAsBB = NOMAD::EvcInterface::getEvaluatorControl()->getSurrogateOptimization();
+    if (isRootAlgo())
+    {
+        solFormat.set(-1);
+    }
+    NOMAD::OutputInfo displaySolFeas(getName(), sFeas, outputLevel);
+    auto fixedVariable = NOMAD::SubproblemManager::getInstance()->getSubFixedVariable(this);
 
     sFeas = "Best feasible solution";
     auto barrier = getMegaIterationBarrier();
@@ -410,12 +311,18 @@ void NOMAD::Algorithm::displayBestSolutions() const
     else if (1 == nbBestFeas)
     {
         sFeas += ":     ";
-        displaySolFeas.addMsgAndSol(sFeas, *evalPointList.begin());
+        displaySolFeas.addMsg(sFeas + evalPointList[0].display(computeType,
+                                                        solFormat,
+                                                        NOMAD::DISPLAY_PRECISION_FULL,
+                                                        surrogateAsBB));
     }
     else
     {
         sFeas += "s:    ";
-        displaySolFeas.addMsgAndSol(sFeas, *evalPointList.begin());
+        displaySolFeas.addMsg(sFeas + evalPointList[0].display(computeType,
+                                                        solFormat,
+                                                        NOMAD::DISPLAY_PRECISION_FULL,
+                                                        surrogateAsBB));
     }
 
 
@@ -431,7 +338,10 @@ void NOMAD::Algorithm::displayBestSolutions() const
             {
                 continue;   // First element already added
             }
-            displaySolFeas.addMsgAndSol("                            ",*it);
+            sFeas = "                            ";
+            displaySolFeas.addMsg(sFeas + it->display(computeType, solFormat,
+                                                      NOMAD::DISPLAY_PRECISION_FULL,
+                                                      surrogateAsBB));
             if (solCount >= maxSolCount)
             {
                 // We printed enough solutions already.
@@ -448,7 +358,7 @@ void NOMAD::Algorithm::displayBestSolutions() const
 
     // Display best infeasible solutions.
     std::string sInf;
-    NOMAD::OutputInfo displaySolInf(_name, sInf, outputLevel);
+    NOMAD::OutputInfo displaySolInf(getName(), sInf, outputLevel);
     sInf = "Best infeasible solution";
     if (nullptr != barrier)
     {
@@ -465,12 +375,18 @@ void NOMAD::Algorithm::displayBestSolutions() const
     else if (1 == nbBestInf)
     {
         sInf += ":   ";
-        displaySolInf.addMsgAndSol(sInf, *evalPointList.begin());
+        displaySolInf.addMsg(sInf + evalPointList[0].display(computeType,
+                                                        solFormat,
+                                                        NOMAD::DISPLAY_PRECISION_FULL,
+                                                        surrogateAsBB));
     }
     else
     {
         sInf += "s:  ";
-        displaySolInf.addMsgAndSol(sInf, *evalPointList.begin());
+        displaySolInf.addMsg(sInf + evalPointList[0].display(computeType,
+                                                        solFormat,
+                                                        NOMAD::DISPLAY_PRECISION_FULL,
+                                                        surrogateAsBB));
     }
 
     if (nbBestInf > 1)
@@ -484,7 +400,10 @@ void NOMAD::Algorithm::displayBestSolutions() const
             {
                 continue;   // First element already added
             }
-            displaySolInf.addMsgAndSol("                            ",(*it));
+            displaySolInf.addMsg("                            " + it->display(computeType,
+                                                                        solFormat,
+                                                                        NOMAD::DISPLAY_PRECISION_FULL,
+                                                                        surrogateAsBB));
             if (solCount >= maxSolCount)
             {
                 // We printed enough solutions already.
@@ -509,15 +428,15 @@ void NOMAD::Algorithm::displayEvalCounts() const
     size_t bbEval       = NOMAD::EvcInterface::getEvaluatorControl()->getBbEval();
     size_t lapBbEval    = NOMAD::EvcInterface::getEvaluatorControl()->getLapBbEval();
     size_t nbEval       = NOMAD::EvcInterface::getEvaluatorControl()->getNbEval();
-    size_t sgteEval     = NOMAD::EvcInterface::getEvaluatorControl()->getSgteEval();
-    size_t totalSgteEval = NOMAD::EvcInterface::getEvaluatorControl()->getTotalSgteEval();
+    size_t modelEval    = NOMAD::EvcInterface::getEvaluatorControl()->getModelEval();
+    size_t totalModelEval = NOMAD::EvcInterface::getEvaluatorControl()->getTotalModelEval();
     size_t nbCacheHits  = NOMAD::CacheBase::getNbCacheHits();
     int nbEvalNoCount   = static_cast<int>(nbEval - bbEval - nbCacheHits);
 
     // What needs to be shown, according to the counts and to the value of isSub
     bool showNbEvalNoCount  = (nbEvalNoCount > 0);
-    bool showSgteEval       = isSub && (sgteEval > 0);
-    bool showTotalSgteEval  = (totalSgteEval > 0);
+    bool showModelEval      = isSub && (modelEval > 0);
+    bool showTotalModelEval = (totalModelEval > 0);
     bool showNbCacheHits    = (nbCacheHits > 0);
     bool showNbEval         = (nbEval > bbEval);
     bool showLapBbEval      = isSub && (bbEval > lapBbEval && lapBbEval > 0);
@@ -529,8 +448,8 @@ void NOMAD::Algorithm::displayEvalCounts() const
                                                  : NOMAD::OutputLevel::LEVEL_NORMAL;
 
     // Padding for nice presentation
-    std::string sFeedBbEval, sFeedLapBbEval, sFeedNbEvalNoCount, sFeedSgteEval,
-                sFeedTotalSgteEval, sFeedCacheHits, sFeedNbEval;
+    std::string sFeedBbEval, sFeedLapBbEval, sFeedNbEvalNoCount, sFeedModelEval,
+                sFeedTotalModelEval, sFeedCacheHits, sFeedNbEval;
 
     // Conditional values: showNbEval, showNbEvalNoCount, showLapBbEval
     if (showLapBbEval)  // Longest title
@@ -538,8 +457,8 @@ void NOMAD::Algorithm::displayEvalCounts() const
         sFeedBbEval += "                 ";
         //sFeedLapBbEval += "";
         sFeedNbEvalNoCount += "   ";
-        sFeedSgteEval += "                     ";
-        sFeedTotalSgteEval += "               ";
+        sFeedModelEval += "                    ";
+        sFeedTotalModelEval += "              ";
         sFeedCacheHits += "                           ";
         sFeedNbEval += "          ";
     }
@@ -548,8 +467,8 @@ void NOMAD::Algorithm::displayEvalCounts() const
         sFeedBbEval += "              ";
         //sFeedLapBbEval += "";
         //sFeedNbEvalNoCount += "";
-        sFeedSgteEval += "                  ";
-        sFeedTotalSgteEval += "            ";
+        sFeedModelEval += "                 ";
+        sFeedTotalModelEval += "           ";
         sFeedCacheHits += "                        ";
         sFeedNbEval += "       ";
     }
@@ -558,17 +477,27 @@ void NOMAD::Algorithm::displayEvalCounts() const
         sFeedBbEval += "       ";
         //sFeedLapBbEval += "";
         //sFeedNbEvalNoCount += "";
-        sFeedSgteEval += "           ";
-        sFeedTotalSgteEval += "     ";
+        sFeedModelEval += "          ";
+        sFeedTotalModelEval += "    ";
         sFeedCacheHits += "                 ";
+        //sFeedNbEval += "";
+    }
+    else if (showTotalModelEval)
+    {
+        sFeedBbEval += "   ";
+        //sFeedLapBbEval += "";
+        //sFeedNbEvalNoCount += "";
+        //sFeedModelEval += "          ";
+        //sFeedTotalModelEval += "    ";
+        //sFeedCacheHits += "                 ";
         //sFeedNbEval += "";
     }
 
     std::string sBbEval         = "Blackbox evaluations: " + sFeedBbEval + NOMAD::itos(bbEval);
     std::string sLapBbEval      = "Sub-optimization blackbox evaluations: " + sFeedLapBbEval + NOMAD::itos(lapBbEval);
     std::string sNbEvalNoCount  = "Blackbox evaluation (not counting): " + sFeedNbEvalNoCount + NOMAD::itos(nbEvalNoCount);
-    std::string sSgteEval       = "Sgte evaluations: " + sFeedSgteEval + NOMAD::itos(sgteEval);
-    std::string sTotalSgteEval  = "Total sgte evaluations: " + sFeedTotalSgteEval + NOMAD::itos(totalSgteEval);
+    std::string sModelEval      = "Model evaluations: " + sFeedModelEval + NOMAD::itos(modelEval);
+    std::string sTotalModelEval = "Total model evaluations: " + sFeedTotalModelEval + NOMAD::itos(totalModelEval);
     std::string sCacheHits      = "Cache hits: " + sFeedCacheHits + NOMAD::itos(nbCacheHits);
     std::string sNbEval         = "Total number of evaluations: " + sFeedNbEval + NOMAD::itos(nbEval);
 
@@ -590,13 +519,13 @@ void NOMAD::Algorithm::displayEvalCounts() const
     {
         AddOutputInfo(sNbEvalNoCount, outputLevelNormal);
     }
-    if (showSgteEval)
+    if (showModelEval)
     {
-        AddOutputInfo(sSgteEval, outputLevelNormal);
+        AddOutputInfo(sModelEval, outputLevelNormal);
     }
-    if (showTotalSgteEval)
+    if (showTotalModelEval)
     {
-        AddOutputInfo(sTotalSgteEval, outputLevelNormal);
+        AddOutputInfo(sTotalModelEval, outputLevelNormal);
     }
     if (showNbCacheHits)
     {

@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -50,14 +51,15 @@
  \date   June 2017
  \see    fileutils.hpp
  */
+#include "../Util/Exception.hpp"
 #include "../Util/fileutils.hpp"
 #include "../Util/utils.hpp"
 
 #ifdef _WIN32
 #include <direct.h>     // for getcwd
+#include <cctype>       // for isalpha
 #define getcwd _getcwd
 #endif
-
 
 /*-----------------------------------------------------------------*/
 /*              check if a file exists and is executable           */
@@ -212,11 +214,26 @@ std::string NOMAD::fullpath(const std::string &filename)
 }
 
 
-// Return true if a filename is absolute, i.e., starts with '/'.
+// Return true if a filename is absolute.
+// On Linux/MacOS, check if the filename start with '/'.
+// On Windows, naively check if the filename starts with a letter
+// followed by a colon.
 // Return false otherwise (filename is relative, or filename is file only).
 bool NOMAD::isAbsolute(const std::string &filename)
 {
+#ifdef WINDOWS
+    if (filename.size() < 2)
+    {
+        throw NOMAD::Exception(__FILE__,__LINE__,"isAbsolute: File name is too small");
+    }
+    return (std::isalpha(filename[0]) && ':' == filename[1]);
+#else
+    if (filename.size() < 1)
+    {
+        throw NOMAD::Exception(__FILE__,__LINE__,"isAbsolute: Empty file name");
+    }
     return (filename[0] == NOMAD::DIR_SEP);
+#endif
 }
 
 

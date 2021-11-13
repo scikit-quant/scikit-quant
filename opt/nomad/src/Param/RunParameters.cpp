@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -46,6 +47,7 @@
 
 #include "../Math/RNG.hpp"  // for setSeed()
 #include "../Param/RunParameters.hpp"
+#include "../Type/DirectionType.hpp"
 #include "../Util/fileutils.hpp"
 
 #include "../nomad_version.hpp"
@@ -64,6 +66,24 @@ void NOMAD::RunParameters::init()
     try
     {
         #include "../Attribute/runAttributesDefinition.hpp"
+        registerAttributes( _definition );
+
+        #include "../Attribute/runAttributesDefinitionLH.hpp"
+        registerAttributes( _definition );
+
+        #include "../Attribute/runAttributesDefinitionNM.hpp"
+        registerAttributes( _definition );
+
+        #include "../Attribute/runAttributesDefinitionPSDSSD.hpp"
+        registerAttributes( _definition );
+
+        #include "../Attribute/runAttributesDefinitionQuadModel.hpp"
+        registerAttributes( _definition );
+
+        #include "../Attribute/runAttributesDefinitionSgtelibModel.hpp"
+        registerAttributes( _definition );
+        
+        #include "../Attribute/runAttributesDefinitionVNS.hpp"
         registerAttributes( _definition );
 
         // Registered attributes using defined keywords (not in preprocessed special header file)
@@ -85,7 +105,7 @@ void NOMAD::RunParameters::init()
         // Note: we cannot call checkAndComply() here, the default values
         // are not valid.
     }
-    catch (NOMAD::Exception & e)
+    catch (NOMAD::Exception& e)
     {
         std::string errorMsg = "Attribute registration failed: ";
         errorMsg += e.what();
@@ -157,65 +177,22 @@ void NOMAD::RunParameters::checkAndComply(
 
     setStaticParameters();
 
-    /*-------------------*/
-    /* Disable parameter */
-    /*-------------------*/
-    // Convert all disabled entries (MODELS, EVAL_SORT, ...) to upper case.
-    auto disabledConst = getAttributeValueProtected<NOMAD::ArrayOfString>("DISABLE", false);
-    NOMAD::ArrayOfString disabled;
-    for (size_t i = 0; i < disabledConst.size(); i++)
-    {
-        std::string disabledI = disabledConst[i];
-        NOMAD::toupper(disabledI);
-        disabled.add(disabledI);
-    }
-    setAttributeValue("DISABLE", disabled);
-
     /*---------------------------*/
     /* Sgtelib Search parameters */
     /*---------------------------*/
     const size_t bigDim = 50;
     size_t n = pbParams->getAttributeValue<size_t>("DIMENSION");
-#ifdef USE_SGTELIB
-    bool showDisableWarn = true;
-#endif
     // If dimension is too large, disable models.
-    disabled = getAttributeValueProtected<NOMAD::ArrayOfString>("DISABLE", false);
     if (n >= bigDim)
     {
-        if (-1 == disabled.find("MODELS"))
+        if (   getAttributeValueProtected<bool>("QUAD_MODEL_SEARCH", false)
+            || getAttributeValueProtected<bool>("SGTELIB_MODEL_SEARCH", false))
         {
-            disabled.add(std::string("MODELS"));
-            setAttributeValue("DISABLE", disabled);
-            std::cerr << "Warning: Dimension " << n << " is greater than (or equal to) " << bigDim << ". Models are disabled." << std::endl;
-#ifdef USE_SGTELIB
-            showDisableWarn = false;
-#endif
-        }
-    }
-#ifdef USE_SGTELIB
-    // If models are disabled, set SGTELIB_SEARCH to false.
-    disabled = getAttributeValueProtected<NOMAD::ArrayOfString>("DISABLE", false);
-    if (disabled.find("MODELS") >= 0)
-    {
-        if (getAttributeValueProtected<bool>("SGTELIB_SEARCH", false))
-        {
-            if (showDisableWarn)
-            {
-                std::cerr << "Warning: Models are disabled. SGTELIB_SEARCH set to false." << std::endl;
-            }
-            setAttributeValue("SGTELIB_SEARCH", false);
-        }
-        if (getAttributeValueProtected<bool>("QUAD_MODEL_SEARCH", false))
-        {
-            if (showDisableWarn)
-            {
-                std::cerr << "Warning: Models are disabled. QUAD_MODEL_SEARCH set to false." << std::endl;
-            }
             setAttributeValue("QUAD_MODEL_SEARCH", false);
+            setAttributeValue("SGTELIB_MODEL_SEARCH", false);
+            std::cerr << "Warning: Dimension " << n << " is greater than (or equal to) " << bigDim << ". Models are disabled." << std::endl;
         }
     }
-#endif
 
     // Set default value, if the parameter is not set.
     // Default value: TYPE LOWESS DEGREE 1 KERNEL_SHAPE OPTIM KERNEL_COEF OPTIM RIDGE 0 METRIC AOECV
@@ -227,29 +204,36 @@ void NOMAD::RunParameters::checkAndComply(
         setAttributeValue("SGTELIB_MODEL_DEFINITION", aos );
     }
 
-    auto sgtelibModelTrials = getAttributeValueProtected<size_t>("SGTELIB_MODEL_TRIALS", false);
-    if (0 == sgtelibModelTrials)
+    auto sgtelibModelSearchTrials = getAttributeValueProtected<size_t>("SGTELIB_MODEL_SEARCH_TRIALS", false);
+    if (0 == sgtelibModelSearchTrials)
     {
-        throw NOMAD::Exception(__FILE__, __LINE__, "Parameter SGTELIB_MODEL_TRIALS must be positive");
+        throw NOMAD::Exception(__FILE__, __LINE__, "Parameter SGTELIB_MODEL_SEARCH_TRIALS must be positive");
     }
+
+    // Misc.
+    auto frameCenterUseCache = getAttributeValueProtected<bool>("FRAME_CENTER_USE_CACHE", false);
+    if (!frameCenterUseCache)
+    {
+        // Void parameter MAX_ITERATION_PER_MEGAITERATION
+        setAttributeValue("MAX_ITERATION_PER_MEGAITERATION", INF_SIZE_T);
+    }
+
 
     /*--------------------------------*/
     /* Parallelism related parameters */
     /*--------------------------------*/
     // Ensure we can get value for BB_MAX_BLOCK_SIZE without throwing an exception.
-    if (evaluatorControlGlobalParams->toBeChecked())
+    if (nullptr != evaluatorControlGlobalParams)
     {
-        evaluatorControlGlobalParams->checkAndComply();
-    }
-    auto bbBlockSize = evaluatorControlGlobalParams->getAttributeValue<size_t>("BB_MAX_BLOCK_SIZE");
-    if (0 == bbBlockSize)
-    {
-        throw NOMAD::Exception(__FILE__, __LINE__, "Parameter BB_MAX_BLOCK_SIZE must be positive");
-    }
-    auto sgteBlockSize = evaluatorControlGlobalParams->getAttributeValue<size_t>("SGTE_MAX_BLOCK_SIZE");
-    if (0 == sgteBlockSize)
-    {
-        throw NOMAD::Exception(__FILE__, __LINE__, "Parameter SGTE_MAX_BLOCK_SIZE must be positive");
+        if (evaluatorControlGlobalParams->toBeChecked())
+        {
+            evaluatorControlGlobalParams->checkAndComply();
+        }
+        auto bbBlockSize = evaluatorControlGlobalParams->getAttributeValue<size_t>("BB_MAX_BLOCK_SIZE");
+        if (0 == bbBlockSize)
+        {
+            throw NOMAD::Exception(__FILE__, __LINE__, "Parameter BB_MAX_BLOCK_SIZE must be positive");
+        }
     }
 
 #ifndef USE_SGTELIB
@@ -260,9 +244,9 @@ void NOMAD::RunParameters::checkAndComply(
         err += "SGTELIB_MODEL_EVAL to false, or recompile NOMAD using option USE_SGTELIB=1.";
         throw NOMAD::Exception(__FILE__,__LINE__, err);
     }
-    if (getAttributeValueProtected<bool>("SGTELIB_SEARCH", false))
+    if (getAttributeValueProtected<bool>("SGTELIB_MODEL_SEARCH", false))
     {
-        err = "Warning: Parameter SGTELIB_SEARCH is set to true, but ";
+        err = "Warning: Parameter SGTELIB_MODEL_SEARCH is set to true, but ";
         err += "Sgtelib Model sampling cannot be used. To be able to use Sgtelib Model ";
         err += "search method, NOMAD must be recompiled using option USE_SGTELIB=1.";
         std::cerr << err << std::endl;
@@ -275,6 +259,53 @@ void NOMAD::RunParameters::checkAndComply(
         std::cerr << err << std::endl;
     }
 #endif
+
+    // Update secondary poll direction based on primary poll direction
+    // If DIRECTION_TYPE contains ORTHO, do nothing.
+    // Else, set DIRECTION_TYPE_SECONDARY_POLL to SINGLE.
+    // This is not exactly the behavior of NOMAD 3, but it is close enough.
+    bool orthoInDirTypes = false;
+    auto primaryDirTypes = getAttributeValueProtected<NOMAD::DirectionTypeList>("DIRECTION_TYPE", false);
+    for (auto primaryDirType : primaryDirTypes)
+    {
+        if (   NOMAD::DirectionType::ORTHO_2N == primaryDirType
+            || NOMAD::DirectionType::ORTHO_NP1_NEG == primaryDirType
+            || NOMAD::DirectionType::ORTHO_NP1_QUAD == primaryDirType)
+        {
+            orthoInDirTypes = true;
+            break;
+        }
+    }
+    if (!orthoInDirTypes)
+    {
+        std::vector<NOMAD::DirectionType> dirTypes;
+        dirTypes.push_back(NOMAD::DirectionType::SINGLE);
+        setAttributeValue("DIRECTION_TYPE_SECONDARY_POLL", dirTypes);
+    }
+
+    // Precisions on MEGA_SEARCH_POLL
+    if (getAttributeValueProtected<bool>("MEGA_SEARCH_POLL", false))
+    {
+        // MEGA_SEARCH_POLL does not support ORTHO_NP1_NEG and ORTHO_NP1_QUAD.
+        for (auto dirType : primaryDirTypes)
+        {
+            if (   NOMAD::DirectionType::ORTHO_NP1_NEG == dirType
+                || NOMAD::DirectionType::ORTHO_NP1_QUAD == dirType)
+            {
+                err = "Parameters check: Direction type " + NOMAD::directionTypeToString(dirType) + " is not supported with MEGA_SEARCH_POLL";
+                throw NOMAD::Exception(__FILE__,__LINE__, err);
+            }
+        }
+        for (auto dirType : getAttributeValueProtected<NOMAD::DirectionTypeList>("DIRECTION_TYPE_SECONDARY_POLL", false))
+        {
+            if (   NOMAD::DirectionType::ORTHO_NP1_NEG == dirType
+                || NOMAD::DirectionType::ORTHO_NP1_QUAD == dirType)
+            {
+                err = "Parameters check: Direction type " + NOMAD::directionTypeToString(dirType) + " is not supported with MEGA_SEARCH_POLL";
+                throw NOMAD::Exception(__FILE__,__LINE__, err);
+            }
+        }
+    }
 
     // PSD-Mads and SSD-Mads parameters
     bool useAlgoPSDMads = getAttributeValueProtected<bool>("PSD_MADS_OPTIMIZATION", false);
@@ -326,7 +357,7 @@ void NOMAD::RunParameters::checkAndComply(
         // Check parameter for coverage
         if (useAlgoPSDMads)
         {
-            std::string covParamName = "PSD_MADS_SUBPROBLEM_PCT_COVERAGE";
+            std::string covParamName = "PSD_MADS_SUBPROBLEM_PERCENT_COVERAGE";
             auto coverage = getAttributeValueProtected<NOMAD::Double>(covParamName, false);
             if (coverage < 0.0 || coverage > 100.0)
             {
@@ -395,6 +426,26 @@ void NOMAD::RunParameters::checkAndComply(
         throw NOMAD::Exception(__FILE__,__LINE__, "Parameters check: H_MAX_0 must be positive");
     }
 
+    /*------------------------*/
+    /* Speculative search     */
+    /*  parameters            */
+    /*------------------------*/
+    auto baseFactor = getAttributeValueProtected<NOMAD::Double>("SPECULATIVE_SEARCH_BASE_FACTOR", false);
+    if (baseFactor <= 1)
+    {
+        throw NOMAD::Exception(__FILE__,__LINE__, "Parameters check: SPECULATIVE_SEARCH_BASE_FACTOR must be strictly greater than 1");
+    }
+
+    /*------------------------*/
+    /* Quad model search      */
+    /*  parameters            */
+    /*------------------------*/
+    auto reductionFactor = getAttributeValueProtected<NOMAD::Double>("QUAD_MODEL_SEARCH_BOUND_REDUCTION_FACTOR", false);
+    if (reductionFactor <= 0)
+    {
+        throw NOMAD::Exception(__FILE__,__LINE__, "Parameters check: QUAD_MODEL_SEARCH_BOUND_REDUCTION_FACTOR must be strictly greater than 0");
+    }
+
     _warningUnknownParamShown = true;
 
     _toBeChecked = false;
@@ -405,7 +456,14 @@ void NOMAD::RunParameters::checkAndComply(
 void NOMAD::RunParameters::setStaticParameters()
 {
     // Sub-method of checkAndComply() to set static variables of some classes.
-    NOMAD::RNG::setSeed ( getAttributeValueProtected<int>("SEED",false) );
+    int currentRNGSeed = NOMAD::RNG::getSeed();
+    int seedToSet = getAttributeValueProtected<int>("SEED",false);
+    // If the seed has changed we call setSeed which reset the private RNG seed to its default and runs the rand() function to set the seed (seed and private seed are different).
+    // If the seed is the same as before we do nothing.
+    if (currentRNGSeed != seedToSet)
+    {
+        NOMAD::RNG::setSeed ( seedToSet );
+    }
     NOMAD::Double::setEpsilon ( getAttributeValueProtected<NOMAD::Double>("EPSILON",false).todouble() );
     NOMAD::Double::setUndefStr ( getAttributeValueProtected<std::string>("UNDEF_STR",false) );
     NOMAD::Double::setInfStr ( getAttributeValueProtected<std::string>("INF_STR",false) );

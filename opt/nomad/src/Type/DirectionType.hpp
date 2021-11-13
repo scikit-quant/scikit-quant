@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -51,11 +52,12 @@
  \see    DirectionType.cpp
  */
 
-#ifndef __NOMAD400_DIRECTION_TYPE__
-#define __NOMAD400_DIRECTION_TYPE__
+#ifndef __NOMAD_4_0_DIRECTION_TYPE__
+#define __NOMAD_4_0_DIRECTION_TYPE__
 
 #include <list>
 #include <sstream>
+#include <vector>
 
 #include "../nomad_nsbegin.hpp"
 
@@ -84,15 +86,18 @@ enum class DirectionType
     ///< DirectionType is mandatory
 };
 
+typedef std::vector<DirectionType> DirectionTypeList;
 
-/// Convert a list of strings (ex "ORTHO 2N", "ORTHO NP1")  to a DirectionType.
+/// Convert a list of strings (ex "ORTHO 2N", "ORTHO NP1") to a DirectionType.
 DirectionType stringToDirectionType(const std::list<std::string> & ls);
 
-/// Convert a string (ex "ORTHO 2N", "ORTHO NP1")  to a DirectionType.
+/// Convert a string (ex "ORTHO 2N", "ORTHO NP1") to a DirectionType.
 DirectionType stringToDirectionType(const std::string & s);
 
-/// Convert an EvalType to a string
-std::string directionTypeToString (const DirectionType& dT);
+/// Convert an DirectionType to a string
+std::string directionTypeToString(const DirectionType& dT);
+/// Convert a DirectionTypeList to a string
+std::string directionTypeListToString(const DirectionTypeList& dirTypeList);
 
 inline std::ostream& operator<<(std::ostream& out, const DirectionType &directionType)
 {
@@ -101,5 +106,12 @@ inline std::ostream& operator<<(std::ostream& out, const DirectionType &directio
 }
 
 
+inline std::ostream& operator<<(std::ostream& out, const DirectionTypeList &dirTypeList)
+{
+    out << directionTypeListToString(dirTypeList);
+    return out;
+}
+
+
 #include "../nomad_nsend.hpp"
-#endif  // __NOMAD400_DIRECTION_TYPE__
+#endif  // __NOMAD_4_0_DIRECTION_TYPE__

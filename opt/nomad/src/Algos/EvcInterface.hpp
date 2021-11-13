@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -44,8 +45,8 @@
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
 
-#ifndef __NOMAD400_EVCINTERFACE__
-#define __NOMAD400_EVCINTERFACE__
+#ifndef __NOMAD_4_0_EVCINTERFACE__
+#define __NOMAD_4_0_EVCINTERFACE__
 
 #include "../Algos/Step.hpp"
 #include "../Eval/EvaluatorControl.hpp"
@@ -63,15 +64,15 @@ private:
     const Step* _step;      ///< Step that uses the EvaluatorControl
     Point _fixedVariable;   ///< Full dimension point including fixed variables
 
-    static std::shared_ptr<EvaluatorControl> _evaluatorControl; ///< Static EvaluatorControl
+    DLL_ALGO_API static std::shared_ptr<EvaluatorControl> _evaluatorControl; ///< Static EvaluatorControl
 
 public:
     /// Constructor
     /**
      \param step            The step using this EvcInterface
      */
-    explicit EvcInterface(Step* step )
-      : _step(step )
+    explicit EvcInterface(const Step* step)
+      : _step(step)
     {
         init();
     }
@@ -83,6 +84,15 @@ public:
     static const std::shared_ptr<EvaluatorControl> getEvaluatorControl()
     {
         return _evaluatorControl;
+    }
+
+    /**
+    Set the EvaluatorControl to NULL.
+    Useful for Runner between two optimization problems to reset all counters. EvaluatorControl is initiated in MainStep::startImp()
+     */
+    static void resetEvaluatorControl()
+    {
+        _evaluatorControl.reset();
     }
 
     /**
@@ -165,4 +175,4 @@ private:
 
 #include "../nomad_nsend.hpp"
 
-#endif // __NOMAD400_EVCINTERFACE__
+#endif // __NOMAD_4_0_EVCINTERFACE__

@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -43,8 +44,8 @@
 /*                                                                                 */
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
-#ifndef __NOMAD400_PHASE_ONE__
-#define __NOMAD400_PHASE_ONE__
+#ifndef __NOMAD_4_0_PHASE_ONE__
+#define __NOMAD_4_0_PHASE_ONE__
 
 #include "../../Eval/EvalPoint.hpp"
 #include "../../Algos/Algorithm.hpp"
@@ -60,18 +61,8 @@
 class PhaseOne: public Algorithm
 {
 private:
-
     std::shared_ptr<Mads>    _mads;
     std::shared_ptr<AlgoStopReasons<MadsStopType>>    _madsStopReasons;
-
-
-    /**
-      The list of ::BBOutputType parameters used for this Phase One.
-      Used to recompute h values at the end of Phase One.
-      Since the recompute methods are static, this member
-      needs to be static.
-     */
-    static BBOutputTypeList _bboutputtypes;
 
 public:
     /// Constructor
@@ -92,8 +83,6 @@ public:
     }
     virtual ~PhaseOne() {}
 
-    static void setBBOutputTypes(const BBOutputTypeList& bboutputtypes) { _bboutputtypes = bboutputtypes; }
-
     /**
      - Setup EvalPoint success computation to be based on h rather than f.
      - Recompute points in cache.
@@ -110,22 +99,8 @@ public:
 private:
     /// Helper for constructor
     void init();
-
-    /*------------------------*/
-    /* Private helper methods */
-    /*------------------------*/
-    /**
-     Static function called by Cache::processOnAllPoints().
-     */
-    static void recomputeH(EvalPoint& evalPoint);
-
-    /**
-     Static function called by Cache::processOnAllPoints().
-     */
-    static void recomputeHPB(EvalPoint& evalPoint);
-
 };
 
 #include "../../nomad_nsend.hpp"
 
-#endif // __NOMAD400_PHASE_ONE__
+#endif // __NOMAD_4_0_PHASE_ONE__

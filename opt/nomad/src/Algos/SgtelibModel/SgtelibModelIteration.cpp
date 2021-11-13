@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -50,7 +51,7 @@
 
 void NOMAD::SgtelibModelIteration::init()
 {
-    _name = NOMAD::Iteration::getName();
+    setStepType(NOMAD::StepType::ITERATION);
 
     // Initialize optimize member - model optimizer on sgte
     auto modelAlgo = getParentOfType<NOMAD::SgtelibModel*>();
@@ -83,23 +84,11 @@ bool NOMAD::SgtelibModelIteration::runImp()
     if (!_stopReasons->checkTerminate() && modelAlgo->isReady())
     {
         // Use the optimizer to find oracle points on this model
-        // If mesh available, add mesh and frame size arguments.
-        NOMAD::ArrayOfDouble initialMeshSize;
-        NOMAD::ArrayOfDouble initialFrameSize;
-
-        auto mesh = modelAlgo->getMesh();
-        if (nullptr != mesh)
-        {
-            initialMeshSize = mesh->getdeltaMeshSize();
-            initialFrameSize = mesh->getDeltaFrameSize();
-        }
 
         // Setup Pb parameters just before optimization.
         // This way, we get the best X0s.
         _optimize->setupPbParameters(modelAlgo->getExtendedLowerBound(),
-                                     modelAlgo->getExtendedUpperBound(),
-                                     initialMeshSize,
-                                     initialFrameSize);
+                                     modelAlgo->getExtendedUpperBound());
 
         _optimize->start();
         optimizationOk = _optimize->run();
@@ -111,7 +100,7 @@ bool NOMAD::SgtelibModelIteration::runImp()
 }
 
 
-// Oracle points are the best points found in sub optimization on sgte model.
+// Oracle points are the best points found in sub optimization on sgtelib model.
 const NOMAD::EvalPointSet& NOMAD::SgtelibModelIteration::getOraclePoints() const
 {
     return _optimize->getOraclePoints();

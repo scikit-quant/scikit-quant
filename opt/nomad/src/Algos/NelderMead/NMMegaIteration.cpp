@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -51,7 +52,7 @@
 
 void NOMAD::NMMegaIteration::init()
 {
-    _name = NOMAD::MegaIteration::getName();
+    setStepType(NOMAD::StepType::MEGA_ITERATION);
 
     // Get barrier from upper MadsMegaIteration, if available.
     auto madsMegaIter = getParentOfType<NOMAD::MadsMegaIteration*>(false);
@@ -64,7 +65,7 @@ void NOMAD::NMMegaIteration::init()
 
 void NOMAD::NMMegaIteration::startImp()
 {
-    // Create a Nelder Mead iteration for a frame center.
+    // Create a Nelder Mead iteration for a simplex center.
     // Use xFeas or xInf if XFeas is not available.
     // During NM we use a single iteration object with several start, run, end for the various iterations of the algorithm.
 
@@ -103,10 +104,10 @@ void NOMAD::NMMegaIteration::startImp()
         }
 
         OUTPUT_DEBUG_START
-        auto frameCenter = _nmIteration->getFrameCenter();
-        AddOutputDebug("Frame center: " + frameCenter->display());
-        auto previousFrameCenter = frameCenter->getPointFrom();
-        AddOutputDebug("Previous frame center: " + (previousFrameCenter ? previousFrameCenter->display() : "NULL"));
+        auto simplexCenter = _nmIteration->getSimplexCenter();
+        AddOutputDebug("Simplex center: " + simplexCenter->display());
+        auto previousSimplexCenter = simplexCenter->getPointFrom();
+        AddOutputDebug("Previous simplex center: " + (previousSimplexCenter ? previousSimplexCenter->display() : "NULL"));
         OUTPUT_DEBUG_END
     }
 }
@@ -120,7 +121,7 @@ bool NOMAD::NMMegaIteration::runImp()
     if ( _stopReasons->checkTerminate() )
     {
         OUTPUT_DEBUG_START
-        s = _name + ": stopReason = " + _stopReasons->getStopReasonAsString() ;
+        s = getName() + ": stopReason = " + _stopReasons->getStopReasonAsString() ;
         AddOutputDebug(s);
         OUTPUT_DEBUG_END
         return false;
@@ -131,7 +132,7 @@ bool NOMAD::NMMegaIteration::runImp()
         throw NOMAD::Exception(__FILE__, __LINE__, "No iteration to run");
     }
 
-    const size_t maxIter = _runParams->getAttributeValue<size_t>("MAX_ITERATION_PER_MEGAITERATION");
+    const size_t maxIter = (size_t)NOMAD::D_INT_MAX; // Could be a parameter.
     size_t nbMegaIter = 0;
     while ( ! _stopReasons->checkTerminate() && nbMegaIter < maxIter )
     {
@@ -145,7 +146,7 @@ bool NOMAD::NMMegaIteration::runImp()
         if (iterSuccessful)
         {
             OUTPUT_DEBUG_START
-            s = _name + ": new success " + NOMAD::enumStr(getSuccessType());
+            s = getName() + ": new success " + NOMAD::enumStr(getSuccessType());
             AddOutputDebug(s);
             OUTPUT_DEBUG_END
         }
@@ -159,7 +160,7 @@ bool NOMAD::NMMegaIteration::runImp()
     }
     OUTPUT_DEBUG_START
     // Display MegaIteration's stop reason
-    AddOutputDebug(_name + " stop reason set to: " + _stopReasons->getStopReasonAsString());
+    AddOutputDebug(getName() + " stop reason set to: " + _stopReasons->getStopReasonAsString());
     OUTPUT_DEBUG_END
 
     // MegaIteration is a success if either a better xFeas or

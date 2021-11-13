@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -44,8 +45,6 @@
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
 
-#include "../../config.hpp"
-
 #include "../../Algos/EvcInterface.hpp"
 #include "../../Algos/Mads/Search.hpp"
 #include "../../Algos/Mads/QuadSearchMethod.hpp"
@@ -54,6 +53,7 @@
 #include "../../Algos/Mads/LHSearchMethod.hpp"
 #include "../../Algos/Mads/NMSearchMethod.hpp"
 #include "../../Algos/Mads/UserSearchMethod.hpp"
+#include "../../Algos/Mads/VNSSearchMethod.hpp"
 #include "../../Output/OutputQueue.hpp"
 
 #ifdef TIME_STATS
@@ -67,7 +67,7 @@ std::vector<double> NOMAD::Search::_searchEvalTime(5, 0.0);
 
 void NOMAD::Search::init()
 {
-    _name = "Search";
+    setStepType(NOMAD::StepType::SEARCH);
     verifyParentNotNull();
 
     auto speculativeSearch      = std::make_shared<NOMAD::SpeculativeSearchMethod>(this);
@@ -76,6 +76,7 @@ void NOMAD::Search::init()
     auto sgtelibSearch          = std::make_shared<NOMAD::SgtelibSearchMethod>(this);
     auto lhSearch               = std::make_shared<NOMAD::LHSearchMethod>(this);
     auto nmSearch               = std::make_shared<NOMAD::NMSearchMethod>(this);
+    auto vnsSearch              = std::make_shared<NOMAD::VNSSearchMethod>(this);
 
 
     // The search methods will be executed in the same order
@@ -94,6 +95,7 @@ void NOMAD::Search::init()
     _searchMethods.push_back(userSearch);           // 2. user search
     _searchMethods.push_back(quadSearch);           // 5a. Quad Model Searches
     _searchMethods.push_back(sgtelibSearch);        // 5b. Model Searches
+    _searchMethods.push_back(vnsSearch);
     _searchMethods.push_back(lhSearch);             // 7. Latin-Hypercube (LH) search
     _searchMethods.push_back(nmSearch);             // 8. NelderMead (NM) search
 }
@@ -117,9 +119,9 @@ bool NOMAD::Search::runImp()
 
     if (!isEnabled())
     {
-        // Early out --> no found better!
+        // Early out - Return false: No new success found.
         OUTPUT_DEBUG_START
-        AddOutputDebug("Search method is disabled. Early out.");
+        AddOutputDebug("Search methods are all disabled.");
         OUTPUT_DEBUG_END
         return false;
     }
@@ -224,9 +226,6 @@ void NOMAD::Search::generateTrialPoints()
             }
         }
     }
-
-    // Sanity check
-    verifyPointsAreOnMesh(getName());
 }
 
 

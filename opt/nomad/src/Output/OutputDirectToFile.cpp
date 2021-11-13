@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -59,7 +60,7 @@ bool NOMAD::OutputDirectToFile::_hasBeenInitialized = false;
 
 // Private constructor
 NOMAD::OutputDirectToFile::OutputDirectToFile()
-  : _params(nullptr),
+  : _outputSize(0),
     _outputFileFormat(DisplayStatsTypeList("SOL BBO")),
     _solutionFile(""),
     _historyFile(""),
@@ -91,38 +92,43 @@ NOMAD::OutputDirectToFile::~OutputDirectToFile()
 std::unique_ptr<NOMAD::OutputDirectToFile>& NOMAD::OutputDirectToFile::getInstance()
 {
 #ifdef _OPENMP
-    // Lock queue before creating singleton
-    omp_set_lock(&_s_output_lock);
-#endif
-    if (nullptr == _single)
+    #pragma omp critical(initODTFLock)
     {
-        _single = std::unique_ptr<OutputDirectToFile> (new OutputDirectToFile()) ;
-    }
-
-#ifdef _OPENMP
-    omp_unset_lock(&_s_output_lock);
 #endif // _OPENMP
+        if (nullptr == _single)
+        {
+#ifdef _OPENMP
+            omp_init_lock(&_s_output_lock);
+#endif // _OPENMP
+            _single = std::unique_ptr<OutputDirectToFile> (new OutputDirectToFile());
+#ifdef _OPENMP
+        }
+#endif // _OPENMP
+    } // end of critical section
+
     return _single;
 }
 
 // Initialize output parameters.
 void NOMAD::OutputDirectToFile::init(const std::shared_ptr<NOMAD::DisplayParameters>& params)
 {
-    std::string historyFileTmp ;
-    if (nullptr != _params)
-        historyFileTmp= _params->getAttributeValue<std::string>("HISTORY_FILE");
+
+    if (nullptr == params)
+    {
+        throw NOMAD::Exception(__FILE__, __LINE__, "OutputDirectToFile::init: Display Parameters are NULL");
+    }
+
+    // Read from the current DisplayParameters
+    std::string historyFileTmp = params->getAttributeValue<std::string>("HISTORY_FILE");
+
+    // Check conflict with previous history file if this has already been initialized
     if(_hasBeenInitialized && ! _historyFile.empty() && ! historyFileTmp.empty() && historyFileTmp == _historyFile )
     {
        throw NOMAD::Exception(__FILE__, __LINE__, "OutputQueue::initParameters: Initialization cannot be performed more than once with the same history_file. The history file will be overwritten! Call OutputDirectToFile::getInstance()->reset() to allow this.");
     }
-    _params = params;
-    if (nullptr == _params)
-    {
-        throw NOMAD::Exception(__FILE__, __LINE__, "OutputDirectToFile::initParameters: Display Parameters are NULL");
-    }
-
     _historyFile = historyFileTmp;
-    _solutionFile = _params->getAttributeValue<std::string>("SOLUTION_FILE");
+    _solutionFile = params->getAttributeValue<std::string>("SOLUTION_FILE");
+    _outputSize = params->getAttributeValue<NOMAD::ArrayOfDouble>("SOL_FORMAT").size();
 
     initHistoryFile();
 
@@ -161,9 +167,9 @@ void NOMAD::OutputDirectToFile::write(const NOMAD::StatsInfo &info, bool writeIn
         return;
     }
 
-    if (nullptr == _params)
+    if (0==_outputSize)
     {
-        throw NOMAD::Exception(__FILE__, __LINE__, "OutputDirectToFile: Display Parameters are NULL");
+        throw NOMAD::Exception(__FILE__, __LINE__, "OutputDirectToFile: output size is null");
     }
 
 #ifdef _OPENMP
@@ -171,8 +177,7 @@ void NOMAD::OutputDirectToFile::write(const NOMAD::StatsInfo &info, bool writeIn
     omp_set_lock(&_s_output_lock);
 #endif
 
-    auto n = _params->getAttributeValue<NOMAD::ArrayOfDouble>("SOL_FORMAT").size();
-    NOMAD::ArrayOfDouble solFormatStats(n, NOMAD::DISPLAY_PRECISION_FULL);
+    NOMAD::ArrayOfDouble solFormatStats(_outputSize, NOMAD::DISPLAY_PRECISION_FULL);
 
     // Add information in history file.
     if (writeInHistoryFile)

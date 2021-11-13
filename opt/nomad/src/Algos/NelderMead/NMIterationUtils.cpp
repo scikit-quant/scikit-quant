@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -59,22 +60,22 @@ void NOMAD::NMIterationUtils::setStopReason ( ) const
 
     switch ( _currentStepType )
     {
-        case NMStepType::REFLECT:
+        case NOMAD::StepType::NM_REFLECT:
             nmStopReason->set( NOMAD::NMStopType::REFLECT_FAILED );
             break;
-        case NMStepType::EXPAND:
+        case NOMAD::StepType::NM_EXPAND:
             nmStopReason->set( NOMAD::NMStopType::EXPANSION_FAILED );
             break;
-        case NMStepType::OUTSIDE_CONTRACTION:
+        case NOMAD::StepType::NM_OUTSIDE_CONTRACTION:
             nmStopReason->set( NOMAD::NMStopType::OUTSIDE_CONTRACTION_FAILED);
             break;
-        case NMStepType::INSIDE_CONTRACTION:
+        case NOMAD::StepType::NM_INSIDE_CONTRACTION:
             nmStopReason->set( NOMAD::NMStopType::INSIDE_CONTRACTION_FAILED );
             break;
-        case NMStepType::SHRINK:
+        case NOMAD::StepType::NM_SHRINK:
             nmStopReason->set( NOMAD::NMStopType::SHRINK_FAILED );
             break;
-        case NMStepType::INSERT_IN_Y:
+        case NOMAD::StepType::NM_INSERT_IN_Y:
             nmStopReason->set( NOMAD::NMStopType::INSERTION_FAILED );
             break;
         default:
@@ -95,7 +96,7 @@ int NOMAD::NMIterationUtils::getRankDZ( ) const
     // The dimension of DZ (k) is related to Y
     size_t k = _nmY->size() - 1 ;
 
-    std::set<EvalPoint>::iterator itY = _nmY->begin();
+    std::set<NOMAD::EvalPoint>::iterator itY = _nmY->begin();
 
     const NOMAD::Point & y0 = (*itY);
     const size_t dim = y0.size();
@@ -122,7 +123,13 @@ int NOMAD::NMIterationUtils::getRankDZ( ) const
         OUTPUT_DEBUG_END
         for ( size_t i = 0; i < dim ; i++ )
         {
+            // To get the rank we better use a scaled DZ
+            // If Delta is not defined use 1 (no scaling)
             DZ[j][i] = ((*itY)[i].todouble() - y0[i].todouble()  );
+            if (i < _Delta.size() && _Delta[i].isDefined())
+            {
+                DZ[j][i] /= _Delta[i].todouble();
+            }
             OUTPUT_DEBUG_START
             outDbg << DZ[j][i] << " ";
             OUTPUT_DEBUG_END

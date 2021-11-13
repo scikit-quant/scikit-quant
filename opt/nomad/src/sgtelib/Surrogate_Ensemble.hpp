@@ -2,7 +2,7 @@
 /*  sgtelib - A surrogate model library for derivative-free optimization               */
 /*  Version 2.0.2                                                                      */
 /*                                                                                     */
-/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */
+/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */ 
 /*                           Bastien Talgorn - McGill University, Montreal             */
 /*                                                                                     */
 /*  Author: Bastien Talgorn                                                            */
@@ -57,7 +57,7 @@ namespace SGTELIB {
     //SGTELIB::Matrix _W; // Weight vector
     std::vector<SGTELIB::Surrogate *>  _surrogates; // List des surrogates
     bool * _active; // Array of boolean. Is _active[k] is true if surrogate k is ready
-                    // AND if there is a j such that W(k,j)!=0
+                    // AND if there is a j such that W(k,j)!=0 
                     // ie: the weight in k is non null for at least one output
     double * _metric; // Value of the metric for the Ensemble
 
@@ -78,10 +78,10 @@ namespace SGTELIB {
     // predict model (private):
     virtual void predict_private ( const SGTELIB::Matrix & XXs,
                                          SGTELIB::Matrix * ZZ ,
-                                         SGTELIB::Matrix * std,
+                                         SGTELIB::Matrix * std, 
                                          SGTELIB::Matrix * ei ,
                                          SGTELIB::Matrix * cdf ) override;
-
+ 
     virtual void predict_private ( const SGTELIB::Matrix & XXs,
                                          SGTELIB::Matrix * ZZ ) override;
 
@@ -89,11 +89,11 @@ namespace SGTELIB {
   public:
 
     // Constructor
-    Surrogate_Ensemble ( SGTELIB::TrainingSet & trainingset ,
+    Surrogate_Ensemble ( SGTELIB::TrainingSet & trainingset ,   
                          SGTELIB::Surrogate_Parameters param) ;
 
     /*
-    Surrogate_Ensemble ( SGTELIB::TrainingSet & trainingset ,
+    Surrogate_Ensemble ( SGTELIB::TrainingSet & trainingset ,   
                          const std::string & s) ;
     */
 
@@ -114,6 +114,7 @@ namespace SGTELIB {
     void compute_active_models ( void ) ;
     // Check the weight vector
     bool check_weight_vector ( void ) const;
+
 
 
     // ==============================================//

@@ -2,7 +2,7 @@
 /*  sgtelib - A surrogate model library for derivative-free optimization               */
 /*  Version 2.0.2                                                                      */
 /*                                                                                     */
-/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */
+/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */ 
 /*                           Bastien Talgorn - McGill University, Montreal             */
 /*                                                                                     */
 /*  Author: Bastien Talgorn                                                            */
@@ -24,7 +24,6 @@
 /*-------------------------------------------------------------------------------------*/
 
 #include "Surrogate_Ensemble.hpp"
-#include <math.h>
 
 /*----------------------------*/
 /*         constructor        */
@@ -91,18 +90,18 @@ void SGTELIB::Surrogate_Ensemble::display_private ( std::ostream & out ) const {
     out << "output " << j << ":\n";
     for ( int k=0 ; k<_kmax ; k++){
       out << "  [";
-      out.width(2);
+      out.width(2); 
       out << k;
       out << "]: ";
-      out.width(12);
+      out.width(12); 
       out << _surrogates.at(k)->get_metric(_param.get_metric_type(),j) << " ; w: ";
-
+      
       w = W.get(k,j);
       if (w==0) out << "  0 %";
       else if (w<=0.01) out << " <1 %";
       else{
         w = double(round(w*100));
-        out.width(3);
+        out.width(3); 
         out << w << " %";
       }
       out << " ; ";
@@ -113,7 +112,7 @@ void SGTELIB::Surrogate_Ensemble::display_private ( std::ostream & out ) const {
     }
     // Metric of the Ensemble
     out << "  =====>";
-    out.width(8);
+    out.width(8); 
     out << _metric[j] ;
     out << " ; weight:       N.A. ; " << get_short_string() << "\n";
   }
@@ -123,12 +122,13 @@ void SGTELIB::Surrogate_Ensemble::display_private ( std::ostream & out ) const {
  double w;
   for (int j=0 ; j<_m ; j++){
     out << "output " << _p << " " << j << ":";
-    for ( int k=0 ; k<_kmax ; k++){
+    for ( int k=0 ; k<_kmax ; k++){    
       w = W.get(k,j);
       if (w>EPSILON) out << " " << k ;
     }
     out << "\n";
   }
+
 
 
 }//
@@ -202,7 +202,7 @@ bool SGTELIB::Surrogate_Ensemble::init_private ( void ) {
         std::cout << " (ready)\n";
       #endif
     }
-  }
+  }  
   #ifdef ENSEMBLE_DEBUG
     std::cout << "Surrogate_Ensemble : _kready/_kmax : " << _kready << "/" << _kmax << "\n";
   #endif
@@ -298,7 +298,7 @@ bool SGTELIB::Surrogate_Ensemble::build_private ( void ) {
 void SGTELIB::Surrogate_Ensemble::compute_active_models ( void ) {
 
   // Compute the array _active
-  // (_active[k] is true if the model k is ready AND the weight in k is not null for
+  // (_active[k] is true if the model k is ready AND the weight in k is not null for 
   // at least one output)
   SGTELIB::Matrix W = _param.get_weight();
   if (! _active){
@@ -388,7 +388,7 @@ void SGTELIB::Surrogate_Ensemble::compute_W_by_select ( void ) {
 void SGTELIB::Surrogate_Ensemble::compute_W_by_wta1 ( void ) {
 
   #ifdef ENSEMBLE_DEBUG
-    std::cout << "SGTELIB::Surrogate_Ensemble::compute_W_by_wta1\n";
+    std::cout << "SGTELIB::Surrogate_Ensemble::compute_W_by_wta1\n"; 
   #endif
 
   // Init Weight matrix
@@ -488,7 +488,7 @@ void SGTELIB::Surrogate_Ensemble::compute_W_by_wta3 ( void ) {
           W.set(k,j,w);
         }
       }
-      // Then, normalize
+      // Then, normalize  
       for (k=0 ; k<_kmax ; k++){
         if (is_ready(k)){
           W.set(k,j,W.get(k,j)/w_sum);
@@ -498,7 +498,7 @@ void SGTELIB::Surrogate_Ensemble::compute_W_by_wta3 ( void ) {
     }
     else{
 
-      // If the metric is null for all models, then set to 1/_kready
+      // If the metric is null for all models, then set to 1/_kready 
       w = 1.0 / double(_kready);
       for (k=0 ; k<_kmax ; k++){
         if (is_ready(k)){
@@ -530,7 +530,7 @@ void SGTELIB::Surrogate_Ensemble::predict_private ( const SGTELIB::Matrix & XXs,
   ZZ->fill(0.0);
   // Tmp matrix for model k
   SGTELIB::Matrix * ZZk = new SGTELIB::Matrix("ZZk",pxx,_m);
-
+ 
   double w;
   for (int k=0 ; k<_kmax ; k++){
     if (_active[k]){
@@ -554,7 +554,7 @@ void SGTELIB::Surrogate_Ensemble::predict_private ( const SGTELIB::Matrix & XXs,
 /*--------------------------------------*/
 void SGTELIB::Surrogate_Ensemble::predict_private ( const SGTELIB::Matrix & XXs,
                                                           SGTELIB::Matrix * ZZ ,
-                                                          SGTELIB::Matrix * std,
+                                                          SGTELIB::Matrix * std, 
                                                           SGTELIB::Matrix * ei ,
                                                           SGTELIB::Matrix * cdf) {
   #ifdef ENSEMBLE_DEBUG
@@ -602,7 +602,7 @@ void SGTELIB::Surrogate_Ensemble::predict_private ( const SGTELIB::Matrix & XXs,
   else    eik = NULL;
 
   double w,z,s;
-
+  
 
   // Loop on the models
   for (int k=0 ; k<_kmax ; k++){
@@ -622,7 +622,7 @@ void SGTELIB::Surrogate_Ensemble::predict_private ( const SGTELIB::Matrix & XXs,
           }
 
           // Compute std
-          if (std){
+          if (std){          
             for (int i=0 ; i<pxx ; i++){
               z = ZZk->get(i,j);
               s = stdk->get(i,j);
@@ -630,14 +630,14 @@ void SGTELIB::Surrogate_Ensemble::predict_private ( const SGTELIB::Matrix & XXs,
               //std->set(i,j, std->get(i,j) + w*z*z );
             }// end loop i
           }
-
+    
           // EI is linear on w
           if ( (ei) && (_trainingset.get_bbo(j)==SGTELIB::BBO_OBJ) ){
             for (int i=0 ; i<pxx ; i++){
               ei->set(i,j, ei->get(i,j) + w*eik->get(i,j) );
             }// end loop i
           }
-
+          
           // CDF is linear on w
           if (cdf){
             for (int i=0 ; i<pxx ; i++){
@@ -670,7 +670,7 @@ void SGTELIB::Surrogate_Ensemble::predict_private ( const SGTELIB::Matrix & XXs,
   if (cdfk) delete cdfk;
 
 }//
-
+ 
 /*--------------------------------------*/
 /*       get_matrix_Zvs                 */
 /*--------------------------------------*/
@@ -679,7 +679,7 @@ const SGTELIB::Matrix * SGTELIB::Surrogate_Ensemble::get_matrix_Zvs (void){
     #ifdef ENSEMBLE_DEBUG
       check_ready(__FILE__,__FUNCTION__,__LINE__);
     #endif
-    const SGTELIB::Matrix W = _param.get_weight();
+    const SGTELIB::Matrix W = _param.get_weight(); 
     _Zvs = new SGTELIB::Matrix("Zv",_p,_m);
     _Zvs->fill(0.0);
     int i,j;
@@ -825,7 +825,7 @@ void SGTELIB::Surrogate_Ensemble::set_weight_vector (const int k, const int j){
   // Set the column j to 0
   _W.set_col( 0.0 , j );
   // Select model k for output j
-  _W.set(k,j,1.0);
+  _W.set(k,j,1.0); 
   // Check and reset
   reset_metrics();
   compute_active_models();
@@ -889,7 +889,7 @@ bool SGTELIB::Surrogate_Ensemble::check_weight_vector ( void ) const {
     if (_trainingset.get_bbo(j)!=SGTELIB::BBO_DUM){
       for (k=0 ; k<_kmax ; k++){
         w = W.get(k,j);
-        if (w<-EPSILON)    return true;
+        if (w<-EPSILON)    return true;   
         if (w>1+EPSILON)   return true;
         if ( isnan(w) ) return true;
       }
@@ -901,6 +901,10 @@ bool SGTELIB::Surrogate_Ensemble::check_weight_vector ( void ) const {
   return false;
 
 }//
+
+
+
+
 
 
 /*--------------------------------------*/
@@ -942,7 +946,7 @@ void SGTELIB::Surrogate_Ensemble::model_list_preset ( const std::string & preset
     }
     else if (SGTELIB::streqi(p,"KS")) {
       model_list_add("TYPE KS KERNEL_TYPE D1 KERNEL_COEF 0.1"+d);
-      model_list_add("TYPE KS KERNEL_TYPE D1 KERNEL_COEF 0.2"+d);
+      model_list_add("TYPE KS KERNEL_TYPE D1 KERNEL_COEF 0.2"+d); 
       model_list_add("TYPE KS KERNEL_TYPE D1 KERNEL_COEF 0.5"+d);
       model_list_add("TYPE KS KERNEL_TYPE D1 KERNEL_COEF 1  "+d);
       model_list_add("TYPE KS KERNEL_TYPE D1 KERNEL_COEF 2  "+d);
@@ -962,7 +966,7 @@ void SGTELIB::Surrogate_Ensemble::model_list_preset ( const std::string & preset
       model_list_add("TYPE PRS_EDGE DEGREE 3");
 
       model_list_add("TYPE KS            KERNEL_TYPE D1 KERNEL_COEF 0.1 DISTANCE_TYPE NORM2_IS0");
-      model_list_add("TYPE KS            KERNEL_TYPE D1 KERNEL_COEF 0.2 DISTANCE_TYPE NORM2_IS0");
+      model_list_add("TYPE KS            KERNEL_TYPE D1 KERNEL_COEF 0.2 DISTANCE_TYPE NORM2_IS0"); 
       model_list_add("TYPE KS            KERNEL_TYPE D1 KERNEL_COEF 0.5 DISTANCE_TYPE NORM2_IS0");
       model_list_add("TYPE KS            KERNEL_TYPE D1 KERNEL_COEF 1   DISTANCE_TYPE NORM2_IS0");
       model_list_add("TYPE KS            KERNEL_TYPE D1 KERNEL_COEF 2   DISTANCE_TYPE NORM2_IS0");
@@ -970,7 +974,7 @@ void SGTELIB::Surrogate_Ensemble::model_list_preset ( const std::string & preset
       model_list_add("TYPE KS            KERNEL_TYPE D1 KERNEL_COEF 10  DISTANCE_TYPE NORM2_IS0");
 
       model_list_add("TYPE KS            KERNEL_TYPE D2 KERNEL_COEF 0.1 DISTANCE_TYPE NORM2_IS0");
-      model_list_add("TYPE KS            KERNEL_TYPE D2 KERNEL_COEF 0.2 DISTANCE_TYPE NORM2_IS0");
+      model_list_add("TYPE KS            KERNEL_TYPE D2 KERNEL_COEF 0.2 DISTANCE_TYPE NORM2_IS0"); 
       model_list_add("TYPE KS            KERNEL_TYPE D2 KERNEL_COEF 0.5 DISTANCE_TYPE NORM2_IS0");
       model_list_add("TYPE KS            KERNEL_TYPE D2 KERNEL_COEF 1   DISTANCE_TYPE NORM2_IS0");
       model_list_add("TYPE KS            KERNEL_TYPE D2 KERNEL_COEF 2   DISTANCE_TYPE NORM2_IS0");
@@ -978,7 +982,7 @@ void SGTELIB::Surrogate_Ensemble::model_list_preset ( const std::string & preset
       model_list_add("TYPE KS            KERNEL_TYPE D2 KERNEL_COEF 10  DISTANCE_TYPE NORM2_IS0");
 
       model_list_add("TYPE RBF  PRESET I KERNEL_TYPE D1 KERNEL_COEF 0.1 DISTANCE_TYPE NORM2_IS0");
-      model_list_add("TYPE RBF  PRESET I KERNEL_TYPE D1 KERNEL_COEF 0.2 DISTANCE_TYPE NORM2_IS0");
+      model_list_add("TYPE RBF  PRESET I KERNEL_TYPE D1 KERNEL_COEF 0.2 DISTANCE_TYPE NORM2_IS0"); 
       model_list_add("TYPE RBF  PRESET I KERNEL_TYPE D1 KERNEL_COEF 0.5 DISTANCE_TYPE NORM2_IS0");
       model_list_add("TYPE RBF  PRESET I KERNEL_TYPE D1 KERNEL_COEF 1   DISTANCE_TYPE NORM2_IS0");
       model_list_add("TYPE RBF  PRESET I KERNEL_TYPE D1 KERNEL_COEF 2   DISTANCE_TYPE NORM2_IS0");
@@ -986,7 +990,7 @@ void SGTELIB::Surrogate_Ensemble::model_list_preset ( const std::string & preset
       model_list_add("TYPE RBF  PRESET I KERNEL_TYPE D1 KERNEL_COEF 10  DISTANCE_TYPE NORM2_IS0");
 
       model_list_add("TYPE RBF  PRESET I KERNEL_TYPE D2 KERNEL_COEF 0.1 DISTANCE_TYPE NORM2_IS0");
-      model_list_add("TYPE RBF  PRESET I KERNEL_TYPE D2 KERNEL_COEF 0.2 DISTANCE_TYPE NORM2_IS0");
+      model_list_add("TYPE RBF  PRESET I KERNEL_TYPE D2 KERNEL_COEF 0.2 DISTANCE_TYPE NORM2_IS0"); 
       model_list_add("TYPE RBF  PRESET I KERNEL_TYPE D2 KERNEL_COEF 0.5 DISTANCE_TYPE NORM2_IS0");
       model_list_add("TYPE RBF  PRESET I KERNEL_TYPE D2 KERNEL_COEF 1   DISTANCE_TYPE NORM2_IS0");
       model_list_add("TYPE RBF  PRESET I KERNEL_TYPE D2 KERNEL_COEF 2   DISTANCE_TYPE NORM2_IS0");
@@ -998,7 +1002,7 @@ void SGTELIB::Surrogate_Ensemble::model_list_preset ( const std::string & preset
       model_list_add("TYPE PRS_CAT DEGREE 3");
 
       model_list_add("TYPE KS           KERNEL_TYPE D1 KERNEL_COEF 0.1 DISTANCE_TYPE NORM2_CAT");
-      model_list_add("TYPE KS           KERNEL_TYPE D1 KERNEL_COEF 0.2 DISTANCE_TYPE NORM2_CAT");
+      model_list_add("TYPE KS           KERNEL_TYPE D1 KERNEL_COEF 0.2 DISTANCE_TYPE NORM2_CAT"); 
       model_list_add("TYPE KS           KERNEL_TYPE D1 KERNEL_COEF 0.5 DISTANCE_TYPE NORM2_CAT");
       model_list_add("TYPE KS           KERNEL_TYPE D1 KERNEL_COEF 1   DISTANCE_TYPE NORM2_CAT");
       model_list_add("TYPE KS           KERNEL_TYPE D1 KERNEL_COEF 2   DISTANCE_TYPE NORM2_CAT");
@@ -1006,7 +1010,7 @@ void SGTELIB::Surrogate_Ensemble::model_list_preset ( const std::string & preset
       model_list_add("TYPE KS           KERNEL_TYPE D1 KERNEL_COEF 10  DISTANCE_TYPE NORM2_CAT");
 
       model_list_add("TYPE KS           KERNEL_TYPE D2 KERNEL_COEF 0.1 DISTANCE_TYPE NORM2_CAT");
-      model_list_add("TYPE KS           KERNEL_TYPE D2 KERNEL_COEF 0.2 DISTANCE_TYPE NORM2_CAT");
+      model_list_add("TYPE KS           KERNEL_TYPE D2 KERNEL_COEF 0.2 DISTANCE_TYPE NORM2_CAT"); 
       model_list_add("TYPE KS           KERNEL_TYPE D2 KERNEL_COEF 0.5 DISTANCE_TYPE NORM2_CAT");
       model_list_add("TYPE KS           KERNEL_TYPE D2 KERNEL_COEF 1   DISTANCE_TYPE NORM2_CAT");
       model_list_add("TYPE KS           KERNEL_TYPE D2 KERNEL_COEF 2   DISTANCE_TYPE NORM2_CAT");
@@ -1014,7 +1018,7 @@ void SGTELIB::Surrogate_Ensemble::model_list_preset ( const std::string & preset
       model_list_add("TYPE KS           KERNEL_TYPE D2 KERNEL_COEF 10  DISTANCE_TYPE NORM2_CAT");
 
       model_list_add("TYPE RBF PRESET I KERNEL_TYPE D1 KERNEL_COEF 0.1 DISTANCE_TYPE NORM2_CAT");
-      model_list_add("TYPE RBF PRESET I KERNEL_TYPE D1 KERNEL_COEF 0.2 DISTANCE_TYPE NORM2_CAT");
+      model_list_add("TYPE RBF PRESET I KERNEL_TYPE D1 KERNEL_COEF 0.2 DISTANCE_TYPE NORM2_CAT"); 
       model_list_add("TYPE RBF PRESET I KERNEL_TYPE D1 KERNEL_COEF 0.5 DISTANCE_TYPE NORM2_CAT");
       model_list_add("TYPE RBF PRESET I KERNEL_TYPE D1 KERNEL_COEF 1   DISTANCE_TYPE NORM2_CAT");
       model_list_add("TYPE RBF PRESET I KERNEL_TYPE D1 KERNEL_COEF 2   DISTANCE_TYPE NORM2_CAT");
@@ -1022,7 +1026,7 @@ void SGTELIB::Surrogate_Ensemble::model_list_preset ( const std::string & preset
       model_list_add("TYPE RBF PRESET I KERNEL_TYPE D1 KERNEL_COEF 10  DISTANCE_TYPE NORM2_CAT");
 
       model_list_add("TYPE RBF PRESET I KERNEL_TYPE D2 KERNEL_COEF 0.1 DISTANCE_TYPE NORM2_CAT");
-      model_list_add("TYPE RBF PRESET I KERNEL_TYPE D2 KERNEL_COEF 0.2 DISTANCE_TYPE NORM2_CAT");
+      model_list_add("TYPE RBF PRESET I KERNEL_TYPE D2 KERNEL_COEF 0.2 DISTANCE_TYPE NORM2_CAT"); 
       model_list_add("TYPE RBF PRESET I KERNEL_TYPE D2 KERNEL_COEF 0.5 DISTANCE_TYPE NORM2_CAT");
       model_list_add("TYPE RBF PRESET I KERNEL_TYPE D2 KERNEL_COEF 1   DISTANCE_TYPE NORM2_CAT");
       model_list_add("TYPE RBF PRESET I KERNEL_TYPE D2 KERNEL_COEF 2   DISTANCE_TYPE NORM2_CAT");
@@ -1046,10 +1050,12 @@ void SGTELIB::Surrogate_Ensemble::model_list_preset ( const std::string & preset
     else {
       throw SGTELIB::Exception ( __FILE__ , __LINE__ ,
         "Surrogate_Ensemble::model_list_preset: unrecognized preset \""+preset+"\"" );
-    }
+    }  
 
     #ifdef ENSEMBLE_DEBUG
       std::cout << "END Build model list\n";
     #endif
 
 }//
+
+

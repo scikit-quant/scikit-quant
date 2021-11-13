@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -53,34 +54,45 @@ bool NOMAD::OrderByDirection::comp(NOMAD::EvalQueuePointPtr& point1,
                                    NOMAD::EvalQueuePointPtr& point2) const
 {
     std::string err;
-    bool lowerPriority = false;
+    bool lowerPriority = false; // Sorting from less interesting to most interesting point, so return true if point1 is less interesting than point2.
+    bool useTag = false;    // If tie, or anything preventing computation, use tag.
 
-    std::shared_ptr<NOMAD::Direction> lastSuccessfulDir1 = _lastSuccessfulDirs[point1->getThreadAlgo()];
-    std::shared_ptr<NOMAD::Direction> lastSuccessfulDir2 = _lastSuccessfulDirs[point2->getThreadAlgo()];
+    if (nullptr == point1 || nullptr == point2)
+    {
+        // Should not happen!
+        throw NOMAD::Exception(__FILE__, __LINE__, "OrderByDirection: Comparing a point that is NULL");
+    }
 
-    if (nullptr == lastSuccessfulDir1 || nullptr == lastSuccessfulDir2
-        || !lastSuccessfulDir1->isDefined() || !lastSuccessfulDir2->isDefined()
+    std::shared_ptr<NOMAD::Direction> lastSuccessfulDir1;
+    std::shared_ptr<NOMAD::Direction> lastSuccessfulDir2;
+
+    auto point1From = point1->getPointFrom();
+    auto point2From = point2->getPointFrom();
+
+    if (nullptr != point1From && NOMAD::EvalStatusType::EVAL_OK == point1From->getEvalStatus(NOMAD::EvalType::BB))
+    {
+        lastSuccessfulDir1 = (point1From->isFeasible(NOMAD::EvalType::BB)) ? _lastSuccessfulFeasDirs[point1->getThreadAlgo()]
+                                                                           : _lastSuccessfulInfDirs[point1->getThreadAlgo()];
+    }
+    if (nullptr != point2From && NOMAD::EvalStatusType::EVAL_OK == point2From->getEvalStatus(NOMAD::EvalType::BB))
+    {
+        lastSuccessfulDir2 = (point2From->isFeasible(NOMAD::EvalType::BB)) ? _lastSuccessfulFeasDirs[point2->getThreadAlgo()]
+                                                                           : _lastSuccessfulInfDirs[point2->getThreadAlgo()];
+    }
+
+    if (   nullptr == point1From || nullptr == point2From
+        || nullptr == lastSuccessfulDir1 || nullptr == lastSuccessfulDir2
+        || !lastSuccessfulDir1->isComplete() || !lastSuccessfulDir2->isComplete()
         || 0 == lastSuccessfulDir1->norm() || 0 == lastSuccessfulDir2->norm())
     {
-        lowerPriority = false;
-    }
-    else if (nullptr == point1 || nullptr == point2)
-    {
-        lowerPriority = false;
-    }
-    else if (!point1->getPointFrom())
-    {
-        lowerPriority = false;
-    }
-    else if (!point2->getPointFrom())
-    {
-        lowerPriority = true;
+        // If no valid last direction of success revert to tag ordering
+        useTag = true;
     }
     else
     {
         // General case, both point1 and point2 have points from.
-        NOMAD::Direction dir1 = NOMAD::Point::vectorize(*point1->getPointFrom(), *point1);
-        NOMAD::Direction dir2 = NOMAD::Point::vectorize(*point2->getPointFrom(), *point2);
+        NOMAD::Direction dir1 = *point1->getDirection();
+        NOMAD::Direction dir2 = *point2->getDirection();
         if (   lastSuccessfulDir1->size() != dir1.size()
             || lastSuccessfulDir2->size() != dir2.size())
         {
@@ -88,27 +100,46 @@ bool NOMAD::OrderByDirection::comp(NOMAD::EvalQueuePointPtr& point1,
             std::cerr << err << std::endl;
             throw NOMAD::Exception(__FILE__, __LINE__, err);
         }
-        else if (0 == dir1.norm())
+        else if (0 == dir1.norm() || 0 == dir2.norm())
         {
-            lowerPriority = false;
-        }
-        else if (0 == dir2.norm())
-        {
-            lowerPriority = true;
+            useTag = true;
         }
         else
         {
-            NOMAD::Double val1 = 1;
-            NOMAD::Double val2 = 1;
-            val1 = NOMAD::Direction::cos(*lastSuccessfulDir1, dir1);
-            val2 = NOMAD::Direction::cos(*lastSuccessfulDir2, dir2);
-
-            // The point farthest from lastSuccessfulDir gets lower priority.
-            if (val1 < val2)
+            NOMAD::Double angle1 = point1->getAngle();
+            if (!angle1.isDefined())
+            {
+                angle1 = NOMAD::Direction::angle(*lastSuccessfulDir1, dir1);
+                point1->setAngle(angle1);
+            }
+            NOMAD::Double angle2 = point2->getAngle();
+            if (!angle2.isDefined())
+            {
+                angle2 = NOMAD::Direction::angle(*lastSuccessfulDir2, dir2);
+                point2->setAngle(angle2);
+            }
+            if (!angle1.isDefined() || !angle2.isDefined())
+            {
+                useTag = true;
+            }
+            else if (angle1 < angle2)
+            {
+                lowerPriority = false;
+            }
+            else if (angle2 < angle1)
             {
                 lowerPriority = true;
             }
+            else
+            {
+                useTag = true;
+            }
         }
+    }
+
+    if (useTag)
+    {
+        lowerPriority = (point1->getTag() > point2->getTag());
     }
 
     return lowerPriority;
@@ -153,6 +184,49 @@ bool NOMAD::BasicComp::comp(NOMAD::EvalQueuePointPtr& point1,
                             NOMAD::EvalQueuePointPtr& point2) const
 {
     return (point1->getK() < point2->getK());
+}
+
+
+/*------------------------*/
+/* Class OrderBySurrogate */
+/*------------------------*/
+bool NOMAD::OrderBySurrogate::comp(NOMAD::EvalQueuePointPtr& point1,
+                            NOMAD::EvalQueuePointPtr& point2) const
+{
+    bool useTag = false;    // If tie, or anything preventing computation, use tag.
+    bool lowerPriority = false; // Sorting from less interesting to most interesting point, so return true if point1 is less interesting than point2.
+
+    auto eval1 = point1->getEval(NOMAD::EvalType::SURROGATE);
+    auto eval2 = point2->getEval(NOMAD::EvalType::SURROGATE);
+    if (nullptr == eval1)
+    {
+        throw NOMAD::Exception(__FILE__, __LINE__, "OrderBySurrogate: SURROGATE evaluation missing for point " + point1->displayAll());
+    }
+    else if (nullptr == eval2)
+    {
+        throw NOMAD::Exception(__FILE__, __LINE__, "OrderBySurrogate: SURROGATE evaluation missing for point " + point2->displayAll());
+    }
+
+    if (eval1->dominates(*eval2))
+    {
+        lowerPriority = false;
+    }
+    else if (eval2->dominates(*eval1))
+    {
+        lowerPriority = true;
+    }
+    else
+    {
+        // Revert to tag ordering
+        useTag = true;
+    }
+
+    if (useTag)
+    {
+        lowerPriority = (point1->getTag() > point2->getTag());
+    }
+
+    return lowerPriority;
 }
 
 

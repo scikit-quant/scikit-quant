@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -51,8 +52,8 @@
  \see    EvalPoint.cpp
  */
 
-#ifndef __NOMAD400_EVALPOINT__
-#define __NOMAD400_EVALPOINT__
+#ifndef __NOMAD_4_0_EVALPOINT__
+#define __NOMAD_4_0_EVALPOINT__
 
 #ifdef USE_UNORDEREDSET
 #include <unordered_set>
@@ -62,7 +63,9 @@
 
 #include "../Eval/Eval.hpp"
 #include "../Math/Point.hpp"
+#include "../Type/ComputeType.hpp"
 #include "../Type/EvalType.hpp"
+#include "../Type/StepType.hpp"
 
 #include "../nomad_nsbegin.hpp"
 
@@ -76,19 +79,22 @@ class EvalPoint : public Point
 {
 private:
 
-    static size_t _currentTag;  ///< Value of the current tag
+    DLL_EVAL_API static int     _currentTag;  ///< Value of the current tag
 
-    EvalUPtr _eval;       ///< Value of the evaluation (truth / blackbox)
+    std::map<EvalType,EvalUPtr> _eval;  ///< Value of the evaluation for each eval type
 
-    EvalUPtr _evalSgte;   ///< Value of the surrogate evaluation
+    mutable int                 _tag; ///< Tag: Ordinal representing the order of creation
 
-    mutable size_t  _tag; ///< Tag: Ordinal representing the order of creation
+    int                         _threadAlgo;    ///< Main thread that generated this point
 
-    int _threadAlgo;    ///< Main thread that generated this point
+    short                       _numberEval; ///< Number of times \c *this point has been evaluated (blackbox only)
 
-    short    _numberEval; ///< Number of times \c *this point has been evaluated (blackbox only)
+    std::shared_ptr<EvalPoint>  _pointFrom; ///< The frame center which generated \c *this point (blackbox only). Full space.
 
-    std::shared_ptr<Point> _pointFrom; ///< The frame center which generated \c *this point (blackbox only)
+    StepTypeList                _genSteps;   ///< Steps and algorithms that generated this point
+
+    std::shared_ptr<Direction>  _direction; ///< True direction that generated this point. Full dimension.
+    Double                      _angle;     ///< Angle of that direction with last successful dir
 
 public:
 
@@ -118,6 +124,9 @@ public:
     EvalPoint(const EvalPoint& evalPoint);
 
 private:
+    /// Helper for constructors
+    void initEval();
+
     /// Helper for copy constructor and others
     void copyMembers(const EvalPoint &evalPoint);
 
@@ -139,66 +148,53 @@ public:
     /// Get Point part of this EvalPoint
     const Point* getX() const { return dynamic_cast<const Point*>(this); }
 
-    /// Get the Eval part of this EvalPoint, using the right EvalType (BB or SGTE)
-    Eval* getEval(const EvalType& evalType = EvalType::BB) const;
+    /// Get the Eval part of this EvalPoint, using the right EvalType (BB or MODEL)
+    Eval* getEval(const EvalType& evalType) const;
 
-    /// Set the Eval part of this EvalPoint, using the right EvalType (BB or SGTE)
+    /// Set the Eval part of this EvalPoint, using the right EvalType (BB or MODEL)
     void setEval(const Eval& eval, const EvalType& evalType);
 
-    /// Clear the surrogate evaluation of \c *this
-    void clearEvalSgte() { _evalSgte = nullptr; }
+    /// Clear the model evaluation of \c *this
+    void clearModelEval() { _eval[EvalType::MODEL].reset(); }
 
-    /// Clear the surrogate evaluation of a point
-    static void clearEvalSgte(EvalPoint& evalPoint) { evalPoint.clearEvalSgte(); }
+    /// Clear the model evaluation of a point
+    static void clearModelEval(EvalPoint& evalPoint) { evalPoint.clearModelEval(); }
 
-    /// Get the objective function value of Eval of this EvalType
-    Double getF(const EvalType& evalType = EvalType::BB) const;
-
-    /// Set the objective function value of the Eval of this EvalType
-    void setF(const Double f, const EvalType& evalType);
+    /// Get the objective function value of Eval of this EvalType,
+    /// using the given ComputeType.
+    Double getF(const EvalType& evalType = EvalType::BB, const ComputeType& computeType = ComputeType::STANDARD) const;
 
     /// Get the infeasibility measure of the Eval of this EvalType
-    Double getH(const EvalType& evalType = EvalType::BB) const;
-
-    /// Set the infeasibility measure of the Eval of this EvalType
-    void setH(const Double &h, const EvalType& evalType);
+    Double getH(const EvalType& evalType = EvalType::BB, const ComputeType& computeType = ComputeType::STANDARD) const;
 
     /// Get the blackbox output for the Eval of this EvalType as a \c string
     std::string getBBO(const EvalType& evalType) const;
 
     /// Set the blackbox output for the Eval of this EvalType from a \c string.
     /**
-     \param bbo             The string containg the raw result of the blackbox evaluation -- \b IN.
-     \param bboutputtypes   The list of blackbox output types -- \b IN.
-     \param evalType        Blackbox or surrogate evaluation  -- \b IN.
-     \param evalOk          Flag for evaluation status  -- \b IN.
+     \param bbo                 The string containg the raw result of the blackbox evaluation -- \b IN.
+     \param bbOutputTypeList    The list of blackbox output types -- \b IN.
+     \param evalType            Blackbox or model evaluation  -- \b IN.
+     \param evalOk              Flag for evaluation status  -- \b IN.
     */
     void setBBO(const std::string &bbo,
-                const BBOutputTypeList &bboutputtypes,
+                const BBOutputTypeList& bbOutputTypeList,
                 const EvalType& evalType = EvalType::BB,
                 const bool evalOk = true);
 
-    /// Set the true or surrogate blackbox output from a \c string.
+    /// Set the true or model blackbox output from a \c string.
     /**
      \param bbo             The string containg the raw result of the blackbox evaluation -- \b IN.
      \param sBBOutputTypes  The blackbox output types coded as a single string -- \b IN.
-     \param evalType        Blackbox or surrogate evaluation  -- \b IN.
+     \param evalType        Blackbox or model evaluation  -- \b IN.
      \param evalOk          Flag for evaluation status  -- \b IN.
      */
     void setBBO(const std::string &bbo,
-                const std::string &sBBOutputTypes,
+                const std::string &sBBOutputTypes = "",
                 const EvalType& evalType = EvalType::BB,
                 const bool evalOk = true);
 
-    /// Set the true or surrogate blackbox output.
-    /**
-     \param bbo             A blackbox evaluation output -- \b IN.
-     \param evalType        Blackbox or surrogate evaluation  -- \b IN.
-     \param evalOk          Flag for evaluation status  -- \b IN.
-     */
-    void setBBO(const BBOutput &bbo,
-                const EvalType& evalType = EvalType::BB,
-                const bool evalOk = true);
+    void setBBOutputType(const BBOutputTypeList& bbOutputType, const EvalType& evalType = EvalType::BB);
 
     /// Get evaluation status of the Eval of this EvalType
     EvalStatusType getEvalStatus(const EvalType& evalType) const;
@@ -206,8 +202,8 @@ public:
     /// Set evaluation status of the Eval of this EvalType
     void setEvalStatus(const EvalStatusType &evalStatus, const EvalType& evalType);
 
-    size_t getTag() const { return _tag; }
-    void setTag(const size_t tag) const { _tag = tag; } ///< Sets mutable _tag
+    int getTag() const { return _tag; }
+    void setTag(const int tag) const { _tag = tag; } ///< Sets mutable _tag
     void updateTag() const; ///< Modifies mutable _tag, and increments static _currentTag
     static void resetCurrentTag(); ///< Reset tag numbers: Use with caution. Expected to be used in unit tests  and runner only.
 
@@ -219,40 +215,54 @@ public:
     void incNumberEval() { _numberEval++; }
 
     /// Get the Point which was the center when this point was generated
-    const std::shared_ptr<Point> getPointFrom() const { return _pointFrom; }
+    const std::shared_ptr<EvalPoint> getPointFrom() const { return _pointFrom; }
+
+    /// Push the step type
+    void addGenStep(const StepType& stepType);
+    /// Get the downmost step type
+    const StepType& getGenStep() const;
+    /// Get vector of all step types
+    const StepTypeList& getGenSteps() const;
+    /// Set vector of all step types
+    void setGenSteps(const StepTypeList& genSteps);
+    /// Check if this EvalPoint was generated by PhaseOne
+    bool getGenByPhaseOne() const;
+    /// Algo comment to be printed out in DISPLAY_STATS
+    std::string getComment() const;
+
+    /// Get Direction from which the point was generated.
+    /// Value is set when setPointFrom() is called.
+    const std::shared_ptr<Direction>& getDirection() const { return _direction; }
+    /// Get/Set angle of direction with direction of last success
+    const Double& getAngle() const { return _angle; }
+    void setAngle(const Double& angle) { _angle = angle; }
 
     /// Get the Point which was the center when this point was generated
     /**
      Returns a Point in the Subspace defined by the fixedVariable
      */
-    const std::shared_ptr<Point> getPointFrom(const Point& fixedVariable) const;
-
-    /// Set the Point for which this point was generated
-    void setPointFrom(const std::shared_ptr<Point> pointFrom);
+    const std::shared_ptr<EvalPoint> getPointFrom(const Point& fixedVariable) const;
 
     /// Set the Point for which this point was generated
     /**
-     Use the fixedVariable to convert pointFrom from Subspace dimension to the full dimension.
+     Use the fixedVariable to convert pointFrom from Subspace dimension to the full dimension, if needed.
      */
-    void setPointFrom(std::shared_ptr<Point> pointFrom,
+    void setPointFrom(const std::shared_ptr<EvalPoint> pointFrom,
                       const Point& fixedVariable);
 
     /// Get evaluation feasibility flag f the Eval of this EvalType
-    bool isFeasible(const EvalType& evalType) const;
-
-    /// Recompute f and h, for a given list of blackbox output type considering that raw blackbox output is set.
-    /**
-     \param bbOutputType    The list of blackbox output types.
-    */
-    void recomputeFH(const BBOutputTypeList &bbOutputType);
+    bool isFeasible(const EvalType& evalType, const ComputeType& computeType = ComputeType::STANDARD) const;
 
     /// Comparison operator used by NM algorithm.
     /**
-     \param rhs     Second eval points to compare      -- \b IN.
-     \param evalType        Blackbox or surrogate evaluation  -- \b IN.
+     \param rhs         Second eval points to compare      -- \b IN.
+     \param evalType    Blackbox or model evaluation  -- \b IN.
+     \param computeType How to compute f and h -- \b IN
      \return        \c true if \c *this dominates x.
      */
-    bool dominates(const EvalPoint& rhs, const EvalType& evalType) const;
+    bool dominates(const EvalPoint& rhs,
+                   const EvalType& evalType,
+                   const ComputeType& computeType = ComputeType::STANDARD) const;
 
     /// Convert a point from sub space to full space using fixed variables.
     /**
@@ -298,10 +308,18 @@ public:
     bool isEvalOk(const EvalType& evalType) const;
 
     /// Display with or without format
-    std::string display(const ArrayOfDouble &format = ArrayOfDouble()) const override;
+    std::string display(const ComputeType& computeType,
+                        const ArrayOfDouble &pointFormat = ArrayOfDouble(),
+                        const int &solFormat = NOMAD::DISPLAY_PRECISION_FULL,
+                        const bool surrogateAsBB = false) const;
 
-    /// Display both true and surrogate evaluations.  Useful for debugging
-    std::string displayAll() const;
+    std::string display(const ArrayOfDouble &pointFormat = ArrayOfDouble(),
+                        const int &solFormat = NOMAD::DISPLAY_PRECISION_FULL) const;
+
+    std::string displayForCache(const ArrayOfDouble &pointFormat);
+
+    /// Display both true and model evaluations. Useful for debugging
+    std::string displayAll(const ComputeType& computeType = ComputeType::STANDARD) const;
 
     /// Function to test if evaluation is required.
     /**
@@ -309,7 +327,7 @@ public:
      * (possibly re-evaluate) this point?
 
      \param maxPointEval    The maximum number of point evaluations  -- \b IN.
-     \param evalType        Blackbox or surrogate evaluation  -- \b IN.
+     \param evalType        Blackbox or model evaluation  -- \b IN.
      \return                \c true if evaluation is required and \c false otherwise.
      */
     bool toEval(short maxPointEval, const EvalType& evalType) const;
@@ -323,10 +341,14 @@ public:
         throw Exception(__FILE__,__LINE__,"Error: Calling EvalPoint::isDefined(). Choose ArrayOfDouble::isDefined() or Double::isDefined() instead.");
     }
 
-    // Determine if an evalpoint has a sgte eval.
-    static bool hasSgteEval(const EvalPoint& evalPoint);
     // Determine if an evalpoint has a bb (regular) eval.
     static bool hasBbEval(const EvalPoint& evalPoint);
+    // Determine if an evalpoint has a model eval.
+    static bool hasModelEval(const EvalPoint& evalPoint);
+    // Determine if an evalpoint has a static surrogate eval.
+    static bool hasSurrogateEval(const EvalPoint& evalPoint);
+    /// Used for phase one
+    static bool isPhaseOneSolution(const EvalPoint& evalPoint);
 };
 
 
@@ -407,4 +429,4 @@ namespace std {
 #endif // USE_UNORDEREDSET
 
 
-#endif // __NOMAD400_EVALPOINT__
+#endif // __NOMAD_4_0_EVALPOINT__

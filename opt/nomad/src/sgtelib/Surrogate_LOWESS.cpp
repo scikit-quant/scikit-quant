@@ -2,7 +2,7 @@
 /*  sgtelib - A surrogate model library for derivative-free optimization               */
 /*  Version 2.0.2                                                                      */
 /*                                                                                     */
-/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */
+/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */ 
 /*                           Bastien Talgorn - McGill University, Montreal             */
 /*                                                                                     */
 /*  Author: Bastien Talgorn                                                            */
@@ -60,20 +60,20 @@ SGTELIB::Surrogate_LOWESS::Surrogate_LOWESS ( SGTELIB::TrainingSet & trainingset
 /*--------------------------------------*/
 void SGTELIB::Surrogate_LOWESS::delete_matrices ( void ) {
 
-  if (_W) delete [] _W;
+  if (_W) delete [] _W; 
   _W = NULL;
 
-  if (_u) delete [] _u;
+  if (_u) delete [] _u; 
   _u = NULL;
 
   if (_x_multiple) delete [] _x_multiple;
   _x_multiple = NULL;
 
   #ifdef SGTELIB_LOWESS_DEV
-    if (_old_u) delete [] _old_u;
+    if (_old_u) delete [] _old_u; 
     _old_u = NULL;
 
-    if (_old_x) delete [] _old_x;
+    if (_old_x) delete [] _old_x; 
     _old_x = NULL;
   #endif
 
@@ -107,6 +107,8 @@ SGTELIB::Surrogate_LOWESS::~Surrogate_LOWESS ( void ) {
 }//
 
 
+
+
 /*----------------------------*/
 /*          display           */
 /*----------------------------*/
@@ -118,8 +120,8 @@ void SGTELIB::Surrogate_LOWESS::display_private ( std::ostream & out ) const {
 /*               init                   */
 /*--------------------------------------*/
 bool SGTELIB::Surrogate_LOWESS::init_private ( void ) {
-
-  const int pvar = _trainingset.get_pvar();
+  
+  const int pvar = _trainingset.get_pvar(); 
 
   if (pvar<2) return false;
 
@@ -157,7 +159,7 @@ bool SGTELIB::Surrogate_LOWESS::init_private ( void ) {
 
   if ( ! _W){
     _W = new double [_p];
-  }
+  } 
   if ( ! _A){
     _A = new double * [_q];
     for (int j=0 ; j<_q ; j++) _A[j] = new double [_q];
@@ -200,7 +202,7 @@ bool SGTELIB::Surrogate_LOWESS::init_private ( void ) {
   // C.Tribes jan 17th, 2017 --- update _p_old to prevent memory leak
   _p_old = _p;
 
-  return true;
+  return true;   
 }//
 
 
@@ -209,7 +211,7 @@ bool SGTELIB::Surrogate_LOWESS::init_private ( void ) {
 /*--------------------------------------*/
 bool SGTELIB::Surrogate_LOWESS::build_private ( void ) {
   _ready = true;
-  return true;
+  return true;  
 }
 
 
@@ -291,7 +293,12 @@ void SGTELIB::Surrogate_LOWESS::predict_private_single ( const SGTELIB::Matrix X
   }
   // Gamma parameters
   const double gamma_shape = mean*mean/var;
-  const double gamma_scale = var/mean;
+  const double gamma_scale = var/mean;  
+
+
+
+
+
 
   #ifdef SGTELIB_LOWESS_DEV
     // Write in a file the values of dq
@@ -375,7 +382,7 @@ void SGTELIB::Surrogate_LOWESS::predict_private_single ( const SGTELIB::Matrix X
       wsum += _W[i];
     }
   }
-
+ 
   // If a point must be excluded from the training points, set its weight to 0.
   if (i_exclude != -1){
     wsum -= _W[i_exclude];
@@ -443,8 +450,8 @@ void SGTELIB::Surrogate_LOWESS::predict_private_single ( const SGTELIB::Matrix X
               }
             }
           }
-        }
-      }
+        } 
+      }    
     }
     else{
       // Put row to 0 (except first column at 1)
@@ -490,7 +497,7 @@ void SGTELIB::Surrogate_LOWESS::predict_private_single ( const SGTELIB::Matrix X
     std::cout << "nb of non-zeros in w: " << w_count << " / " << _p << "\n";
   #endif
 
-  // Symmetry of A
+  // Symmetry of A 
   for (i=0 ; i<_q ; i++){
     for (j=i+1 ; j<_q ; j++){
       _A[j][i] = _A[i][j];
@@ -607,7 +614,7 @@ void SGTELIB::Surrogate_LOWESS::predict_private_single ( const SGTELIB::Matrix X
       d = 0;
     }
     double rr_old,alpha,pAp;
-
+    
     while ( (rr>tol) && (iter_conj < 100)) {
       // Ap // ===================
       for (i=0 ; i<_q ; i++){
@@ -636,7 +643,7 @@ void SGTELIB::Surrogate_LOWESS::predict_private_single ( const SGTELIB::Matrix X
       for (i=0 ; i<_q ; i++){
         p[i] *= d;
         p[i] += r[i];
-      }
+      }  
       iter_conj++;
     }
 
@@ -727,9 +734,9 @@ void SGTELIB::Surrogate_LOWESS::predict_private_single ( const SGTELIB::Matrix X
       std::ofstream myfile;
       const std::string file_name = "LOWESS_times_n"+itos(_n)+".txt";
       myfile.open (file_name.c_str(),std::ios::app);
-      myfile << _n << " , " << dx << " "
+      myfile << _n << " , " << dx << " " 
              << du << " " << res << " , "
-             << time_build << " " << time_chol
+             << time_build << " " << time_chol 
              << " " << time_conj << " , " << iter_conj << "\n";
       myfile.close();
     }
@@ -767,3 +774,7 @@ const SGTELIB::Matrix * SGTELIB::Surrogate_LOWESS::get_matrix_Zvs (void){
   #endif
   return _Zvs;
 }//
+
+
+
+

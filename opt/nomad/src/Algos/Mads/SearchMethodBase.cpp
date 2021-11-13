@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -44,7 +45,6 @@
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
 
-#include "../../Algos/EvcInterface.hpp"
 #include "../../Algos/Mads/SearchMethodBase.hpp"
 #include "../../Output/OutputQueue.hpp"
 
@@ -59,7 +59,7 @@ void NOMAD::SearchMethodBase::init()
 void NOMAD::SearchMethodBase::endImp()
 {
     // Compute hMax and update Barrier.
-    postProcessing(NOMAD::EvcInterface::getEvaluatorControl()->getEvalType());
+    postProcessing();
 
     // Need to reimplement end() to set a stop reason for Mads based on the search method stop reason
 }
@@ -69,7 +69,7 @@ void NOMAD::SearchMethodBase::generateTrialPoints()
 {
 
     OUTPUT_INFO_START
-    AddOutputInfo("Generate points for " + _name, true, false);
+    AddOutputInfo("Generate points for " + getName(), true, false);
     OUTPUT_INFO_END
 
     generateTrialPointsImp();
@@ -80,13 +80,13 @@ void NOMAD::SearchMethodBase::generateTrialPoints()
     auto upperBound = _pbParams->getAttributeValue<NOMAD::ArrayOfDouble>("UPPER_BOUND");
 
     std::list<NOMAD::EvalPoint> snappedTrialPoints;
-    for (auto point : searchMethodPoints)
+    for (auto evalPoint : searchMethodPoints)
     {
-        if (snapPointToBoundsAndProjectOnMesh(point,lowerBound,upperBound))
+        if (snapPointToBoundsAndProjectOnMesh(evalPoint, lowerBound, upperBound))
         {
-            snappedTrialPoints.push_back(NOMAD::EvalPoint(point));
+            snappedTrialPoints.push_back(evalPoint);
             OUTPUT_INFO_START
-            std::string s = "Snap point " + point.display();
+            std::string s = "Snap point " + evalPoint.display();
             AddOutputInfo(s);
             OUTPUT_INFO_END
         }
@@ -94,18 +94,13 @@ void NOMAD::SearchMethodBase::generateTrialPoints()
 
     // Re-insert snapped trial points
     clearTrialPoints();
-    for (auto point : snappedTrialPoints)
+    for (auto evalPoint : snappedTrialPoints)
     {
-        insertTrialPoint(point);
+        insertTrialPoint(evalPoint);
     }
 
     OUTPUT_INFO_START
     AddOutputInfo("Generated " + std::to_string(getTrialPointsCount()) + " points");
-    AddOutputInfo("Generate points for " + _name, false, true);
+    AddOutputInfo("Generate points for " + getName(), false, true);
     OUTPUT_INFO_END
-
-
-    // The trial points must know what frame center originated them.
-    updatePointsWithFrameCenter();
-
 }

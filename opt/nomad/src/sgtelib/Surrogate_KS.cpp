@@ -2,7 +2,7 @@
 /*  sgtelib - A surrogate model library for derivative-free optimization               */
 /*  Version 2.0.2                                                                      */
 /*                                                                                     */
-/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */
+/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */ 
 /*                           Bastien Talgorn - McGill University, Montreal             */
 /*                                                                                     */
 /*  Author: Bastien Talgorn                                                            */
@@ -24,7 +24,6 @@
 /*-------------------------------------------------------------------------------------*/
 
 #include "Surrogate_KS.hpp"
-#include <math.h>
 
 /*----------------------------*/
 /*         constructor        */
@@ -64,7 +63,7 @@ bool SGTELIB::Surrogate_KS::build_private ( void ) {
     throw SGTELIB::Exception ( __FILE__ , __LINE__ ,
              "Surrogate_KS::build_private(): Kernel must be decreasing for KS model" );
   }
-
+ 
   _ready = true;
   return true;
 }//
@@ -74,7 +73,7 @@ bool SGTELIB::Surrogate_KS::build_private ( void ) {
 /*--------------------------------------*/
 void SGTELIB::Surrogate_KS::predict_private ( const SGTELIB::Matrix & XXs,
                                                     SGTELIB::Matrix * ZZs) {
-
+  
   // i: index of a point in Xs
   // ixx: index of a point in XXs
   // j: index of an output (ie: a column of ZZs)
@@ -90,7 +89,7 @@ void SGTELIB::Surrogate_KS::predict_private ( const SGTELIB::Matrix & XXs,
   //double ks = _param.get_kernel_coef() / _trainingset.get_Ds_mean();
   double ks = _param.get_kernel_coef() / _trainingset.get_Ds_mean();
 
-  // Compute weights
+  // Compute weights 
   SGTELIB::Matrix phi = kernel(_param.get_kernel_type(),ks,D);
 
   const SGTELIB::Matrix & Zs = get_matrix_Zs();
@@ -110,7 +109,7 @@ void SGTELIB::Surrogate_KS::predict_private ( const SGTELIB::Matrix & XXs,
           case SGTELIB::KERNEL_D4:
           case SGTELIB::KERNEL_D5:
             // imin is the index of the closest neighbor of xx in Xs
-            i = D.get_min_index_row(ixx);
+            i = D.get_min_index_row(ixx); 
             // Copy the output of this point
             ZZs->set_row( Zs.get_row(i) , ixx);
             break;
@@ -187,8 +186,8 @@ const SGTELIB::Matrix * SGTELIB::Surrogate_KS::get_matrix_Zvs (void){
             wz+= phi.get(i,iv)*_trainingset.get_Zs(i,j);
           }
         }
-
-        // Compute z
+        
+        // Compute z 
         if (w>EPSILON){
           // Normal method
           z = wz/w;
@@ -288,9 +287,28 @@ const SGTELIB::Matrix * SGTELIB::Surrogate_KS::get_matrix_Zhs (void){
     }
 
     _Zhs->replace_nan(+INF);
-    _Zhs->set_name("Zhs");
+    _Zhs->set_name("Zhs"); 
 
   }
   return _Zhs;
 
 }//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

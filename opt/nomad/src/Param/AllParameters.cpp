@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -45,6 +46,7 @@
 /*---------------------------------------------------------------------------------*/
 
 #include "../Param/AllParameters.hpp"
+#include "../Util/fileutils.hpp"
 
 // Do we need to call checkAndComply() ?
 bool NOMAD::AllParameters::toBeChecked() const
@@ -81,14 +83,18 @@ void NOMAD::AllParameters::read(const std::string &paramFile, bool overwrite , b
     // Read all entries
     NOMAD::Parameters::readParamFileAndSetEntries(paramFile, overwrite ,resetAllEntries );
 
+    // Read entries to detect deprecated entries explicitly set
+    _deprecatedParams->readAndDetectExplicitlySet();
+
     // Read entries and set attribute values for each type of parameters
     _runParams->readEntries();
-    _pbParams->readEntries();
+    _pbParams->readEntries(false, NOMAD::dirname(paramFile));
     _evalParams->readEntries();
     _evaluatorControlGlobalParams->readEntries();
     _evaluatorControlParams->readEntries();
     _cacheParams->readEntries();
     _dispParams->readEntries();
+
 
 }
 
@@ -142,6 +148,12 @@ void NOMAD::AllParameters::readParamLine(const std::string &line)
     }
 
 }
+
+void NOMAD::AllParameters::eraseAllEntries()
+{
+    NOMAD::Parameters::eraseAllEntries();
+}
+
 
 bool NOMAD::AllParameters::isAlgoCompatible(const NOMAD::AllParameters& allP_tmp) const
 {
@@ -202,7 +214,7 @@ void NOMAD::AllParameters::displayHelp(const std::string &helpSubject , bool dev
         else
         {
             os << "-------------------------------------------------------------------------------" << std::endl;
-            os << "----------------------------- DEVELOPPER PARAMETERS ---------------------------" << std::endl;
+            os << "----------------------------- DEVELOPER PARAMETERS ----------------------------" << std::endl;
             os << "-------------------------------------------------------------------------------" << std::endl;
             os << ossBasic.str() << std::endl << std::endl;
         }
@@ -223,8 +235,8 @@ void NOMAD::AllParameters::checkAndComply()
     _pbParams->checkAndComply();
     _evaluatorControlGlobalParams->checkAndComply(_pbParams);
     _runParams->checkAndComply(_evaluatorControlGlobalParams, _pbParams);
-    _evaluatorControlParams->checkAndComply(_runParams);
-    _evalParams->checkAndComply(_runParams);
+    _evaluatorControlParams->checkAndComply(_evaluatorControlGlobalParams, _runParams);
+    _evalParams->checkAndComply(_runParams, _pbParams);
     _cacheParams->checkAndComply(_runParams);
     _dispParams->checkAndComply(_runParams, _pbParams);
 
@@ -275,3 +287,5 @@ void NOMAD::AllParameters::display(std::ostream & os, bool flagHelp )
     os << "----- DISPLAY PARAMETERS -----" << std::endl;
     _dispParams->display(os,flagHelp);
 }
+
+

@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -53,15 +54,14 @@
 
 void NOMAD::NMSearchMethod::init()
 {
-    if ( _runParams->getAttributeValue<bool>("GENERATE_ALL_POINTS_BEFORE_EVAL") )
+    if ( _runParams->getAttributeValue<bool>("MEGA_SEARCH_POLL") )
     {
-        _name = "Search (Nelder Mead single pass)";
+        setStepType(NOMAD::StepType::SEARCH_METHOD_NM);
     }
     else
     {
-        _name = "Search (Nelder Mead optimization)";
+        setStepType(NOMAD::StepType::ALGORITHM_NM);
     }
-    //setComment("(NMSearch)");
 
     auto nmSearch = _runParams->getAttributeValue<bool>("NM_SEARCH");
     setEnabled(nmSearch);
@@ -95,8 +95,6 @@ bool NOMAD::NMSearchMethod::runImp()
     bool foundBetter = nm->run();
     nm->end();
 
-
-
     return foundBetter;
 }
 
@@ -108,7 +106,10 @@ void NOMAD::NMSearchMethod::generateTrialPointsImp()
 
     auto madsIteration = getParentOfType<MadsIteration*>();
 
-    NOMAD::NMAllReflective allReflective(this, madsIteration->getFrameCenter(), madsIteration->getMesh());
+    // Note: Use first point of barrier as simplex center.
+    NOMAD::NMAllReflective allReflective(this,
+                            std::make_shared<NOMAD::EvalPoint>(getMegaIterationBarrier()->getFirstPoint()),
+                            madsIteration->getMesh());
     allReflective.start();
     allReflective.end();
 

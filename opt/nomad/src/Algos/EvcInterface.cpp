@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -62,7 +63,7 @@ void NOMAD::EvcInterface::init()
     verifyStepNotNull();
     verifyEvaluatorControlNotNull();
 
-    _fixedVariable = NOMAD::SubproblemManager::getSubFixedVariable(_step);
+    _fixedVariable = NOMAD::SubproblemManager::getInstance()->getSubFixedVariable(_step);
 }
 
 
@@ -89,6 +90,7 @@ void NOMAD::EvcInterface::verifyEvaluatorControlNotNull()
 void NOMAD::EvcInterface::setEvaluatorControl(const std::shared_ptr<NOMAD::EvaluatorControl>& evaluatorControl)
 {
     _evaluatorControl = evaluatorControl;
+    verifyEvaluatorControlNotNull();
 }
 
 
@@ -153,7 +155,7 @@ void NOMAD::EvcInterface::keepPointsThatNeedEval(const NOMAD::EvalPointSet &tria
             // cache is not used, update tag here.
             trialPoint.updateTag();
             // Look in EvaluatorControl's Barrier if the point is already evaluated.
-            // Only do this when EvalType is BB. If it is SGTE, always reevaluate.
+            // Only do this when EvalType is BB. If it is MODEL, always reevaluate.
             if (NOMAD::EvalType::BB == evalType)
             {
                 auto barrier = _evaluatorControl->getBarrier();
@@ -173,14 +175,10 @@ void NOMAD::EvcInterface::keepPointsThatNeedEval(const NOMAD::EvalPointSet &tria
             NOMAD::EvalQueuePointPtr evalQueuePoint(new NOMAD::EvalQueuePoint(trialPoint, evalType));
             if (useMesh && nullptr == iteration)
             {
-                iteration = dynamic_cast<NOMAD::Iteration*>(megaSearchPoll->getIterForPoint(trialPointSub).get());
-                if (nullptr == iteration)
-                {
-                    std::string s = _step->getName();
-                    s += ": In keepPointsThatNeedEval: Could not determine iteration for point ";
-                    s += trialPoint.display();
-                    throw NOMAD::StepException(__FILE__,__LINE__, s, _step);
-                }
+                std::string s = _step->getName();
+                s += ": In keepPointsThatNeedEval: Could not determine iteration for point ";
+                s += trialPoint.display();
+                throw NOMAD::StepException(__FILE__,__LINE__, s, _step);
             }
             if ( useMesh )
             {
@@ -193,20 +191,9 @@ void NOMAD::EvcInterface::keepPointsThatNeedEval(const NOMAD::EvalPointSet &tria
                 }
             }
 
-            // Set a flag in evalQueuePoint according to algo -> this is for stats
-            const Algorithm * algo = _step->getRootAlgorithm();
-            auto algoConstPhaseOne = dynamic_cast<const PhaseOne*>(algo);
-            if(nullptr != algoConstPhaseOne)
-            {
-                evalQueuePoint->setGenByPhaseOne(true);
-            }
-            else
-            {
-                evalQueuePoint->setGenByPhaseOne(false);
-            }
-
-            evalQueuePoint->setComment(_step->getAlgoComment());
-            evalQueuePoint->setGenStep(_step->getName());
+            evalQueuePoint->addGenStep(_step->getStepType());
+            // Additional info
+            evalQueuePoint->addGenStep(_step->getRootAlgorithm()->getStepType());
 
             if (_evaluatorControl->addToQueue(evalQueuePoint))
             {
@@ -265,15 +252,16 @@ void NOMAD::EvcInterface::setBarrier(const std::shared_ptr<NOMAD::Barrier>& subB
     // Clear xFeas and xInf lists and recompute them
     fullBarrier->clearXFeas();
     fullBarrier->clearXInf();
+    auto evalType = _evaluatorControl->getEvalType();
     for (auto xFeas : subBarrier->getAllXFeas())
     {
         auto xFeasFull = xFeas.makeFullSpacePointFromFixed(_fixedVariable);
-        fullBarrier->addXFeas(xFeasFull, _evaluatorControl->getEvalType());
+        fullBarrier->addXFeas(xFeasFull, evalType, _evaluatorControl->getComputeType());
     }
     for (auto xInf : subBarrier->getAllXInf())
     {
         auto xInfFull = xInf.makeFullSpacePointFromFixed(_fixedVariable);
-        fullBarrier->addXInf(xInfFull);
+        fullBarrier->addXInf(xInfFull, evalType);
     }
     auto refBestFeas = subBarrier->getRefBestFeas();
     auto refBestInf  = subBarrier->getRefBestInf();
@@ -290,7 +278,7 @@ void NOMAD::EvcInterface::setBarrier(const std::shared_ptr<NOMAD::Barrier>& subB
 }
 
 
-bool NOMAD::EvcInterface::findInBarrier(const Point& x, EvalPoint& evalPoint) const
+bool NOMAD::EvcInterface::findInBarrier(const NOMAD::Point& x, NOMAD::EvalPoint& evalPoint) const
 {
     bool pointFound = false;
 
@@ -334,13 +322,12 @@ NOMAD::SuccessType NOMAD::EvcInterface::startEvaluation()
     _step->AddOutputInfo("Evaluate points for " + _step->getName(), true, false);
     OUTPUT_INFO_END
 
-    NOMAD::SuccessType success = NOMAD::SuccessType::UNSUCCESSFUL;
     std::shared_ptr<NOMAD::AllStopReasons> stopReasons = _step->getAllStopReasons();
 
     // Evaluate points
     // Note: do not use checkTerminate() here. If it is time to terminate, EvaluatorControl will take
     // care of clearing the queue.
-    success = _evaluatorControl->run();
+    NOMAD::SuccessType success = _evaluatorControl->run();
 
     OUTPUT_DEBUG_START
     std::string s = _step->getName() + ": " + NOMAD::enumStr(success);

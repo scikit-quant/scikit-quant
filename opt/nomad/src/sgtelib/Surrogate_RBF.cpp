@@ -2,7 +2,7 @@
 /*  sgtelib - A surrogate model library for derivative-free optimization               */
 /*  Version 2.0.2                                                                      */
 /*                                                                                     */
-/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */
+/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */ 
 /*                           Bastien Talgorn - McGill University, Montreal             */
 /*                                                                                     */
 /*  Author: Bastien Talgorn                                                            */
@@ -99,6 +99,11 @@ bool SGTELIB::Surrogate_RBF::init_private ( void ) {
                                                    _qrbf,
                                                    1.0,
                                                    _param.get_distance_type());
+    // select_greedy() might return a set with less than _qrbf points
+    // in which case _qrbf is modified
+    if ((int)_selected_kernel.size() < _qrbf){
+      _qrbf = (int)_selected_kernel.size();
+    }     
   }
   else{
     _qrbf = _p;
@@ -109,7 +114,7 @@ bool SGTELIB::Surrogate_RBF::init_private ( void ) {
     const int dmin = SGTELIB::kernel_dmin(_param.get_kernel_type());
     if      (dmin==-1) _qprs = 0;
     else if (dmin==0 ) _qprs = 1;
-    else if (dmin==1 ) _qprs = 1 + _trainingset.get_nvar();
+    else if (dmin==1 ) _qprs = 1 + _trainingset.get_nvar(); 
     else{
       std::cout << "dmin = " << dmin << "\n";
       throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"dmin out of range." );
@@ -122,7 +127,7 @@ bool SGTELIB::Surrogate_RBF::init_private ( void ) {
 
   // Total number of basis function
   _q = _qrbf + _qprs;
-
+ 
   if ( (modeO) & (_q>pvar) ) return false;
 
   return true;
@@ -134,7 +139,7 @@ bool SGTELIB::Surrogate_RBF::init_private ( void ) {
 /*--------------------------------------*/
 bool SGTELIB::Surrogate_RBF::build_private ( void ) {
 
-  // The build primarily consists of computing alpha
+  // The build primarily consists of computing alpha  
 
   // Compute scaling distance for each training point
   const SGTELIB::Matrix & Zs = get_matrix_Zs();
@@ -144,7 +149,7 @@ bool SGTELIB::Surrogate_RBF::build_private ( void ) {
     // Solve with orthogonality constraints
     // =========================================
     // Build design matrix with constraints lines
-    _H = compute_design_matrix(get_matrix_Xs(),true);
+    _H = compute_design_matrix(get_matrix_Xs(),true); 
     // Inverte matrix
     _Ai = _H.lu_inverse();
     // Product (only the p first rows of Ai)
@@ -162,7 +167,7 @@ bool SGTELIB::Surrogate_RBF::build_private ( void ) {
     SGTELIB::Matrix A = _HtH;
 
     const double r = _param.get_ridge();
-
+  
     // Add regularization term
     if ( string_find(_param.get_preset(),"1") ){
       // Add ridge to all basis function
@@ -184,14 +189,14 @@ bool SGTELIB::Surrogate_RBF::build_private ( void ) {
     _Alpha = _Ai*_HtZ;
   }
 
-  // Check for Nan
+  // Check for Nan  
   if (_Alpha.has_nan()){
     return false;
   }
 
   _ready = true;
-  return true;
-
+  return true;    
+  
 }//
 
 
@@ -232,7 +237,7 @@ const SGTELIB::Matrix SGTELIB::Surrogate_RBF::compute_design_matrix ( const SGTE
         if (_trainingset.get_X_nbdiff(j)>1){
           L.set_col ( XXs.get_col(j) , k++ );
         }
-      }
+      } 
     }
 
     // Last column is the constant term
@@ -249,11 +254,13 @@ const SGTELIB::Matrix SGTELIB::Surrogate_RBF::compute_design_matrix ( const SGTE
       // We add this to the design matrix
       H.add_rows(L);
     }
-
+  
   }
 
   return H;
 }//
+
+
 
 
 /*--------------------------------------*/
@@ -287,8 +294,8 @@ const SGTELIB::Matrix * SGTELIB::Surrogate_RBF::get_matrix_Zvs (void){
     else{
       //SGTELIB::Matrix dPiPZs    = SGTELIB::Matrix::get_matrix_dPiPZs(_Ai,_H,Zs);
       SGTELIB::Matrix dPiPZs = SGTELIB::Matrix::get_matrix_dPiPZs(_Ai,_H,Zs,_Alpha);
-
-      // dPi is the inverse of the diag of P
+    
+      // dPi is the inverse of the diag of P 
       // Compute _Zv = Zs - dPi*P*Zs
       *_Zvs = Zs - dPiPZs;
     }

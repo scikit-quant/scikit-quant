@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -43,8 +44,8 @@
 /*                                                                                 */
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
-#ifndef __NOMAD400_BARRIER__
-#define __NOMAD400_BARRIER__
+#ifndef __NOMAD_4_0_BARRIER__
+#define __NOMAD_4_0_BARRIER__
 
 #include "../Eval/EvalPoint.hpp"
 
@@ -77,13 +78,15 @@ public:
      * hMax will be updated during optimization.
      \param hMax            The max of h to keep a point in the barrier -- \b IN.
      \param fixedVariable   The fixed variables have a fixed value -- \b IN.
-     \param evalType        Type of evaluation (BB or SGTE) -- \b IN.
+     \param evalType        Type of evaluation (BB or MODEL) -- \b IN.
      \param evalPointList   Additional points to consider in building the barrier -- \b IN.
      */
     Barrier(const Double& hMax = INF,
             const Point& fixedVariable = Point(),
             const EvalType& evalType = EvalType::BB,
-            const std::vector<EvalPoint>& evalPointList = std::vector<EvalPoint>())
+            const ComputeType& computeType = ComputeType::STANDARD,
+            const std::vector<EvalPoint>& evalPointList = std::vector<EvalPoint>(),
+            bool barrierInitializedFromCache= true)
       : _xFeas(),
         _xInf(),
         _refBestFeas(nullptr),
@@ -91,7 +94,7 @@ public:
         _hMax(hMax),
         _n(0)
     {
-        init(fixedVariable, evalType, evalPointList);
+        init(fixedVariable, evalType, evalPointList, computeType, barrierInitializedFromCache);
     }
 
     /*-----------------*/
@@ -101,7 +104,7 @@ public:
     /**
      \return All the eval points that are feasible.
      */
-    const std::vector<EvalPoint> getAllXFeas()    const { return _xFeas; }
+    const std::vector<EvalPoint>& getAllXFeas()    const { return _xFeas; }
 
     /// Update ref best feasible and ref best infeasible values.
     void updateRefBests();
@@ -128,9 +131,9 @@ public:
     /**
      * If the point is feasible it is added, if not an exception is triggered.
      \param xFeas       The eval point to add -- \b IN.
-     \param evalType    Which eval (Blackbox or Surrogate) of the EvalPoint to use to verify feasibility  -- \b IN.
+     \param evalType    Which eval (Blackbox or Model) of the EvalPoint to use to verify feasibility  -- \b IN.
      */
-    void addXFeas(const EvalPoint &xFeas, const EvalType& evalType);
+    void addXFeas(const EvalPoint &xFeas, const EvalType& evalType, const ComputeType& computeType = ComputeType::STANDARD);
 
     /// Remove feasible points from the barrier.
     void clearXFeas();
@@ -142,7 +145,7 @@ public:
     /**
      \return All the eval points that are infeasible.
      */
-    const std::vector<EvalPoint> getAllXInf() const { return _xInf; }
+    const std::vector<EvalPoint>& getAllXInf() const { return _xInf; }
 
     ///  Get the first infeasible point in the barrier.
     /**
@@ -167,7 +170,7 @@ public:
      * If the point is nullptr an exception is triggered.
      \param xInf   The eval point to add -- \b IN.
      */
-    void addXInf(const EvalPoint &xInf);
+    void addXInf(const EvalPoint &xInf, const EvalType& evalType);
 
     /// Remove infeasible points from the barrier.
     void clearXInf();
@@ -176,7 +179,12 @@ public:
     /* Other methods */
     /*---------------*/
     /// Get all feasible and infeasable points
-    std::vector<EvalPoint> getAllPoints();
+    std::vector<EvalPoint> getAllPoints() const;
+
+    /// Get first of all feasible and infeasible points.
+    /** If there are feasible points, returns first feasible point.
+      * else, returns first infeasible point. */
+    const EvalPoint& getFirstPoint() const;
 
     /// Get the current hMax of the barrier.
     Double getHMax() const { return _hMax; }
@@ -187,6 +195,17 @@ public:
      */
     void setHMax(const Double &hMax);
 
+    ///  xFeas and xInf according to given points.
+    /* \param evalPointList vector of EvalPoints  -- \b IN.
+     * \param keepAllPoints keep all good points, or keep just one point as in NOMAD 3 -- \b IN.
+     * \return true if the Barrier was updated, false otherwise
+     * \note Input EvalPoints are already in subproblem dimention
+     */
+    SuccessType getSuccessTypeOfPoints(const std::shared_ptr<EvalPoint> & xFeas,
+                                       const std::shared_ptr<EvalPoint> & xInf,
+                                       const EvalType& evalType,
+                                       const ComputeType& computeType);
+
     /// Update xFeas and xInf according to given points.
     /* \param evalPointList vector of EvalPoints  -- \b IN.
      * \param keepAllPoints keep all good points, or keep just one point as in NOMAD 3 -- \b IN.
@@ -195,7 +214,8 @@ public:
      */
     bool updateWithPoints(const std::vector<EvalPoint>& evalPointList,
                           const EvalType& evalType,
-                          const bool keepAllPoints);
+                          const ComputeType& computeType,
+                          const bool keepAllPoints = false);
 
     /// Return the barrier as a string.
     /* May be used for information, or for saving a barrier. In the former case,
@@ -212,13 +232,16 @@ private:
      * \brief Helper function for constructor.
      *
      * Will throw exceptions or output error messages if something is wrong. Will remain silent otherwise.
-     \param fixedVariable  The fixed variables have a fixed value     -- \b IN.
-     \param evalType        Which eval (Blackbox or Surrogate) to use to verify feasibility  -- \b IN.
-     \param evalPointList Additional points to consider to construct barrier. -- \b IN.
+     \param fixedVariable   The fixed variables have a fixed value     -- \b IN.
+     \param evalType        Which eval (Blackbox or Model) to use to verify feasibility  -- \b IN.
+     \param evalPointList   Additional points to consider to construct barrier. -- \b IN.
+     \param barrierInitializedFromCache  Flag to initialize barrier from cache or not. -- \b IN.
      */
     void init(const Point& fixedVariable,
               const EvalType& evalType,
-              const std::vector<EvalPoint>& evalPointList);
+              const std::vector<EvalPoint>& evalPointList,
+              const ComputeType& computeType,
+              bool barrierInitializedFromCache);
 
     /**
      * \brief Helper function for init/constructor.
@@ -237,21 +260,25 @@ private:
      *
      * Will throw exceptions or output error messages if something is wrong. Will remain silent otherwise.
      */
-    void checkXFeas(const EvalType& evalType);
+    void checkXFeas(const EvalPoint &xFeas,
+                    const EvalType& evalType,
+                    const ComputeType& computeType = ComputeType::STANDARD);
 
     /**
      * \brief Helper function for insertion.
      *
      * Will throw exceptions or output error messages if something is wrong. Will remain silent otherwise.
      */
-    void checkXFeasIsFeas(const EvalType& evalType);
+    void checkXFeasIsFeas(const EvalPoint &xFeas,
+                          const EvalType& evalType,
+                          const ComputeType& computeType = ComputeType::STANDARD);
 
     /**
      * \brief Helper function for insertion.
      *
      * Will throw exceptions or output error messages if something is wrong. Will remain silent otherwise.
      */
-    void checkXInf();
+    void checkXInf(const EvalPoint &xInf, const EvalType& evalType);
 
     /**
      * \brief Helper function for init/setHMax.
@@ -271,4 +298,4 @@ std::istream& operator>>(std::istream& is, Barrier& barrier);
 
 #include "../nomad_nsend.hpp"
 
-#endif // __NOMAD400_BARRIER__
+#endif // __NOMAD_4_0_BARRIER__

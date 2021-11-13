@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -53,7 +54,7 @@
 
 void NOMAD::NMInitializeSimplex::init()
 {
-    _name = getAlgoName() + "Initialize Simplex";
+    setStepType(NOMAD::StepType::NM_INITIALIZE_SIMPLEX);
 
     verifyParentNotNull();
 
@@ -90,6 +91,7 @@ bool NOMAD::NMInitializeSimplex::runImp()
 bool NOMAD::NMInitializeSimplex::createSimplex()
 {
     auto evalType = NOMAD::EvcInterface::getEvaluatorControl()->getEvalType();
+    auto computeType = NOMAD::EvcInterface::getEvaluatorControl()->getComputeType();
 
     auto iter = dynamic_cast<const NOMAD::NMIteration*>( NOMAD::Step::_parentStep );
     if (nullptr == iter)
@@ -97,8 +99,14 @@ bool NOMAD::NMInitializeSimplex::createSimplex()
         throw NOMAD::Exception(__FILE__, __LINE__, "The simplex initialization must have a NMIteration Step as parent");
     }
 
-    const std::shared_ptr<NOMAD::EvalPoint> centerPt = iter->getFrameCenter();
-    // Use center point of iteration, otherwise
+    std::vector<NOMAD::EvalPoint> evalPointList;
+    std::shared_ptr<NOMAD::EvalPoint> centerPt = nullptr;
+    auto barrier = getMegaIterationBarrier();
+    if (nullptr != barrier)
+    {
+        evalPointList = barrier->getAllPoints();
+        centerPt = std::make_shared<NOMAD::EvalPoint>(evalPointList[0]);
+    }
     if (nullptr == centerPt)
     {
         throw NOMAD::Exception(__FILE__, __LINE__, "A center point must be defined.");
@@ -120,7 +128,7 @@ bool NOMAD::NMInitializeSimplex::createSimplex()
     auto includeLength = _runParams->getAttributeValue<NOMAD::Double>("NM_SIMPLEX_INCLUDE_LENGTH");
     NOMAD::ArrayOfDouble includeRectangle(n, includeLength ) ;
 
-    NOMAD::OutputInfo dbgInfo(_name,"Insertion of potential points to include in initial Y: ", NOMAD::OutputLevel::LEVEL_DEBUG);
+    NOMAD::OutputInfo dbgInfo(getName(),"Insertion of potential points to include in initial Y: ", NOMAD::OutputLevel::LEVEL_DEBUG);
 
     // If a mesh and include factor are supplied: the max distance is include factor times Delta
     // Else we use include length
@@ -135,7 +143,7 @@ bool NOMAD::NMInitializeSimplex::createSimplex()
         if ( ! includeRectangle.isDefined() )
             throw NOMAD::Exception(__FILE__, __LINE__, "The frame size is not defined.");
 
-        includeRectangle *= includeFactor ;
+        includeRectangle *= (double)includeFactor ;
 
         OUTPUT_DEBUG_START
         dbgInfo.addMsg("The include rectangle: " + includeRectangle.display() );
@@ -147,26 +155,24 @@ bool NOMAD::NMInitializeSimplex::createSimplex()
     // The set of points initially included
     NOMAD::NMSimplexEvalPointSet T;
 
-    std::vector<NOMAD::EvalPoint> evalpointlist;
     if (NOMAD::EvcInterface::getEvaluatorControl()->getUseCache())
     {
         // browse the cache:
         NOMAD::CacheInterface cacheInterface(this);
-        cacheInterface.getAllPoints(evalpointlist);
+        cacheInterface.getAllPoints(evalPointList);
     }
     else
     {
-        auto barrier = getMegaIterationBarrier();
         if (nullptr != barrier)
         {
-            evalpointlist = barrier->getAllPoints();
+            evalPointList = barrier->getAllPoints();
         }
     }
 
     // variables used to limit display
     const size_t maxPointsToDisplay = 4;
     size_t nbPoints = 0;
-    for ( const auto & cur : evalpointlist )
+    for ( const auto & cur : evalPointList )
     {
         if ( cur.getEvalStatus(evalType) == NOMAD::EvalStatusType::EVAL_OK &&
             cur.getX()->size() == n             )
@@ -202,7 +208,7 @@ bool NOMAD::NMInitializeSimplex::createSimplex()
                     if ( include )
                     {
 
-                        // Issue #382: make sure to evaluate f or h for points in cache (important if cache is loaded from file) see 
+                        // Issue #382: make sure to evaluate f or h for points in cache (important if cache is loaded from file) see
                         NOMAD::EvalPoint Y ( cur );
                         std::pair<NMSimplexEvalPointSetIterator,bool> ret = T.insert ( Y );
 
@@ -255,7 +261,7 @@ bool NOMAD::NMInitializeSimplex::createSimplex()
     NOMAD::NMSimplexEvalPointSetIterator itT = T.begin();
 
     // For debugging
-    NOMAD::OutputInfo dbgInfo2(_name,"Proceed to simplex creation", NOMAD::OutputLevel::LEVEL_DEBUG);
+    NOMAD::OutputInfo dbgInfo2(getName(),"Proceed to simplex creation", NOMAD::OutputLevel::LEVEL_DEBUG);
 
     // First point is always added
     _nmY->insert ( *itT );
@@ -267,8 +273,8 @@ bool NOMAD::NMInitializeSimplex::createSimplex()
 
     int count_feasible = 0;
 
-    if ( (*itT).getH(evalType).isDefined()
-        && (*itT).isFeasible(evalType) )
+    if ( (*itT).getH(evalType, computeType).isDefined()
+        && (*itT).isFeasible(evalType, computeType) )
         count_feasible = 1 ;
 
     itT++;
@@ -319,7 +325,7 @@ bool NOMAD::NMInitializeSimplex::createSimplex()
             OUTPUT_DEBUG_START
             dbgInfo2.addMsg( " ---> zk KEPT in Y " );
             OUTPUT_DEBUG_END
-            if ( (*itT).isFeasible(evalType) )
+            if ( (*itT).isFeasible(evalType, computeType) )
                 count_feasible++;
             k++;
             itT++;

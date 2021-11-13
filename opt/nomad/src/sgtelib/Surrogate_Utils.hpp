@@ -2,7 +2,7 @@
 /*  sgtelib - A surrogate model library for derivative-free optimization               */
 /*  Version 2.0.2                                                                      */
 /*                                                                                     */
-/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */
+/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */ 
 /*                           Bastien Talgorn - McGill University, Montreal             */
 /*                                                                                     */
 /*  Author: Bastien Talgorn                                                            */
@@ -82,7 +82,7 @@ namespace SGTELIB {
     SVN      ,
     RBF      ,
     LOWESS      ,
-    ENSEMBLE
+    ENSEMBLE 
   };
   const int NB_MODEL_TYPES = 12;
 
@@ -95,8 +95,8 @@ namespace SGTELIB {
     WEIGHT_EXTERN // Belief vector is set externaly by the user.
   };
   const int NB_WEIGHT_TYPES = 5;
-
-
+  
+ 
   // Diff in ms
   int diff_ms(timeval t1, timeval t2);
 
@@ -120,7 +120,7 @@ namespace SGTELIB {
   // add string on a new line of an existing files
   void append_file (const std::string & s , const std::string & file);
 
-  // wait
+  // wait 
   void wait (double t);
 
   // isdef (not nan nor inf)

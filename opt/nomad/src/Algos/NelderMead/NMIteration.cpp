@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -46,8 +47,7 @@
 
 #include <algorithm>    // For std::merge and std::unique
 
-#include "../../config.hpp"
-
+#include "../../nomad_platform.hpp"
 #include "../../Algos/AlgoStopReasons.hpp"
 #include "../../Algos/NelderMead/NMIteration.hpp"
 #include "../../Algos/NelderMead/NMUpdate.hpp"
@@ -58,7 +58,7 @@
 
 void NOMAD::NMIteration::init()
 {
-    _name = getAlgoName() + "Iteration";
+    setStepType(NOMAD::StepType::ITERATION);
 
     _bestSuccess = NOMAD::SuccessType::UNSUCCESSFUL;
 
@@ -101,7 +101,7 @@ bool NOMAD::NMIteration::runImp()
     NOMAD::NMReflective reflect( this );
 
     // Start with the REFLECT step
-    NMStepType stepType = NMStepType::REFLECT;
+    NOMAD::StepType stepType = NOMAD::StepType::NM_REFLECT;
 
     bool nmOpt = _runParams->getAttributeValue<bool>("NM_OPTIMIZATION");
     bool nmSearchStopOnSuccess = _runParams->getAttributeValue<bool>("NM_SEARCH_STOP_ON_SUCCESS");
@@ -110,7 +110,7 @@ bool NOMAD::NMIteration::runImp()
     // 1) A Reflect
     // 2) An Expansion or an Inside contraction or an Outside contraction or Continue to next iteration (no shrink).
     // 3) Possibly a Shrink.
-    while (  ! _stopReasons->checkTerminate() && stepType != NMStepType::CONTINUE && stepType != NMStepType::SHRINK )
+    while (  ! _stopReasons->checkTerminate() && stepType != NOMAD::StepType::NM_CONTINUE && stepType != NOMAD::StepType::NM_SHRINK )
     {
         // Need to set the current step type before starting
         reflect.setCurrentNMStepType( stepType );
@@ -141,7 +141,7 @@ bool NOMAD::NMIteration::runImp()
 
     // Perform SHRINK only for a standalone NM optimization
     if ( ! _stopReasons->checkTerminate() &&
-         stepType == NMStepType::SHRINK  &&
+         stepType == NOMAD::StepType::NM_SHRINK  &&
          nmOpt )
     {
         // Create shrink trial points and evaluate them
@@ -158,7 +158,14 @@ bool NOMAD::NMIteration::runImp()
             _bestSuccess = success;
         }
     }
+    // Perform SHRINK only for a standalone NM optimization ELSE stop NM
+    if ( ! _stopReasons->checkTerminate() &&
+         stepType == NOMAD::StepType::NM_SHRINK && !nmOpt )
+    {
+        auto nmStopReason = NOMAD::AlgoStopReasons<NOMAD::NMStopType>::get ( _stopReasons );
+        nmStopReason->set( NOMAD::NMStopType::NM_STOP_NO_SHRINK );
 
+    }
     if ( iterationSuccess )
     {
         // Update MegaIteration success type with best success found.

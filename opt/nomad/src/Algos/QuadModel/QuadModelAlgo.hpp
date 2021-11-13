@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -43,8 +44,8 @@
 /*                                                                                 */
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
-#ifndef __NOMAD400_QUAD_MODEL_ALGO__
-#define __NOMAD400_QUAD_MODEL_ALGO__
+#ifndef __NOMAD_4_0_QUAD_MODEL_ALGO__
+#define __NOMAD_4_0_QUAD_MODEL_ALGO__
 
 #include "../../Algos/AlgoStopReasons.hpp"
 #include "../../Algos/Algorithm.hpp"
@@ -57,7 +58,7 @@
  * Use the start, run and end tasks. Iterate on the following sequence:
  *
  * 1- Points provided as X0s and points in cache are put in a training set.
- * 2- These points are used to build a surrogate model.
+ * 2- These points are used to build a dynamic model.
  * 3- The model is optimized. This gives oracle points.
  * 4- The oracle points are evaluated by the blackbox.
  * 5- As long as new oracle points are found, the process is repeated.
@@ -110,5 +111,5 @@ private:
 
 #include "../../nomad_nsend.hpp"
 
-#endif // __NOMAD400_QUAD_MODEL_ALGO__
+#endif // __NOMAD_4_0_QUAD_MODEL_ALGO__
 

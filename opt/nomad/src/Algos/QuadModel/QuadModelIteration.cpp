@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -63,9 +64,10 @@ void NOMAD::QuadModelIteration::reset()
     }
 }
 
+
 void NOMAD::QuadModelIteration::init()
 {
-    _name = getAlgoName() + NOMAD::Iteration::getName();
+    setStepType(NOMAD::StepType::ITERATION);
 
     // Count the number of constraints
     const auto bbot = NOMAD::QuadModelAlgo::getBBOutputType();
@@ -121,7 +123,7 @@ bool NOMAD::QuadModelIteration::runImp()
         optimize.end();
     }
 
-    // Update MegaIteration success type (use deconstification!)
+    // Update MegaIteration success type
     NOMAD::SuccessType success = optimize.getSuccessType();
     auto megaIter = getParentOfType<NOMAD::MegaIteration*>();
     megaIter->setSuccessType(success);

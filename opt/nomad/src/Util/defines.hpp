@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -49,8 +50,8 @@
  \author Sebastien Le Digabel, modified by Viviane Rochon Montplaisir
  \date   March 2017
  */
-#ifndef __NOMAD400_DEFINES__
-#define __NOMAD400_DEFINES__
+#ifndef __NOMAD_4_0_DEFINES__
+#define __NOMAD_4_0_DEFINES__
 
 #include <string>
 #include <iostream>
@@ -138,6 +139,9 @@ const int DISPLAY_PRECISION_FULL = 20;  ///< Display all decimals
 const int NB_DIGITS_BEFORE_POINT = 3;   // "Precision" before decimal point
 const int INT_DISPLAY_WIDTH = 3;        // Width for integers
 
+// Maximal output value for points used for models.
+const double MODEL_MAX_OUTPUT = 1E10;
+
 
 // -------------------------
 // Related to MADS algorithm
@@ -157,4 +161,4 @@ enum class SuccessType
 
 #include "../nomad_nsend.hpp"
 
-#endif // __NOMAD400_DEFINES__
+#endif // __NOMAD_4_0_DEFINES__

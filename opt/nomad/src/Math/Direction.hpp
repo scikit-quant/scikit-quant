@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -51,8 +52,8 @@
  \see    Direction.cpp
  */
 
-#ifndef __NOMAD400_DIRECTION__
-#define __NOMAD400_DIRECTION__
+#ifndef __NOMAD_4_0_DIRECTION__
+#define __NOMAD_4_0_DIRECTION__
 
 #include <numeric>
 #include "../Math/ArrayOfDouble.hpp"
@@ -108,6 +109,26 @@ public:
     /// Destructor.
     virtual ~Direction() {}
 
+    /*-----------*/
+    /* Operators */
+    /*-----------*/
+
+    /// Operator \c +=.
+    /**
+     Vector operation dir + dir1.
+     \param dir1  Direction to add -- \b IN.
+     \return      Reference to \c *this after adding dir1.
+     */
+    const Direction& operator+=(const Direction& dir1);
+
+    /// Operator \c -=.
+    /**
+     Vector operation dir - dir1.
+     \param dir1  Direction to substract -- \b IN.
+     \return      Reference to \c *this after substracting dir1.
+     */
+    const Direction& operator-=(const Direction& dir1);
+
     /*----------*/
     /*   Norm   */
     /*----------*/
@@ -142,6 +163,8 @@ public:
      */
     static const Double cos(const Direction& dir1, const Direction& dir2);
 
+    static const Double angle(const Direction& dir1, const Direction& dir2);    // From NOMAD 3
+
     /// Compute a random direction on a unit N-Sphere
     /**
      \param randomDir of the desired dimension -- \b IN/OUT
@@ -161,6 +184,9 @@ public:
 
 };
 
+/// Inverse operator.
+Direction operator-(const Direction &dir);
+
 /// Display of \c Direction
 /**
  \param d    Object to be displayed -- \b IN.
@@ -171,5 +197,4 @@ std::ostream& operator<< (std::ostream& out, const Direction& d);
 
 
 #include "../nomad_nsend.hpp"
-
-#endif // __NOMAD400_DIRECTION__
+#endif // __NOMAD_4_0_DIRECTION__

@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -67,14 +68,8 @@ uint32_t NOMAD::RNG::_z = z_def;
 
 void NOMAD::RNG::setSeed(int s)
 {
-    bool newSeed = false;
-
     if (s <= INT_MAX && s >= 0)
     {
-        if (_s != s)
-        {
-            newSeed = true;
-        }
         _s = s;
     }
     else
@@ -83,11 +78,8 @@ void NOMAD::RNG::setSeed(int s)
                                 "NOMAD::RNG::setSeed(): invalid seed. Seed should be in [0,INT_MAX]");
     }
 
-    // Only reset to default values if the seed has really changed.
-    if (newSeed)
-    {
-        resetPrivateSeedToDefault();
-    }
+    // Always reset the private seed to default values
+    resetPrivateSeedToDefault();
 
     for (int i = 0; i < _s; i++)
     {

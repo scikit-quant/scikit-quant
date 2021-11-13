@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -44,18 +45,17 @@
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
 
-#include "../../Algos/Mads/MadsIteration.hpp"
-#include "../../Algos/Mads/MadsMegaIteration.hpp"
 #include "../../Algos/Mads/SinglePollMethod.hpp"
+#include "../../Math/Direction.hpp"
 
 void NOMAD::SinglePollMethod::init()
 {
-    setName("Single Poll Method");
+    setStepType(NOMAD::StepType::POLL_METHOD_SINGLE);
     verifyParentNotNull();
 }
 
 // Generate a poll direction
-void NOMAD::SinglePollMethod::generateUnitPollDirections(std::list<NOMAD::Direction> &directions, size_t n) const
+void NOMAD::SinglePollMethod::generateUnitPollDirections(std::list<NOMAD::Direction> &directions, const size_t n) const
 {
     NOMAD::Direction dirUnit(n, 0.0);
     NOMAD::Direction::computeDirOnUnitSphere(dirUnit);

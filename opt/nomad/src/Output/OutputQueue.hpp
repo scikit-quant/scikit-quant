@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -43,8 +44,8 @@
 /*                                                                                 */
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
-#ifndef __NOMAD400_OUTPUTQUEUE__
-#define __NOMAD400_OUTPUTQUEUE__
+#ifndef __NOMAD_4_0_OUTPUTQUEUE__
+#define __NOMAD_4_0_OUTPUTQUEUE__
 
 #include <vector>
 #ifdef _OPENMP
@@ -157,6 +158,8 @@ public:
     void initStatsFile();
     const std::string& getStatsFileName() const { return _statsFile; }
 
+    void setTotalEval(const size_t totalEval) { if (totalEval > _totalEval) { _totalEval = totalEval; } }
+
     void setStatsFileFormat(const DisplayStatsTypeList& statsFileFormat)
     {
         _statsFileFormat = statsFileFormat;
@@ -175,21 +178,23 @@ private:
     // NOTE It does not seem relevant for the lock to be static,
     // because OutputQueue is a singleton anyway. If staticity causes problems,
     // we could remove the static keyword.
-    static omp_lock_t _s_queue_lock;
+    DLL_UTIL_API static omp_lock_t      _s_queue_lock;
 #endif // _OPENMP
 
-    static bool _hasBeenInitialized; ///< Flag for initialization (initialization cannot be performed more than once).
+    DLL_UTIL_API static bool            _hasBeenInitialized;    ///< Flag for initialization (initialization cannot be performed more than once).
 
-    static std::unique_ptr<OutputQueue> _single; ///< The singleton
+    DLL_UTIL_API static std::unique_ptr<OutputQueue>    _single;                ///< The singleton
 
     /// Queue of all the OutputInfo we have to print.
-    std::vector<OutputInfo> _queue;
+    std::vector<OutputInfo>             _queue;
 
     /// Display parameters
-    std::shared_ptr<DisplayParameters> _params;
+    std::shared_ptr<DisplayParameters>  _params;
 
-    std::string _statsFile;
-    std::ofstream _statsStream;
+    std::string                         _statsFile;
+    std::ofstream                       _statsStream;
+    bool                                _statsWritten;
+    size_t                              _totalEval;
 
     /**
      Format for stats in a file (parameter STATS_FILE).
@@ -228,4 +233,4 @@ private:
 
 #include "../nomad_nsend.hpp"
 
-#endif // __NOMAD400_OUTPUTQUEUE__
+#endif // __NOMAD_4_0_OUTPUTQUEUE__

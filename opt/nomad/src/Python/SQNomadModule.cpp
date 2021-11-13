@@ -1,7 +1,7 @@
 // Copyright UC Regents
 
 #include "PyCompat.h"
-#include "../config.hpp"
+#include "../nomad_platform.hpp"
 #include "../Nomad/nomad.hpp"
 #include "../Cache/CacheBase.hpp"
 #include "../Type/BBOutputType.hpp"
@@ -46,12 +46,15 @@ public:
 };
 
 class EvcInterfaceReset {
+    MainStep& m_cnomad;
+
 public:
+    EvcInterfaceReset(MainStep& m) : m_cnomad(m) {}
     ~EvcInterfaceReset() {
-    // resetting the evaluator is necessary b/c it's implementation is a static
-    // shared_ptr: since the evaluator is user-provided, it may be destroyed after
-    // the user level library was already unloaded
-        EvcInterface::getEvaluatorControl()->setEvaluator(nullptr);
+    // resetting the optimizer state is necessary to allow re-runs within the
+    // same program; this also takes care of resetting the evaluator in case
+    // the user level library gets unloaded earlier than NOMAD
+        m_cnomad.resetComponentsBetweenOptimization();
     }
 };
 
@@ -463,12 +466,10 @@ static PyObject* minimize(PyObject* /* dummy */, PyObject* args, PyObject* kwds)
         // non-existent / nothing to clear
         }
 
-    // resetting the evaluator control is necessary as MainStep will otherwise not
-    // re-initialize it, leaving the old "stop reasons" in place, failing the run
-        EvcInterface::setEvaluatorControl(nullptr);
-
     // create and configure NOMAD instance (outside of thread blocks b/c it will own a Python object)
         MainStep cnomad;
+        EvcInterfaceReset e{cnomad};
+
         cnomad.setAllParameters(params);
         cnomad.setEvaluator(
             std::make_unique<PyCallback>(params->getEvalParams(), PyTuple_GET_ITEM(args, 0)));
@@ -476,8 +477,6 @@ static PyObject* minimize(PyObject* /* dummy */, PyObject* args, PyObject* kwds)
         bool run_ok = false;
         {
         PyUnGILRAII m;
-        EvcInterfaceReset e;
-
         cnomad.start();
         run_ok = cnomad.run();
         cnomad.end();
@@ -485,7 +484,8 @@ static PyObject* minimize(PyObject* /* dummy */, PyObject* args, PyObject* kwds)
 
         if (run_ok) {
             std::vector<EvalPoint> evpl;
-            auto nf = CacheBase::getInstance()->findBestFeas(evpl, Point(), EvalType::BB, nullptr);
+            auto nf = CacheBase::getInstance()->findBestFeas(
+                evpl, Point(), EvalType::BB, NOMAD::ComputeType::STANDARD, nullptr);
             if (0 < nf) {
                 EvalPoint evres = evpl[0];
                 result = PyTuple_New(2);

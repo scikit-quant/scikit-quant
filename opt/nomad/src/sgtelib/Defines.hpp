@@ -2,7 +2,7 @@
 /*  sgtelib - A surrogate model library for derivative-free optimization               */
 /*  Version 2.0.2                                                                      */
 /*                                                                                     */
-/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */
+/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */ 
 /*                           Bastien Talgorn - McGill University, Montreal             */
 /*                                                                                     */
 /*  Author: Bastien Talgorn                                                            */
@@ -56,15 +56,15 @@ using std::isnan;
 using std::isinf;
 
 namespace SGTELIB {
-
+  
   const double EPSILON = 1E-13;
   const double PI = 3.141592654;
   const double INF = std::numeric_limits<double>::max(); ///< Infinity
   const double NaN = std::numeric_limits<double>::quiet_NaN();
 
   const bool APPROX_CDF = true;
-  // If true, then the lower bound of standard deviation is EPSILON.
-  // This allows to avoid flat EI and P functions.
+  // If true, then the lower bound of standard deviation is EPSILON. 
+  // This allows to avoid flat EI and P functions. 
 
 
   enum norm_t {
@@ -73,6 +73,7 @@ namespace SGTELIB {
     NORM_2 ,
     NORM_INF
   };
+
 
 
   enum scaling_t {
@@ -119,6 +120,7 @@ namespace SGTELIB {
     STATUS_OPTIM,
     STATUS_MODEL_DEFINED
   };
+    
 
 
 }

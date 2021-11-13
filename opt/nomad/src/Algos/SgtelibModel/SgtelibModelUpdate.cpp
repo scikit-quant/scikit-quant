@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -62,14 +63,20 @@ NOMAD::SgtelibModelUpdate::~SgtelibModelUpdate()
 
 void NOMAD::SgtelibModelUpdate::init()
 {
-    _name = getAlgoName() + "Update";
+    setStepType(NOMAD::StepType::UPDATE);
     verifyParentNotNull();
+}
+
+
+std::string NOMAD::SgtelibModelUpdate::getName() const
+{
+    return getAlgoName() + NOMAD::stepTypeToString(_stepType);
 }
 
 
 void NOMAD::SgtelibModelUpdate::startImp()
 {
-    auto modelDisplay = _runParams->getAttributeValue<std::string>("MODEL_DISPLAY");
+    auto modelDisplay = _runParams->getAttributeValue<std::string>("SGTELIB_MODEL_DISPLAY");
     _displayLevel = (std::string::npos != modelDisplay.find("U"))
                         ? NOMAD::OutputLevel::LEVEL_INFO
                         : NOMAD::OutputLevel::LEVEL_DEBUGDEBUG;
@@ -107,7 +114,7 @@ bool NOMAD::SgtelibModelUpdate::runImp()
 
     if (NOMAD::SgtelibModelFormulationType::EXTERN == modelFormulation)
     {
-        // Extern SGTE. Early out
+        // Extern model. Early out
         OUTPUT_INFO_START
         AddOutputInfo("FORMULATION: EXTERN.", _displayLevel);
         OUTPUT_INFO_END
@@ -155,7 +162,7 @@ bool NOMAD::SgtelibModelUpdate::runImp()
         radius = modelAlgo->getMesh()->getDeltaFrameSize();
     }
     // Multiply by radius parameter
-    auto radiusFactor = _runParams->getAttributeValue<NOMAD::Double>("MODEL_RADIUS_FACTOR");
+    auto radiusFactor = _runParams->getAttributeValue<NOMAD::Double>("SGTELIB_MODEL_RADIUS_FACTOR");
     radius *= radiusFactor;
 
     // Get all frame centers
@@ -213,8 +220,8 @@ bool NOMAD::SgtelibModelUpdate::runImp()
     if (nbValidPoints < minNbPoints)
     {
         // If no points available, it is impossible to build a model.
-        auto sgteStopReason = NOMAD::AlgoStopReasons<NOMAD::ModelStopType>::get(_stopReasons);
-        sgteStopReason->set(NOMAD::ModelStopType::NOT_ENOUGH_POINTS);
+        auto sgtelibModelStopReason = NOMAD::AlgoStopReasons<NOMAD::ModelStopType>::get(_stopReasons);
+        sgtelibModelStopReason->set(NOMAD::ModelStopType::NOT_ENOUGH_POINTS);
 
         OUTPUT_INFO_START
         AddOutputInfo("Sgtelib Model has not enough points to build model");
@@ -248,7 +255,7 @@ bool NOMAD::SgtelibModelUpdate::runImp()
 
         // Objective
         // Update uses blackbox values
-        row_Z.set(0, 0, evalPoint.getF(NOMAD::EvalType::BB).todouble()); // 1st column: constraint model
+        row_Z.set(0, 0, evalPoint.getF(NOMAD::EvalType::BB, NOMAD::EvcInterface::getEvaluatorControl()->getComputeType()).todouble()); // 1st column: constraint model
 
         NOMAD::ArrayOfDouble bbo = evalPoint.getEval(NOMAD::EvalType::BB)->getBBOutput().getBBOAsArrayOfDouble();
         // Constraints
@@ -267,12 +274,11 @@ bool NOMAD::SgtelibModelUpdate::runImp()
                 break;
 
             case NOMAD::SgtelibModelFeasibilityType::H:
-                NOMAD::SgtelibModelEvaluator::evalH(bbo, bbot, v);
                 row_Z.set(0, 1, v.todouble()); // 2nd column: constraint model
                 break;
 
             case NOMAD::SgtelibModelFeasibilityType::B:
-                row_Z.set(0, 1, evalPoint.isFeasible(NOMAD::EvalType::BB)); // 2nd column: constraint model
+                row_Z.set(0, 1, evalPoint.isFeasible(NOMAD::EvalType::BB, NOMAD::EvcInterface::getEvaluatorControl()->getComputeType())); // 2nd column: constraint model
                 break;
 
             case NOMAD::SgtelibModelFeasibilityType::M:
@@ -295,7 +301,7 @@ bool NOMAD::SgtelibModelUpdate::runImp()
 
         add_Z->add_rows(row_Z);
 
-        if (evalPoint.isFeasible(NOMAD::EvalType::BB))
+        if (evalPoint.isFeasible(NOMAD::EvalType::BB, NOMAD::EvcInterface::getEvaluatorControl()->getComputeType()))
         {
             if (!modelAlgo->getFoundFeasible())
             {
@@ -368,9 +374,8 @@ bool NOMAD::SgtelibModelUpdate::validForUpdate(const NOMAD::EvalPoint& evalPoint
     // - Not a NaN
     // - Not a fail
     // - All outputs defined
-    // - Blackbox OBJ available (Not sgte)
+    // - Blackbox OBJ available (Not MODEL)
     bool validPoint = true;
-    NOMAD::ArrayOfDouble bbo;
 
     auto eval = evalPoint.getEval(NOMAD::EvalType::BB);
     if (nullptr == eval)
@@ -380,14 +385,17 @@ bool NOMAD::SgtelibModelUpdate::validForUpdate(const NOMAD::EvalPoint& evalPoint
     }
     else
     {
-        bbo = eval->getBBOutput().getBBOAsArrayOfDouble();
+        auto computeType = NOMAD::EvcInterface::getEvaluatorControl()->getComputeType();
 
         // Note: it could be discussed if points that have h > hMax should still be used
         // to build the model. We validate them to comply with Nomad 3.
-        if (   ! bbo.isComplete()
-            || (   !(NOMAD::EvalStatusType::EVAL_OK == eval->getEvalStatus())
-                && !(NOMAD::EvalStatusType::EVAL_CONS_H_OVER == eval->getEvalStatus()) )
-            || ! eval->getF().isDefined() )
+        // If f or h greater than MODEL_MAX_OUTPUT (default=1E10) the point is not valid (same as Nomad 3)
+        if (   ! eval->isBBOutputComplete()
+            || !(NOMAD::EvalStatusType::EVAL_OK == eval->getEvalStatus())
+            || !eval->getF(computeType).isDefined()
+            || !eval->getH(computeType).isDefined()
+            || eval->getF(computeType) > NOMAD::MODEL_MAX_OUTPUT
+            || eval->getH(computeType) > NOMAD::MODEL_MAX_OUTPUT)
         {
             validPoint = false;
         }

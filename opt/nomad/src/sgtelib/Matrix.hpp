@@ -2,7 +2,7 @@
 /*  sgtelib - A surrogate model library for derivative-free optimization               */
 /*  Version 2.0.2                                                                      */
 /*                                                                                     */
-/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */
+/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */ 
 /*                           Bastien Talgorn - McGill University, Montreal             */
 /*                                                                                     */
 /*  Author: Bastien Talgorn                                                            */
@@ -81,6 +81,7 @@ namespace SGTELIB {
     //Matrix & operator * ( const Matrix & B);
 
 
+
     // destructor:
     virtual ~Matrix ( void );
 
@@ -102,7 +103,7 @@ namespace SGTELIB {
     inline int get_numel   ( void ) const { return _nbRows*_nbCols; }
 
     // access to element (k)
-    double get ( const int k ) const;
+    double get ( const int k ) const; 
     // access to element (i,j)
     inline double get ( const int i , const int j ) const {
       #ifdef SGTELIB_DEBUG
@@ -119,7 +120,8 @@ namespace SGTELIB {
     double & operator [] ( int k );
 
 
-    SGTELIB::Matrix get ( const std::list<int> & list_cols ,
+
+    SGTELIB::Matrix get ( const std::list<int> & list_cols , 
                           const std::list<int> & list_rows) const;
 
     SGTELIB::Matrix get_row (const int i) const;
@@ -130,7 +132,7 @@ namespace SGTELIB {
 
     SGTELIB::Matrix get_rows (const int i1, const int i2) const;
     SGTELIB::Matrix get_cols (const int i1, const int i2) const;
-
+  
     void swap_rows (const int i1, const int i2);
 
 
@@ -152,7 +154,7 @@ namespace SGTELIB {
     void set_col (const SGTELIB::Matrix & T , const int j); // T is col vector
     void set_row (const double v , const int i); // T is row vector
     void set_col (const double v , const int j); // T is col vector
-
+  
     // swap terms (i1,j1) and (i2,j2)
     void swap (const int i1 , const int j1 , const int i2 , const int j2 );
 
@@ -268,7 +270,7 @@ namespace SGTELIB {
                                  const SGTELIB::Matrix & B);
 
     void sub ( const SGTELIB::Matrix & B);
-
+  
     // Identity matrix
     static SGTELIB::Matrix identity ( const int n );
 
@@ -297,6 +299,7 @@ namespace SGTELIB {
     SGTELIB::Matrix cholesky_inverse ( void ) const;
     static SGTELIB::Matrix cholesky_solve ( const SGTELIB::Matrix & A ,
                                             const SGTELIB::Matrix & b );
+
 
 
     // Triangular matrix
@@ -347,9 +350,9 @@ namespace SGTELIB {
     // Min / Max
     double max (void);
     double min (void);
-    static SGTELIB::Matrix max ( const SGTELIB::Matrix & A ,
+    static SGTELIB::Matrix max ( const SGTELIB::Matrix & A , 
                                  const SGTELIB::Matrix & B );
-    static SGTELIB::Matrix min ( const SGTELIB::Matrix & A ,
+    static SGTELIB::Matrix min ( const SGTELIB::Matrix & A , 
                                  const SGTELIB::Matrix & B );
 
     // Get min index
@@ -370,16 +373,16 @@ namespace SGTELIB {
     static SGTELIB::Matrix string_to_row ( const std::string & s , int nbCols = 0 );
 
     // distances
-    static SGTELIB::Matrix get_distances_norm1   ( const SGTELIB::Matrix & A ,
+    static SGTELIB::Matrix get_distances_norm1   ( const SGTELIB::Matrix & A , 
                                                    const SGTELIB::Matrix & B );
-    static SGTELIB::Matrix get_distances_norm2   ( const SGTELIB::Matrix & A ,
+    static SGTELIB::Matrix get_distances_norm2   ( const SGTELIB::Matrix & A , 
                                                    const SGTELIB::Matrix & B );
-    static SGTELIB::Matrix get_distances_norminf ( const SGTELIB::Matrix & A ,
+    static SGTELIB::Matrix get_distances_norminf ( const SGTELIB::Matrix & A , 
                                                    const SGTELIB::Matrix & B );
 
     int find_row (SGTELIB::Matrix & R);
 
-    // nan
+    // nan 
     bool has_nan (void) const;
     bool has_inf (void) const;
     void replace_nan (double d);

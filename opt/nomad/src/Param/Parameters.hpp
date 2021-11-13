@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -43,8 +44,8 @@
 /*                                                                                 */
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
-#ifndef __NOMAD400_PARAMETERS__
-#define __NOMAD400_PARAMETERS__
+#ifndef __NOMAD_4_0_PARAMETERS__
+#define __NOMAD_4_0_PARAMETERS__
 
 #include <algorithm>
 #include <fstream>
@@ -57,8 +58,10 @@
 #include "../Math/Point.hpp"
 #include "../Math/ArrayOfPoint.hpp"
 #include "../Type/ListOfVariableGroup.hpp"
+#include "../Type/DirectionType.hpp"
 #include "../Param/AttributeFactory.hpp"
 #include "../Param/ParameterEntries.hpp"
+#include "../nomad_platform.hpp"
 
 
 #include "../nomad_nsbegin.hpp"
@@ -138,7 +141,6 @@ class Parameters
 {
 private:
 
-    static ParameterEntries _paramEntries; ///< The set of entries obtained when reading a parameter file.
 
     std::ostringstream _streamedAttribute; ///< The attributes in a format ready to be printed with Parameters::getSetAttributeAsString.
 
@@ -147,6 +149,7 @@ protected:
     /*---------*/
     /* Members */
     /*---------*/
+    DLL_UTIL_API static ParameterEntries _paramEntries; ///< The set of entries obtained when reading a parameter file.
 
     std::string _typeName; ///< The type of parameters: ex. Problem, Run
 
@@ -162,7 +165,7 @@ protected:
      Map of attribute names and type name as string.
      Static to the class.
      */
-    static std::map<std::string,std::string> _typeOfAttributes;
+    DLL_UTIL_API static std::map<std::string,std::string> _typeOfAttributes;
 
     /// Constructors
     /**
@@ -229,7 +232,7 @@ public:
     /**
      Helper for Parameters::readParamLine OR called by AllParameters::read for each specific type of Parameters such as RunParameters, PbParameters, ....
      */
-    void readEntries(const bool overwrite = false);
+    void readEntries(const bool overwrite = false, std::string problemDir="");
 
     /**
      Read a single parameter given in a single line.
@@ -253,19 +256,21 @@ public:
      */
     bool toBeChecked() const;
 
+    /// Get the names of all the Attributes for this Parameter instance
+    std::vector<std::string> getAttributeNames() const;
+
     /**
      Return the name of a parameter type. Ex. Problem, Run
      */
     std::string getTypeName() const { return _typeName; }
 
     void resetToDefaultValues() noexcept ;
+    void resetToDefaultValue(const std::string& paramName);
 
     /**
      Read the parameter file. Each line of the file is sent to Parameters::readParamLine.
      Called by AllParameters::read.
      */
-    void resetToDefaultValue(const std::string& paramName);
-
     static void readParamFileAndSetEntries(const std::string &paramFile, bool overwrite = false , bool resetAllEntries = false );
 
     /// Erase all entries
@@ -283,6 +288,8 @@ public:
                      std::ostringstream & ossAdvanced ) ;
 
 
+
+
 private:
     /**
      Must be implemented by derived object. Used by constructor.
@@ -294,6 +301,9 @@ private:
 
     /// Helper for read
     size_t readValuesForArrayOfPoint(const ParameterEntry &pe, Point &point);
+
+    /// Helper for read
+    NOMAD::ArrayOfPoint readPointValuesFromFile(const std::string& pointFile);
 
     /// Helper for read
     size_t readValuesForVariableGroup(const ParameterEntry &pe, VariableGroup &vg);
@@ -581,6 +591,21 @@ public:
             err += " and not of type T = " + typeTName;
             throw Exception(__FILE__,__LINE__, err);
         }
+        if (!sp->uniqueEntry())
+        {
+            if (typeid(ArrayOfString).name() == _typeOfAttributes.at(name))
+            {
+                // Special case for DISPLAY parameter
+                ArrayOfString* valueAsAos = (ArrayOfString*)(&value);
+                ArrayOfString* aos = (ArrayOfString*)(&sp->getValue());
+                for (size_t i = 0; i < valueAsAos->size(); i++)
+                {
+                    aos->add((*valueAsAos)[i]);
+                }
+                // Convert back to T
+                value = *((T*)(aos));
+            }
+        }
         sp->setValue(value);
 
         // Keep a track of all the non default set (used by runner to display attributes)
@@ -618,6 +643,30 @@ public:
             aop.push_back(value);
 
             setSpValue(name, aop);
+        }
+        else
+        {
+            // Use default behaviour
+            setSpValueDefault(name, value);
+        }
+    }
+
+    /**
+     Overload of setSpValue for DirectionType -> DirectionTypeList case.
+     Value is of type DirectionType, and it might need to be converted to an DirectionTypeList for parameter name.
+     */
+    void setSpValue(const std::string& name, DirectionType value)
+    {
+        if (typeid(DirectionTypeList).name() == _typeOfAttributes.at(name))
+        {
+            // Special case: Attribute type is an DirectionTypeList, but user sets
+            // a DirectionType.
+            // Create an DirectionTypeList and set its first element to the
+            // given point value.
+            DirectionTypeList dirTypeList;
+            dirTypeList.push_back(value);
+
+            setSpValue(name, dirTypeList);
         }
         else
         {
@@ -731,4 +780,5 @@ protected:
 
 #include "../nomad_nsend.hpp"
 
-#endif // __NOMAD400_PARAMETERS__
+
+#endif // __NOMAD_4_0_PARAMETERS__

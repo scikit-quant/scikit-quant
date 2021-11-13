@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -54,9 +55,15 @@
 #include "../../Type/DirectionType.hpp"
 
 
+void NOMAD::SSDMadsMegaIteration::init()
+{
+    setStepType(NOMAD::StepType::MEGA_ITERATION);
+    _randomPickup.reset();
+}
+
+
 void NOMAD::SSDMadsMegaIteration::startImp()
 {
-
     // Update manager mesh and barrier.
     NOMAD::MadsUpdate update( this );
     update.start();
@@ -74,10 +81,10 @@ void NOMAD::SSDMadsMegaIteration::startImp()
     OUTPUT_DEBUG_END
     if ( ! _stopReasons->checkTerminate() )
     {
-        auto bestEvalPoint = _barrier->getRefBestFeas();
+        auto bestEvalPoint = _barrier->getFirstXFeas();
 
         if (bestEvalPoint == nullptr)
-            bestEvalPoint  = _barrier->getRefBestInf();
+            bestEvalPoint  = _barrier->getFirstXInf();
 
         if (bestEvalPoint == nullptr)
             throw NOMAD::Exception(__FILE__, __LINE__, "No best eval point");
@@ -110,7 +117,7 @@ void NOMAD::SSDMadsMegaIteration::startImp()
 
 
         OUTPUT_INFO_START
-        AddOutputInfo(_name + " has " + std::to_string(nbMadsSubproblem) + " subproblem mads.");
+        AddOutputInfo(getName() + " has " + std::to_string(nbMadsSubproblem) + " subproblem mads.");
         OUTPUT_INFO_END
     }
 }
@@ -175,8 +182,8 @@ bool NOMAD::SSDMadsMegaIteration::runImp()
         NOMAD::EvalPointPtr newBestFeas,newBestInf;
 
         // Use mega iteration barrier to get the reference best points (should work for opportunistic or not)
-        auto refBestFeas = _barrier->getRefBestFeas();
-        auto refBestInf = _barrier->getRefBestInf();
+        auto refBestFeas = _barrier->getFirstXFeas();
+        auto refBestInf = _barrier->getFirstXInf();
 
         // Set the iter success based on best feasible and best infeasible points found compared to initial point.
         if (iterSuccessful && (nullptr != refBestFeas || nullptr != refBestInf))
@@ -191,7 +198,7 @@ bool NOMAD::SSDMadsMegaIteration::runImp()
                 // Compute success
                 // Get which of newBestFeas and newBestInf is improving
                 // the solution. Check newBestFeas first.
-                NOMAD::ComputeSuccessType computeSuccess(NOMAD::EvcInterface::getEvaluatorControl()->getEvalType());
+                NOMAD::ComputeSuccessType computeSuccess(evc->getEvalType(), evc->getComputeType());
                 subPbSuccess = computeSuccess(newBestFeas, refBestFeas);
                 if (subPbSuccess >= NOMAD::SuccessType::PARTIAL_SUCCESS)
                 {
@@ -248,11 +255,11 @@ bool NOMAD::SSDMadsMegaIteration::runImp()
         // Transfer the Mads subproblem barrier into the mega iteration barrier
         //
         // The fixed variables of the mads subproblem
-        auto fixedVariable = NOMAD::SubproblemManager::getSubFixedVariable((madsOnSubPb.get()));
+        auto fixedVariable = NOMAD::SubproblemManager::getInstance()->getSubFixedVariable((madsOnSubPb.get()));
         auto evalPointList = madsOnSubPb->getMegaIterationBarrier()->getAllPoints();
         // Convert into full dimension
         NOMAD::convertPointListToFull(evalPointList, fixedVariable);
-        _barrier->updateWithPoints(evalPointList, NOMAD::EvalType::BB, true);
+        _barrier->updateWithPoints(evalPointList, NOMAD::EvalType::BB, evc->getComputeType(), true);
 
         // Reset counter will reset the EvalMainThreadStopReason if the max bb is reached for this sub optimization
         evc->resetBbEvalInSubproblem();
@@ -269,7 +276,7 @@ bool NOMAD::SSDMadsMegaIteration::runImp()
         if (_stopReasons->checkTerminate())
         {
             OUTPUT_DEBUG_START
-            s = _name + " stop reason set to: " + _stopReasons->getStopReasonAsString();
+            s = getName() + " stop reason set to: " + _stopReasons->getStopReasonAsString();
             AddOutputDebug(s);
             OUTPUT_DEBUG_END
         }
@@ -297,7 +304,7 @@ void NOMAD::SSDMadsMegaIteration::setupSubproblemParams ( std::shared_ptr<NOMAD:
     subProblemPbParams->doNotShowWarnings();
     if (isPollster)
     {
-        subProblemPbParams->setAttributeValue("DIRECTION_TYPE", NOMAD::DirectionType::SINGLE );
+        subProblemRunParams->setAttributeValue("DIRECTION_TYPE", NOMAD::DirectionType::SINGLE );
         subProblemRunParams->setAttributeValue("MAX_ITERATIONS", 1);
         subProblemPbParams->setAttributeValue("INITIAL_FRAME_SIZE", mainFrameSize);
 

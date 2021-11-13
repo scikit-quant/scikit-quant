@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -50,8 +51,8 @@
  \date   2010-04-02
  \see    Double.hpp
  */
-#include <iomanip>  // For std::setprecision
 #include <cctype>   // for toupper
+#include <iomanip>  // For std::setprecision
 #include "../Math/Double.hpp"
 #include "../Util/defines.hpp"
 
@@ -170,6 +171,34 @@ double NOMAD::Double::trunk() const
 
 }
 
+bool NOMAD::Double::roundToPrecision(const NOMAD::Double & precision )
+{
+    if (! _defined)
+    {
+        throw NotDefined(__FILE__, __LINE__,
+                          "NOMAD::Double::roundToPrecision(): value not defined");
+    }
+    
+    bool modif = false;
+    if (precision.isDefined())
+    {
+        if (precision > 0)
+        {
+            double powprec = std::pow(10,precision.round());
+            _value = std::round(_value * powprec) / powprec;
+        }
+        else
+        {
+            // Integer, binary (and categorical) have no decimal
+            _value = std::round(_value);
+        }
+        modif = true;
+    }
+    
+    return modif;
+
+}
+
 bool NOMAD::Double::weakLess(const NOMAD::Double &d1, const NOMAD::Double &d2)
 {
     return (d1.trunk() < d2.trunk());
@@ -182,19 +211,7 @@ bool NOMAD::Double::weakLess(const NOMAD::Double &d1, const NOMAD::Double &d2)
 /*-----------------------------------------------*/
 const std::string NOMAD::Double::tostring() const
 {
-    std::string s;
-    if (!_defined)
-    {
-        s = DEFAULT_UNDEF_STR;
-    }
-    else
-    {
-        std::ostringstream oss;
-        oss << *this;
-        s = oss.str();
-    }
-
-    return s;
+    return display(NOMAD::DISPLAY_PRECISION_STD);
 }
 
 
@@ -334,6 +351,9 @@ bool NOMAD::Double::isBinary ( void ) const
 const NOMAD::Double NOMAD::operator / ( const NOMAD::Double & d1 ,
                                        const NOMAD::Double & d2   )
 {
+    if ( !d1.isDefined() || !d2.isDefined() )
+        throw NOMAD::Double::NotDefined ( "Double.cpp" , __LINE__ ,
+                           "NOMAD::Double: d1 / d2: d1 or d2 not defined" );
     if ( d2.todouble() == 0.0 )
         throw NOMAD::Double::InvalidValue ( "Double.cpp" , __LINE__ ,
                                             "NOMAD::Double: d1 / d2: division by zero" );
@@ -497,6 +517,16 @@ std::string NOMAD::Double::display(const int prec, const size_t refWidth) const
 {
     std::ostringstream oss;
 
+    if(NOMAD::INF == _value)
+    {
+        return NOMAD::DEFAULT_INF_STR;
+    }
+    else if(NOMAD::INF == -_value)
+    {
+        std::string str = "-" + NOMAD::DEFAULT_INF_STR;
+        return str;
+    }
+
     // Set the number of digits after the point (ignore if prec < 0).
     if (prec >= 0)
     {
@@ -529,7 +559,8 @@ std::string NOMAD::Double::display(const int prec, const size_t refWidth) const
         // Ex: 447.000774493 -> 447.000774
         // If it is smaller, use the string and complete with space padding.
         // Ex. -1878.99 -> "-1878.99    "
-        if ( NOMAD::nbDecimals(s) >= (size_t)prec)
+        size_t nbDec = NOMAD::nbDecimals(s);
+        if (nbDec >= (size_t)prec)
         {
             oss << std::setprecision(prec) << std::setw(static_cast<int>(width)) << _value;
         }
@@ -543,17 +574,18 @@ std::string NOMAD::Double::display(const int prec, const size_t refWidth) const
             oss << std::setw(static_cast<int>(width)) << s;
         }
 
-        // Replace superfluous 0's and trailing numbers with spaces
-        size_t pos0 = oss.str().find_last_not_of('0') + 1;
-        if (std::string::npos != pos0)
+        // Replace superfluous 0's with spaces
+        size_t pos0 = oss.str().find_last_not_of("0");
+        if (std::string::npos != pos0 && nbDec > 0)
         {
             s = oss.str();
+            if ('.' == s[pos0]) { pos0++; } // Leave an extra '0' after the decimal point
+            pos0++; // Start replacing from first non-0 char
             size_t nbRep = s.size() - pos0;
             std::string sSpaces(nbRep, ' ');
             s.replace(pos0, nbRep, sSpaces);
             oss.str(s);
         }
-
     }
     else if (_defined)
     {
@@ -778,7 +810,7 @@ int NOMAD::Double::round ( void ) const
 // Ex. 123.4567 -> 4
 //     123 -> 0
 //     0.000 -> 3
-std::size_t NOMAD::Double::nbDecimals( ) const
+std::size_t NOMAD::Double::nbDecimals() const
 {
     std::size_t nbDec;
 
@@ -1003,10 +1035,36 @@ const NOMAD::Double NOMAD::Double::nextMult(const NOMAD::Double &granularity) co
         {
             granMult++;
         }
-        d = granMult * granularity;
+        double bigGranExp = pow(10, granularity.nbDecimals());
+        int bigGran = (int)(granularity.todouble() * bigGranExp);
+        d = granMult * bigGran / bigGranExp;
     }
 
     return d;
 }
 
 
+const NOMAD::Double NOMAD::Double::previousMult(const NOMAD::Double &granularity) const
+{
+    NOMAD::Double d;
+
+    if (!granularity.isDefined() || !isDefined() || (granularity <= 0.0) || isMultipleOf(granularity))
+    {
+        d = _value;
+    }
+    else
+    {
+        // granularity > 0, and _value is not a multiple of granularity.
+        // Adjust value with granularity
+        int granMult = (int)(_value / granularity.todouble());
+        if (_value < 0)
+        {
+            granMult--;
+        }
+        double bigGranExp = pow(10, granularity.nbDecimals());
+        int bigGran = (int)(granularity.todouble() * bigGranExp);
+        d = granMult * bigGran / bigGranExp;
+    }
+
+    return d;
+}

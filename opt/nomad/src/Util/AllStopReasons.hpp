@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -43,9 +44,10 @@
 /*                                                                                 */
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
-#ifndef __NOMAD400_ALLSTOPREASONS__
-#define __NOMAD400_ALLSTOPREASONS__
+#ifndef __NOMAD_4_0_ALLSTOPREASONS__
+#define __NOMAD_4_0_ALLSTOPREASONS__
 
+#include "../nomad_platform.hpp"
 #include "../Util/StopReason.hpp"
 
 #include "../nomad_nsbegin.hpp"
@@ -74,8 +76,8 @@ public:
     {}
 
 private:
-    static StopReason<BaseStopType> _baseStopReason; ///< A single base stop reason is considered for NOMAD.
-    static StopReason<EvalGlobalStopType> _evalGlobalStopReason; ///< An eval stop reason valable for the whole of NOMAD.
+    DLL_UTIL_API static StopReason<BaseStopType> _baseStopReason; ///< A single base stop reason is considered for NOMAD.
+    DLL_UTIL_API static StopReason<EvalGlobalStopType> _evalGlobalStopReason; ///< An eval stop reason valable for the whole of NOMAD.
     StopReason<IterStopType> _iterStopReason; ///< An iteration stop reason.
 
 public:
@@ -168,4 +170,4 @@ public:
 
 #include "../nomad_nsend.hpp"
 
-#endif // __NOMAD400_ALLSTOPREASONS__
+#endif // __NOMAD_4_0_ALLSTOPREASONS__

@@ -2,7 +2,7 @@
 /*  sgtelib - A surrogate model library for derivative-free optimization               */
 /*  Version 2.0.2                                                                      */
 /*                                                                                     */
-/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */
+/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */ 
 /*                           Bastien Talgorn - McGill University, Montreal             */
 /*                                                                                     */
 /*  Author: Bastien Talgorn                                                            */
@@ -66,7 +66,7 @@ bool SGTELIB::Surrogate_CN::build_private ( void ) {
 /*--------------------------------------*/
 void SGTELIB::Surrogate_CN::predict_private ( const SGTELIB::Matrix & XXs,
                                                     SGTELIB::Matrix * ZZs) {
-
+  
   int i,imin;
   const int pxx = XXs.get_nb_rows();
 
@@ -79,7 +79,7 @@ void SGTELIB::Surrogate_CN::predict_private ( const SGTELIB::Matrix & XXs,
   // Loop on the points of XXs
   for (i=0 ; i<pxx ; i++){
     // imin is the index of the closest neighbor of xx in Xs
-    imin = D.get_min_index_row(i);
+    imin = D.get_min_index_row(i); 
     // Copy the output of this point
     ZZs->set_row( Zs.get_row(imin) , i);
   }
@@ -101,7 +101,7 @@ bool SGTELIB::Surrogate_CN::compute_cv_values (void){
     _Zvs = new SGTELIB::Matrix ("Zvs",_p,_m);
     _Zvs->set_name("Zvs");
   }
-
+    
   if ( ! _Svs){
     _Svs = new SGTELIB::Matrix ("Svs",_p,_m);
     _Svs->set_name("Svs");
@@ -129,6 +129,7 @@ bool SGTELIB::Surrogate_CN::compute_cv_values (void){
     _Svs->set_row( dmin             , i);
   }
 
+  
   return true;
 
 }//
@@ -173,3 +174,18 @@ const SGTELIB::Matrix * SGTELIB::Surrogate_CN::get_matrix_Svs (void){
   compute_cv_values();
   return _Svs;
 }//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -41,6 +41,8 @@ class my_build_extension(_build_ext):
         self.warn_error = False
 
     def build_extension(self, ext):
+        ext.extra_compile_args += ['-DUSE_SGTELIB=1']
+
         if 'linux' in sys.platform:
             if not 'NOOMP' in os.environ:
                 ext.extra_compile_args += ['-fopenmp']
@@ -48,7 +50,8 @@ class my_build_extension(_build_ext):
             ext.extra_compile_args += ['-Wno-unused-value']
             ext.extra_link_args += ['-Wl,-Bsymbolic-functions', '-Wl,--as-needed']
         elif 'darwin' in sys.platform:
-            ext.extra_compile_args += ['-Wno-unused-value', '-Wno-unused-private-field']
+            ext.extra_compile_args += ['-Wno-unused-value', '-Wno-unused-private-field',
+                                       '-Wno-overloaded-virtual']
 
         # adding numpy late to allow setup to install it in the build env
         import numpy

@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -175,29 +176,6 @@ void NOMAD::PbParameters::checkAndComply( )
         }
     }
 
-    // Check for deprecated ***_POLL_SIZE parameters --> convert into ***_FRAME_SIZE
-    auto iPS = getAttributeValueProtected<NOMAD::ArrayOfDouble>("INITIAL_POLL_SIZE",false);
-    auto iFS = getAttributeValueProtected<NOMAD::ArrayOfDouble>("INITIAL_FRAME_SIZE",false);
-    if ( iFS.isDefined() && iPS.isDefined() )
-    {
-        std::string s = "Check: INITIAL_POLL_SIZE (deprecated) and INITIAL_FRAME_SIZE are defined. Just one must be set";
-        throw NOMAD::InvalidParameter(__FILE__,__LINE__, s);
-    }
-    if ( iPS.isDefined() && ! iFS.isDefined())
-        setAttributeValue("INITIAL_FRAME_SIZE", iPS );
-
-    auto mPS = getAttributeValueProtected<NOMAD::ArrayOfDouble>("MIN_POLL_SIZE",false);
-    auto mFS = getAttributeValueProtected<NOMAD::ArrayOfDouble>("MIN_FRAME_SIZE",false);
-    if ( mFS.isDefined() && mPS.isDefined() )
-    {
-        std::string s = "Check: MIN_POLL_SIZE (deprecated) and MIN_FRAME_SIZE are defined. Just one must be set.";
-        throw NOMAD::InvalidParameter(__FILE__,__LINE__, s);
-    }
-    if ( mPS.isDefined() && ! mFS.isDefined())
-    {
-        setAttributeValue("MIN_FRAME_SIZE", iPS );
-    }
-
     /*--------------------*/
     /* Granular variables */
     /*--------------------*/
@@ -235,6 +213,34 @@ void NOMAD::PbParameters::checkAndComply( )
     checkForGranularity("MIN_FRAME_SIZE");
     checkForGranularity("INITIAL_MESH_SIZE");
     checkForGranularity("INITIAL_FRAME_SIZE");
+    
+    
+    /*---------------------------*/
+    /* POINT_FORMAT (internal)    */
+    /*---------------------------*/
+    auto pointFormat = getAttributeValueProtected<NOMAD::ArrayOfDouble>("POINT_FORMAT",false);
+    
+    if (! pointFormat.isDefined())
+    {
+        // Default precision is computed based on Epsilon.
+        int defaultPrec = static_cast<int>(-log10(NOMAD::Double::getEpsilon())) + 1;
+        pointFormat.reset(n, defaultPrec);
+        setAttributeValue("POINT_FORMAT", pointFormat);
+    }
+    
+    auto bbInputType = getAttributeValueProtected<NOMAD::BBInputTypeList>("BB_INPUT_TYPE",false);
+    // CONTINUOUS variables will be created with full precision.
+    // INTEGER, BOOLEAN, and eventually CATEGORICAL variables will be written
+    // as integers.
+    for (size_t i = 0; i < n; i++)
+    {
+        if (NOMAD::BBInputType::CONTINUOUS != bbInputType[i])
+        {
+            pointFormat[i] = -1;
+        }
+    }
+    setAttributeValue("POINT_FORMAT", pointFormat);
+    
 
     _toBeChecked = false;
 
@@ -526,6 +532,7 @@ void NOMAD::PbParameters::setVariableGroups()
         }
     }
 }
+
 
 void NOMAD::PbParameters::checkX0AgainstBounds() const
 {
@@ -848,3 +855,6 @@ void NOMAD::PbParameters::checkForGranularity(const std::string &paramName, cons
         throw NOMAD::InvalidParameter(__FILE__, __LINE__, oss.str());
     }
 }
+
+
+

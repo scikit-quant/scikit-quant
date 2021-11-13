@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -63,7 +64,7 @@ void NOMAD::DisplayParameters::init()
         // are not valid, for instance DIMENSION, X0, etc.
 
     }
-    catch ( NOMAD::Exception & e)
+    catch (NOMAD::Exception& e)
     {
         std::string errorMsg = "Attribute registration failed: ";
         errorMsg += e.what();
@@ -86,6 +87,13 @@ void NOMAD::DisplayParameters::checkAndComply(
     {
         // Early out
         return;
+    }
+    
+    auto display_degree = getAttributeValueProtected<int>("DISPLAY_DEGREE",false);
+    // Force display all eval
+    if (display_degree>=3)
+    {
+        setAttributeValue("DISPLAY_ALL_EVAL", true);
     }
 
     // Pb params must be checked before accessing its value
@@ -155,12 +163,12 @@ void NOMAD::DisplayParameters::checkAndComply(
         setAttributeValue("STATS_FILE", statsFileParam);
     }
 
-    auto mainStatsFileName = getAttributeValueProtected<std::string>("MAIN_STATS_FILE",false) ;
-    if (!mainStatsFileName.empty() && mainStatsFileName.compare("-") != 0  )
+    auto evalStatsFileName = getAttributeValueProtected<std::string>("EVAL_STATS_FILE",false) ;
+    if (!evalStatsFileName.empty() && evalStatsFileName.compare("-") != 0  )
     {
         auto seed = runParams->getAttributeValue<int>("SEED");
-        NOMAD::completeFileName(mainStatsFileName, problemDir, addSeedToFileNames, seed);
-        setAttributeValue("MAIN_STATS_FILE", mainStatsFileName);
+        NOMAD::completeFileName(evalStatsFileName, problemDir, addSeedToFileNames, seed);
+        setAttributeValue("EVAL_STATS_FILE", evalStatsFileName);
     }
 
     /*------------------------------------------------------*/
@@ -191,6 +199,8 @@ void NOMAD::DisplayParameters::checkAndComply(
 // End checkAndComply()
 
 
+
+
 NOMAD::ArrayOfDouble NOMAD::DisplayParameters::setFormatFromGranularity( const NOMAD::ArrayOfDouble & aod )
 {
     size_t n = aod.size();
@@ -203,9 +213,13 @@ NOMAD::ArrayOfDouble NOMAD::DisplayParameters::setFormatFromGranularity( const N
         if ( aod[i] > 0 )
         {
             nbDecimals = aod[i].nbDecimals( );
-            solFormat.set(i, nbDecimals);
+            solFormat.set(i, (double)nbDecimals);
         }
     }
     return solFormat;
 
 }
+
+
+
+

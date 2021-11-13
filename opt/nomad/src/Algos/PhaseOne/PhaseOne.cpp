@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -51,59 +52,57 @@
 #include "../../Eval/ComputeSuccessType.hpp"
 #include "../../Output/OutputDirectToFile.hpp"
 
-NOMAD::BBOutputTypeList NOMAD::PhaseOne::_bboutputtypes;
-
 void NOMAD::PhaseOne::init()
 {
-    _name = "Phase One";
+    setStepType(NOMAD::StepType::ALGORITHM_PHASE_ONE);
     verifyParentNotNull();
 
 }
 
+
 void NOMAD::PhaseOne::startImp()
 {
-
-    // Setup EvalPoint success computation to be based on h rather than f.
-    NOMAD::EvcInterface::getEvaluatorControl()->setComputeSuccessTypeFunction(NOMAD::ComputeSuccessType::computeSuccessTypePhaseOne);
-    // These are two static methods that should be un-staticized. Issue #410
-    NOMAD::Eval::setComputeSuccessTypeFunction(NOMAD::Eval::computeSuccessTypePhaseOne);
-    NOMAD::Eval::setComputeHFunction(NOMAD::Eval::computeHPB);
-
-    // The cache may not be empty.
-    // Recompute the h for cache points that were read from cache file.
-    NOMAD::CacheBase::getInstance()->processOnAllPoints(NOMAD::PhaseOne::recomputeHPB);
-
     // Temporarily disable solution file (restored in endImp())
     NOMAD::OutputDirectToFile::getInstance()->disableSolutionFile();
 
-    // Comment to appear at the end of stats lines
-    setAlgoComment("(Phase One)", true); // true: force comment
-
-    // Setup the pb parameters to stop once a feasible point is obtained
-    _pbParams->setAttributeValue("STOP_IF_FEASIBLE", true);
-    _pbParams->checkAndComply();
-
+    // Setup the run parameters to stop once a point that satisfies EB constraints is obtained
+    _runParams = std::make_shared<NOMAD::RunParameters>(*_runParams);
+    _runParams->setAttributeValue("STOP_IF_PHASE_ONE_SOLUTION", true);
+    auto evcParams = NOMAD::EvcInterface::getEvaluatorControl()->getEvaluatorControlGlobalParams();
+    _runParams->checkAndComply(evcParams, _pbParams);
 
     // Setup Mads
     _madsStopReasons = std::make_shared<NOMAD::AlgoStopReasons<NOMAD::MadsStopType>>();
     _mads = std::make_shared<NOMAD::Mads>(this, _madsStopReasons, _runParams, _pbParams);
-
 }
+
 
 void NOMAD::PhaseOne::readInformationForHotRestart()
 {
 }
 
 
-
 bool NOMAD::PhaseOne::runImp()
 {
     bool ret = false;
+
+    auto evc = NOMAD::EvcInterface::getEvaluatorControl();
+
+    auto previousComputeType = evc->getComputeType();
+    evc->setComputeType(NOMAD::ComputeType::PHASE_ONE);
 
     // Run Mads on Phase One.
     _mads->start();
     ret = _mads->run();
     _mads->end();
+
+    evc->setComputeType(previousComputeType);
+
+    if (!hasPhaseOneSolution())
+    {
+        auto phaseOneStopReasons = NOMAD::AlgoStopReasons<NOMAD::PhaseOneStopType>::get(_stopReasons);
+        phaseOneStopReasons->set(NOMAD::PhaseOneStopType::MADS_FAIL);
+    }
 
     return ret;
 }
@@ -113,41 +112,18 @@ void NOMAD::PhaseOne::endImp()
 {
     // Ensure evaluation of queue will continue
     NOMAD::EvcInterface::getEvaluatorControl()->restart();
-
-    // reset to the previous stats comment
-    resetPreviousAlgoComment(true); // true: release lock on comment
+    NOMAD::EvcInterface::getEvaluatorControl()->setLastSuccessfulFeasDir(nullptr);
+    NOMAD::EvcInterface::getEvaluatorControl()->setLastSuccessfulInfDir(nullptr);
 
     // Re-enable writing in Solution file
     NOMAD::OutputDirectToFile::getInstance()->enableSolutionFile();
 
-    // Reset success computation function
-    NOMAD::EvcInterface::getEvaluatorControl()->setComputeSuccessTypeFunction(NOMAD::ComputeSuccessType::defaultComputeSuccessType);
-    // These are two static methods that should be un-staticized. Issue #410
-    NOMAD::Eval::setComputeSuccessTypeFunction(NOMAD::Eval::defaultComputeSuccessType);
-    NOMAD::Eval::setComputeHFunction(NOMAD::Eval::defaultComputeH);
-
-    // All points in the cache must be recomputed for their h.
-    // Note: Cache is ordered on the Point part only, and we recompute the Eval
-    // part, so the cache remains coherent.
-    NOMAD::CacheBase::getInstance()->processOnAllPoints(NOMAD::PhaseOne::recomputeH);
-
-    bool hasFeas = NOMAD::CacheBase::getInstance()->hasFeas();
-    if (!hasFeas)
-    {
-        // If cache is not used, feasible points remain in the barrier
-        auto barrier = _mads->getMegaIterationBarrier();
-        if (nullptr != barrier)
-        {
-            hasFeas = (nullptr != barrier->getFirstXFeas());
-        }
-    }
-
-    if (hasFeas)
+    if (solHasFeas())
     {
         std::vector<NOMAD::EvalPoint> evalPointList;
         NOMAD::CacheInterface cacheInterface(this);
-        size_t numFeas = cacheInterface.findBestFeas(evalPointList, EvalType::BB, nullptr);
-        if (numFeas>0)
+        size_t numFeas = cacheInterface.findBestFeas(evalPointList, NOMAD::EvalType::BB, NOMAD::ComputeType::STANDARD, nullptr);
+        if (numFeas > 0)
         {
             // Evaluation info for output
             NOMAD::StatsInfo info;
@@ -160,37 +136,16 @@ void NOMAD::PhaseOne::endImp()
     }
 
     // Update PhaseOne stop reasons
-    auto PhaseOneStopReasons = NOMAD::AlgoStopReasons<NOMAD::PhaseOneStopType>::get( _stopReasons );
-    if (!hasFeas)
+    auto phaseOneStopReasons = NOMAD::AlgoStopReasons<NOMAD::PhaseOneStopType>::get(_stopReasons);
+    if (!hasPhaseOneSolution())
     {
-        if ( _madsStopReasons->checkTerminate() )
+        if (_madsStopReasons->checkTerminate())
         {
-            PhaseOneStopReasons->set ( NOMAD::PhaseOneStopType::MADS_FAIL );
+            phaseOneStopReasons->set(NOMAD::PhaseOneStopType::MADS_FAIL);
         }
         else
         {
-            PhaseOneStopReasons->set ( NOMAD::PhaseOneStopType::NO_FEAS_PT );
+            phaseOneStopReasons->set(NOMAD::PhaseOneStopType::NO_FEAS_PT);
         }
-    }
-}
-
-
-void NOMAD::PhaseOne::recomputeH(NOMAD::EvalPoint& evalPoint)
-{
-    // EvalType BB: Never use Sgte in Phase One
-    auto eval = evalPoint.getEval(NOMAD::EvalType::BB);
-    if (nullptr != eval && !eval->getBBO().empty())
-    {
-        eval->setH(NOMAD::Eval::defaultComputeH(*eval, _bboutputtypes));
-    }
-}
-
-
-void NOMAD::PhaseOne::recomputeHPB(NOMAD::EvalPoint& evalPoint)
-{
-    auto eval = evalPoint.getEval(NOMAD::EvalType::BB);
-    if (nullptr != eval && !eval->getBBO().empty())
-    {
-        eval->setH(NOMAD::Eval::computeHPB(*eval, _bboutputtypes));
     }
 }

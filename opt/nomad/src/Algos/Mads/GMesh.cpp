@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -149,7 +150,6 @@ void NOMAD::GMesh::updatedeltaMeshSize()
     // In GMesh, delta is already updated, as a side effect of the
     // other mesh parameters being updated.
 }
-
 
 // Update frame size after a successful Search or Frame step.
 // In GMesh, big Delta and small delta are updated simultaneously as a
@@ -651,6 +651,16 @@ NOMAD::Point NOMAD::GMesh::projectOnMesh(const NOMAD::Point& point,
     // To avoid running around in circles
     const size_t maxNbTry = 10;
 
+//    for (size_t i = 0; i < point.size(); ++i)
+//    {
+//
+//        NOMAD::Double diffProjFrameCenter = proj[i] - frameCenter[i];
+//        // Value which will be used in verifyPointIsOnMesh
+//        proj[i] = diffProjFrameCenter / delta[i];
+//        proj[i] = proj[i].round();
+//        proj[i] = frameCenter[i] + proj[i] * delta[i];
+//    }
+
     for (size_t i = 0; i < point.size(); ++i)
     {
         const NOMAD::Double deltaI = delta[i];
@@ -671,13 +681,20 @@ NOMAD::Point NOMAD::GMesh::projectOnMesh(const NOMAD::Point& point,
         {
             NOMAD::Double newVerifValueI;
 
-            if (0 == nbTry && _granularity[i] > 0 && _granularity[i].isInteger()
-                && frameCenter[i].isInteger())
+            if (0 == nbTry)
             {
-                verifValueI = verifValueI.roundd();
+                // Use closest projection
+                NOMAD::Double vHigh = verifValueI.nextMult(deltaI);
+                NOMAD::Double vLow = - (-verifValueI).nextMult(deltaI);
+                NOMAD::Double diffHigh = vHigh - verifValueI;
+                NOMAD::Double diffLow = verifValueI - vLow;
+                verifValueI = (diffLow < diffHigh) ? vLow
+                                                   : (diffHigh < diffLow) ? vHigh
+                                                   : (proj[i] < 0) ? vLow : vHigh;
             }
             else
             {
+                // Go hacky
                 verifValueI = (diffProjFrameCenter >= 0) ? verifValueI.nextMult(deltaI)
                                                          : - (-verifValueI).nextMult(deltaI);
             }
@@ -735,9 +752,9 @@ NOMAD::Point NOMAD::GMesh::projectOnMesh(const NOMAD::Point& point,
         }
     }
 
+
     return proj;
 }
-
 
 
 void NOMAD::GMesh::getLargerMantExp(NOMAD::Double &frameSizeMant, NOMAD::Double &frameSizeExp) const

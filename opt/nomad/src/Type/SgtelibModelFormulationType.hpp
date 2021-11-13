@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -50,8 +51,8 @@
  \date   July 2019
  \see    SgtelibModel.hpp
  */
-#ifndef __NOMAD400_SGTELIB_MODEL_FORMULATION_TYPE__
-#define __NOMAD400_SGTELIB_MODEL_FORMULATION_TYPE__
+#ifndef __NOMAD_4_0_SGTELIB_MODEL_FORMULATION_TYPE__
+#define __NOMAD_4_0_SGTELIB_MODEL_FORMULATION_TYPE__
 
 #include <string>
 #include <sstream>
@@ -71,7 +72,7 @@ enum class SgtelibModelFormulationType
     EFIC  ,  /// min -EFI-lambda*(EI*sigma+P*mu)
     PFI   ,  /// min -PFI
     D     ,  /// min -distance_to_closest
-    EXTERN,  /// min f, st c, with extern sgte.exe model
+    EXTERN,  /// min f, st c, with extern executable model
     UNDEFINED /// Undefined
 };
 
@@ -97,7 +98,7 @@ inline std::ostream& operator<<(std::ostream& os, const SgtelibModelFormulationT
             os << "EIS";
             break;
         case SgtelibModelFormulationType::EFI:
-            os << "EIS";
+            os << "EFI";
             break;
         case SgtelibModelFormulationType::EFIS:
             os << "EFIS";
@@ -126,6 +127,7 @@ inline std::ostream& operator<<(std::ostream& os, const SgtelibModelFormulationT
 }
 
 
+
 #include "../nomad_nsend.hpp"
 
-#endif // __NOMAD400_SGTELIB_MODEL_FORMULATION_TYPE__
+#endif // __NOMAD_4_0_SGTELIB_MODEL_FORMULATION_TYPE__

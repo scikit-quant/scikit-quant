@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -44,8 +45,8 @@
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
 
-#ifndef __NOMAD400_NMITERATIONUTILS__
-#define __NOMAD400_NMITERATIONUTILS__
+#ifndef __NOMAD_4_0_NMITERATIONUTILS__
+#define __NOMAD_4_0_NMITERATIONUTILS__
 
 #include "../../Algos/IterationUtils.hpp"
 #include "../../Algos/NelderMead/NMIteration.hpp"
@@ -55,25 +56,11 @@
 #include "../../nomad_nsbegin.hpp"
 
 
-/// Type for the different phases of Nelder Mead algorithm
-enum class NMStepType
-{
-    UNSET               ,
-    INITIAL             ,
-    REFLECT             ,
-    EXPAND              ,
-    OUTSIDE_CONTRACTION ,
-    INSIDE_CONTRACTION  ,
-    SHRINK              ,
-    INSERT_IN_Y         ,
-    CONTINUE
-};
-
 /// Class of utils for NM iterations.
 /**
  - Manage the simplex: update the characteristics (diameter, volume and normalized volume). The diameter is max(distance(y_i,y_j)). The volume is det(y_k-y_0)/!n (k=1,..n). The normalized volume is volume/diameter^n. \n
 
- - Hold a variable NMIterationUtils::_currentStepType for ::NMStepType (phase of Nelder Mead algorithm).
+ - Hold a variable NMIterationUtils::_currentStepType of type ::StepType for the phase of Nelder Mead algorithm.
  - Calculate the rank of DZ=[y_i-y_0] using NMIterationUtils::_rankEps as trigger (see ::getRank function)
 
  */
@@ -86,16 +73,17 @@ private:
     const EvalPoint * _simplexDiamPt1; /// First point used for simplex diameter
     const EvalPoint * _simplexDiamPt2; /// Second point used for simplex diameter
 
+    ArrayOfDouble _Delta;  /// Delta mads frame size for scaling DZ (can be undefined)
+
     /// Helper for NMIterationUtils::updateYCharacteristics
     void updateYDiameter ( void );
 
 protected:
-
     /// The precision for the rank calculation. Default is ::DEFAULT_EPSILON.
     Double _rankEps;
 
     /// The step type (REFLECT, EXPAND, INSIDE_CONTRACTION, OUTSIDE_CONTRACTION)
-    NMStepType _currentStepType;
+    StepType _currentStepType;
 
     std::shared_ptr<NMSimplexEvalPointSet> _nmY;  ///< The Nelder Mead simplex.
 
@@ -109,7 +97,7 @@ protected:
     void displayYInfo ( void ) const ;
 
     /**
-     \return The rank of DZ=[y_i-y_0]
+     \return The rank of DZ=[y_i-y_0]/Delta (Delta can be ones if mesh is not available)
      */
     int getRankDZ ( ) const ;
 
@@ -130,13 +118,24 @@ public:
         _simplexVon(0),
         _simplexDiamPt1(nullptr),
         _simplexDiamPt2(nullptr),
+        _Delta(ArrayOfDouble()),
         _rankEps(DEFAULT_EPSILON),
-        _currentStepType(NMStepType::UNSET),
+        _currentStepType(StepType::NM_UNSET),
         _nmY(nullptr)
     {
         auto iter = dynamic_cast<const NMIteration*>(_iterAncestor);
         if ( nullptr != iter )
+        {
             _nmY = iter->getY();
+
+            // If a Mads mesh is available, initialize the frame size.
+            auto madsMesh = iter->getMesh();
+            if ( nullptr !=
+                madsMesh )
+            {
+                _Delta = madsMesh->getDeltaFrameSize();
+            }
+        }
     }
 
 
@@ -144,4 +143,4 @@ public:
 
 #include "../../nomad_nsend.hpp"
 
-#endif // __NOMAD400_NMITERATIONUTILS__
+#endif // __NOMAD_4_0_NMITERATIONUTILS__

@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -43,10 +44,8 @@
 /*                                                                                 */
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
-#ifndef __NOMAD400_QUAD_MODEL_EVALUATION__
-#define __NOMAD400_QUAD_MODEL_EVALUATION__
-
-#include "../../config.hpp"
+#ifndef __NOMAD_4_0_QUAD_MODEL_EVALUATION__
+#define __NOMAD_4_0_QUAD_MODEL_EVALUATION__
 
 #include "../../Eval/Evaluator.hpp"
 #include "../../Output/OutputInfo.hpp"
@@ -54,7 +53,7 @@
 
 #include "../../nomad_nsbegin.hpp"
 
-/// Class for evaluating trial points as EvalType::SGTE.
+/// Class for evaluating trial points as EvalType::MODEL.
 class QuadModelEvaluator : public Evaluator
 {
 private:
@@ -73,7 +72,7 @@ public:
                                 const std::shared_ptr<SGTELIB::Surrogate>& model,
                                 const std::string& modelDisplay,
                                 const Point& fixedVariable)
-      : Evaluator(evalParams, EvalType::SGTE),
+      : Evaluator(evalParams, EvalType::MODEL),
         _model(model),
         _modelDisplay(modelDisplay),
         _displayLevel(OutputLevel::LEVEL_INFO),
@@ -88,13 +87,8 @@ public:
      Points for evaluations are given in a block. Sgtelib models handle the points as a matrix and return a matrix for outputs.
      */
     std::vector<bool> eval_block(Block &block,
-                                 const Double & NOMAD_UNUSED(hMax),
+                                 const Double &NOMAD_UNUSED(hMax),
                                  std::vector<bool> &countEval) const override;
-
-    static void evalH(const ArrayOfDouble& bbo,
-                      const BBOutputTypeList& bbot,
-                      Double &h);
-
 
 private:
     void init();
@@ -104,4 +98,4 @@ private:
 
 #include "../../nomad_nsend.hpp"
 
-#endif // __NOMAD400_QUAD_MODEL_EVALUATION__
+#endif // __NOMAD_4_0_QUAD_MODEL_EVALUATION__

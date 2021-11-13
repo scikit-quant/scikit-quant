@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -50,20 +51,21 @@
 #include "../../Algos/SgtelibModel/SgtelibModelFilterCache.hpp"
 #include "../../Algos/SgtelibModel/SgtelibModelIteration.hpp"
 #include "../../Algos/SgtelibModel/SgtelibModelMegaIteration.hpp"
+#include "../../Algos/SubproblemManager.hpp"
 #include "../../Output/OutputQueue.hpp"
 
 
 void NOMAD::SgtelibModelMegaIteration::init()
 {
-    _name = NOMAD::MegaIteration::getName();
+    setStepType(NOMAD::StepType::MEGA_ITERATION);
 }
 
 
 NOMAD::SgtelibModelMegaIteration::~SgtelibModelMegaIteration()
 {
-    // Clear sgte info from cache.
+    // Clear model info from cache.
     // Very important so we don't have false info in a later MegaIteration.
-    NOMAD::CacheBase::getInstance()->clearSgte(NOMAD::getThreadNum());
+    NOMAD::CacheBase::getInstance()->clearModelEval(NOMAD::getThreadNum());
 }
 
 
@@ -74,8 +76,8 @@ void NOMAD::SgtelibModelMegaIteration::startImp()
 
     if (0 == getTrialPointsCount())
     {
-        auto sgteStopReasons = NOMAD::AlgoStopReasons<NOMAD::ModelStopType>::get(_stopReasons);
-        sgteStopReasons->set(NOMAD::ModelStopType::NOT_ENOUGH_POINTS);
+        auto sgtelibModelStopReasons = NOMAD::AlgoStopReasons<NOMAD::ModelStopType>::get(_stopReasons);
+        sgtelibModelStopReasons->set(NOMAD::ModelStopType::NOT_ENOUGH_POINTS);
     }
 
 }
@@ -103,8 +105,8 @@ bool NOMAD::SgtelibModelMegaIteration::runImp()
     if (!foundBetter)
     {
         // If no better points found, we should terminate, otherwise we will spin.
-        auto sgteStopReasons = NOMAD::AlgoStopReasons<NOMAD::ModelStopType>::get(_stopReasons);
-        sgteStopReasons->set(NOMAD::ModelStopType::NO_NEW_POINTS_FOUND);
+        auto sgtelibModelStopReasons = NOMAD::AlgoStopReasons<NOMAD::ModelStopType>::get(_stopReasons);
+        sgtelibModelStopReasons->set(NOMAD::ModelStopType::NO_NEW_POINTS_FOUND);
     }
 
 
@@ -114,11 +116,11 @@ bool NOMAD::SgtelibModelMegaIteration::runImp()
 
 void NOMAD::SgtelibModelMegaIteration::endImp()
 {
-    postProcessing(NOMAD::EvcInterface::getEvaluatorControl()->getEvalType());
+    postProcessing();
 
-    // Clear sgte info from cache.
+    // Clear model info from cache.
     // Very important so we don't have false info in a later MegaIteration.
-    NOMAD::CacheBase::getInstance()->clearSgte(NOMAD::getThreadNum());
+    NOMAD::CacheBase::getInstance()->clearModelEval(NOMAD::getThreadNum());
     NOMAD::MegaIteration::endImp();
 }
 
@@ -130,7 +132,7 @@ void NOMAD::SgtelibModelMegaIteration::generateIterations()
     size_t k = _k;  // Main iteration counter
     // Note: NOMAD 3 uses SGTELIB_MODEL_TRIALS only.
     size_t nbIter = _runParams->getAttributeValue<size_t>("MAX_ITERATION_PER_MEGAITERATION");
-    nbIter = std::min(nbIter, _runParams->getAttributeValue<size_t>("SGTELIB_MODEL_TRIALS"));
+    nbIter = std::min(nbIter, _runParams->getAttributeValue<size_t>("SGTELIB_MODEL_SEARCH_TRIALS"));
 
     for (size_t iterCount = 0; iterCount < nbIter; iterCount++)
     {
@@ -140,7 +142,7 @@ void NOMAD::SgtelibModelMegaIteration::generateIterations()
     }
 
     OUTPUT_INFO_START
-    AddOutputInfo(_name + " has " + NOMAD::itos(nbIter) + " iteration" + ((nbIter > 1)? "s" : "") + ".");
+    AddOutputInfo(getName() + " has " + NOMAD::itos(nbIter) + " iteration" + ((nbIter > 1)? "s" : "") + ".");
     OUTPUT_INFO_END
 
     OUTPUT_DEBUG_START
@@ -168,8 +170,7 @@ void NOMAD::SgtelibModelMegaIteration::runIterationsAndSetTrialPoints()
         {
             break;
         }
-        // downcast from Iteration to SgtelibModelIteration
-        std::shared_ptr<NOMAD::SgtelibModelIteration> iteration = std::dynamic_pointer_cast<NOMAD::SgtelibModelIteration>(_iterList[i]);
+        auto iteration = _iterList[i];
 
         if (nullptr == iteration)
         {
@@ -194,6 +195,10 @@ void NOMAD::SgtelibModelMegaIteration::runIterationsAndSetTrialPoints()
             // To be evaluated by blackbox
             // Add it to the list.
             // Snap to bounds, but there is no useful mesh in the context.
+            auto pointFrom = modelAlgo->getX0();
+            // PointFrom needs to be updated. It could have been set inside sub-algorithm,
+            // but that value is moot.
+            oraclePoint.setPointFrom(pointFrom, NOMAD::SubproblemManager::getInstance()->getSubFixedVariable(this));
             if (snapPointToBoundsAndProjectOnMesh(oraclePoint, lb, ub))
             {
                 bool inserted = insertTrialPoint(oraclePoint);
@@ -213,8 +218,8 @@ void NOMAD::SgtelibModelMegaIteration::runIterationsAndSetTrialPoints()
         // If this iteration failed to generate new points, end it here.
         if (0 == nbInserted)
         {
-            auto sgteStopReasons = NOMAD::AlgoStopReasons<NOMAD::ModelStopType>::get(_stopReasons);
-            sgteStopReasons->set(NOMAD::ModelStopType::NO_NEW_POINTS_FOUND);
+            auto sgtelibModelStopReasons = NOMAD::AlgoStopReasons<NOMAD::ModelStopType>::get(_stopReasons);
+            sgtelibModelStopReasons->set(NOMAD::ModelStopType::NO_NEW_POINTS_FOUND);
         }
 
         // Update MegaIteration's stop reason
@@ -248,7 +253,7 @@ void NOMAD::SgtelibModelMegaIteration::generateTrialPoints()
 void NOMAD::SgtelibModelMegaIteration::filterCache()
 {
     // Select additonal candidates out of the cache
-    int nbCandidates = _runParams->getAttributeValue<int>("SGTELIB_MODEL_CANDIDATES_NB");
+    int nbCandidates = _runParams->getAttributeValue<int>("SGTELIB_MODEL_SEARCH_CANDIDATES_NB");
     auto evcParams = NOMAD::EvcInterface::getEvaluatorControl()->getEvaluatorControlGlobalParams();
 
     if (nbCandidates < 0)
@@ -261,7 +266,7 @@ void NOMAD::SgtelibModelMegaIteration::filterCache()
     }
 
     // We already have a certain number of points.
-    nbCandidates -= getTrialPointsCount();
+    nbCandidates -= (int)getTrialPointsCount();
 
     if (nbCandidates > 0)
     {
@@ -292,6 +297,7 @@ void NOMAD::SgtelibModelMegaIteration::filterCache()
 
     }
 }
+
 
 std::ostream& NOMAD::operator<<(std::ostream& os, const NOMAD::SgtelibModelMegaIteration& megaIteration)
 {

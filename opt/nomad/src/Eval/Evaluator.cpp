@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -61,13 +62,12 @@
 std::vector<std::string> NOMAD::Evaluator::_tmpFiles = std::vector<std::string>();
 
 namespace {
-
-   struct TmpFilesCleanup {
-      ~TmpFilesCleanup() { NOMAD::Evaluator::removeTmpFiles(); }
-   } _TmpFilesCleanup;
-
+    // the cleanup of temporary files at program shutdown needs to remain with this
+    // translation unit to guarantee the correct destruction order
+    struct TmpFilesCleanup {
+        ~TmpFilesCleanup() { NOMAD::Evaluator::removeTmpFiles(); }
+    } _TmpFilesCleanup;
 }
-
 
 //
 // Constructor
@@ -243,7 +243,21 @@ std::vector<bool> NOMAD::Evaluator::evalXBBExe(NOMAD::Block &block,
 
     // At this point, we are for sure in batch mode.
     // Verify blackbox executable defined by BB_EXE is available and executable.
-    auto bbExe = _evalParams->getAttributeValue<std::string>("BB_EXE");
+    std::string bbExe;
+    switch (_evalType)
+    {
+        case NOMAD::EvalType::BB:
+            bbExe = _evalParams->getAttributeValue<std::string>("BB_EXE");
+            break;
+        case NOMAD::EvalType::SURROGATE:
+            bbExe = _evalParams->getAttributeValue<std::string>("SURROGATE_EXE");
+            break;
+        default:
+            std::string err = "Evaluator: No executable supported for EvalType ";
+            err += NOMAD::evalTypeToString(_evalType);
+            throw NOMAD::Exception(__FILE__,__LINE__,err);
+    }
+
     if (bbExe.empty())
     {
         throw NOMAD::Exception(__FILE__, __LINE__, "Evaluator: No blackbox executable defined.");
@@ -275,6 +289,7 @@ std::vector<bool> NOMAD::Evaluator::evalXBBExe(NOMAD::Block &block,
         return evalOk;
     }
 
+    auto evalFormat = _evalParams->getAttributeValue<NOMAD::ArrayOfDouble>("BB_EVAL_FORMAT");
     for (auto it = block.begin(); it != block.end(); it++)
     {
         std::shared_ptr<NOMAD::EvalPoint> x = (*it);
@@ -284,10 +299,11 @@ std::vector<bool> NOMAD::Evaluator::evalXBBExe(NOMAD::Block &block,
             {
                 xfile << " ";
             }
-            xfile << (*x)[i].tostring();
+            xfile << (*x)[i].display(static_cast<int>(evalFormat[i].todouble()));
         }
         xfile << std::endl;
     }
+    xfile.close();
 
     std::string cmd = bbExe + " " + tmpfile;
     std::string s;
@@ -320,36 +336,59 @@ std::vector<bool> NOMAD::Evaluator::evalXBBExe(NOMAD::Block &block,
             std::shared_ptr<NOMAD::EvalPoint> x = block[index];
 
             char buffer[1024];
-            char *outputLine = fgets(buffer, sizeof(buffer), fresult);
-            if (NULL == outputLine)
+            char *outputLine = nullptr;
+
+            size_t nbTries=0;
+            while (nbTries < 5)
+            {
+                nbTries++;
+
+                outputLine = fgets(buffer, sizeof(buffer), fresult);
+
+                if( feof(fresult) )
+                { // c-stream eof detected. Output is empty, break the loop
+                    x->setEvalStatus(NOMAD::EvalStatusType::EVAL_ERROR, _evalType);
+#ifdef _OPENMP
+#pragma omp critical(warningEvalX)
+#endif
+                    {
+                        std::cerr << "Warning: Evaluation error with point " << x->display() << ": output is empty" << std::endl;
+                    }
+                    break;
+                }
+
+                if (NULL != outputLine)
+                {
+                    // Evaluation succeeded. Get and process blackbox output.
+                    std::string bbo(outputLine);
+                    // delete trailing '\n'
+                    bbo.erase(bbo.size() - 1);
+
+                    // Process blackbox output
+                    auto bbOutputTypeList = _evalParams->getAttributeValue<NOMAD::BBOutputTypeList>("BB_OUTPUT_TYPE");
+                    x->setBBO(bbo, bbOutputTypeList, _evalType);
+                    auto bbOutput = x->getEval(_evalType)->getBBOutput();
+
+                    evalOk[index] = bbOutput.getEvalOk();
+                    countEval[index] = bbOutput.getCountEval(bbOutputTypeList);
+
+                    break;
+                }
+            }
+            // The number of tries has been reached (not eof) and still cannot read output file.
+            if( ! feof(fresult) && NULL == outputLine )
             {
                 // Something went wrong with the evaluation.
                 // Point could be re-submitted.
                 x->setEvalStatus(NOMAD::EvalStatusType::EVAL_ERROR, _evalType);
 #ifdef _OPENMP
-                #pragma omp critical(warningEvalX)
+#pragma omp critical(warningEvalX)
 #endif
                 {
                     std::cerr << "Warning: Evaluation error with point " << x->display() << ": output is empty" << std::endl;
                 }
             }
-            else
-            {
-                // Evaluation succeeded. Get and process blackbox output.
-                std::string bbo(outputLine);
-                // delete trailing '\n'
-                bbo.erase(bbo.size() - 1);
-
-                // Process blackbox output
-                NOMAD::BBOutput bbOutput(bbo);
-
-                auto bbOutputType = _evalParams->getAttributeValue<NOMAD::BBOutputTypeList>("BB_OUTPUT_TYPE");
-                x->getEval(_evalType)->setBBOutputAndRecompute(bbOutput, bbOutputType);
-                evalOk[index] = bbOutput.getEvalOk();
-                countEval[index] = bbOutput.getCountEval(bbOutputType);
-            }
         }
-
         // Get exit status of the bb.exe. If it is not 0, there was an error.
         int exitStatus = pclose(fresult);
 
@@ -371,10 +410,6 @@ std::vector<bool> NOMAD::Evaluator::evalXBBExe(NOMAD::Block &block,
                 {
                     std::cerr << s << std::endl;
                 }
-            }
-            else if (x->getH(_evalType) > hMax)
-            {
-                x->setEvalStatus(NOMAD::EvalStatusType::EVAL_CONS_H_OVER, _evalType);
             }
             else if (!evalOk[index])
             {

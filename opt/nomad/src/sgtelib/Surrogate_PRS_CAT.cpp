@@ -2,7 +2,7 @@
 /*  sgtelib - A surrogate model library for derivative-free optimization               */
 /*  Version 2.0.2                                                                      */
 /*                                                                                     */
-/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */
+/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */ 
 /*                           Bastien Talgorn - McGill University, Montreal             */
 /*                                                                                     */
 /*  Author: Bastien Talgorn                                                            */
@@ -73,8 +73,8 @@ bool SGTELIB::Surrogate_PRS_CAT::init_private ( void ) {
 /*--------------------------------------*/
 bool SGTELIB::Surrogate_PRS_CAT::build_private ( void ) {
 
-  const int pvar = _trainingset.get_pvar();
-  const int nvar = _trainingset.get_nvar();
+  const int pvar = _trainingset.get_pvar(); 
+  const int nvar = _trainingset.get_nvar(); 
 
   // Get the number of basis functions.
   int nb_monomes = Surrogate_PRS::get_nb_PRS_monomes(nvar-1,_param.get_degree());
@@ -94,30 +94,46 @@ bool SGTELIB::Surrogate_PRS_CAT::build_private ( void ) {
   _H = compute_design_matrix ( _M , get_matrix_Xs() );
 
   // Compute alpha
-  bool ok = compute_alpha();
+  bool ok = compute_alpha();   
   return ok;
 }//
+
 
 
 /*-------------------------------------------------*/
 /*          Compute PRS_CAT design matrix          */
 /*-------------------------------------------------*/
-const SGTELIB::Matrix SGTELIB::Surrogate_PRS_CAT::compute_design_matrix ( const SGTELIB::Matrix& Monomes,
+const SGTELIB::Matrix SGTELIB::Surrogate_PRS_CAT::compute_design_matrix ( const SGTELIB::Matrix& Monomes, 
                                                                           const SGTELIB::Matrix & Xs ) {
 
-  const int p = Xs.get_nb_rows();
+  const int p = Xs.get_nb_rows(); 
   SGTELIB::Matrix H("H",p,0);
   SGTELIB::Matrix is_cat ("is_cat",p,1);
   const SGTELIB::Matrix H_prs = SGTELIB::Surrogate_PRS::compute_design_matrix ( Monomes, Xs );
-
+  
   std::set<double>::iterator it;
   double c;
   for (it = _cat.begin(); it != _cat.end(); ++it){
     c = *it;
     for (int i=0 ; i<p ; i++){
       is_cat.set(i,0,(double)(Xs.get(i,0)==c));
-    }
+    }       
     H.add_cols( Matrix::diagA_product(is_cat,H_prs) );
   }
   return H;
 }//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -2,7 +2,7 @@
 /*  sgtelib - A surrogate model library for derivative-free optimization               */
 /*  Version 2.0.2                                                                      */
 /*                                                                                     */
-/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */
+/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */ 
 /*                           Bastien Talgorn - McGill University, Montreal             */
 /*                                                                                     */
 /*  Author: Bastien Talgorn                                                            */
@@ -38,13 +38,13 @@ namespace SGTELIB {
   /*--------------------------------------*/
   class DLL_API Surrogate {
 
-  // Surrogate Ensemble is a friend, so that it can access to private and protected
+  // Surrogate Ensemble is a friend, so that it can access to private and protected 
   // prediction methods of other derived classed of Surrogate_Ensemble
   friend class Surrogate_Ensemble;
 
   protected:
 
-    // TrainingSet containing the data
+    // TrainingSet containing the data 
     // (may be shared between several surrogates)
     SGTELIB::TrainingSet & _trainingset;
     // Parameters
@@ -56,24 +56,24 @@ namespace SGTELIB {
     const int _m;
 
     // Number of data points of the training set
-    int _p_ts;
-    int _p_ts_old;
+    int _p_ts;    
+    int _p_ts_old;    
     // Number of data points used in the model
-    int _p;
+    int _p; 
     int _p_old;
 
     // Is the surrogate ready to perform predictions ?
-    bool _ready;
+    bool _ready; 
 
     // Predictions
     // _Zhs: Prediction of the model in the training points
     // (used to compute emax, rmse, eotp, linv)
-    SGTELIB::Matrix * _Zhs;
+    SGTELIB::Matrix * _Zhs; 
     SGTELIB::Matrix * _Shs; // Predictive std on the training points
 
     // _Zvs: Cross-Validation prediction of the model in the training points
     // (used to compute rmsecv, oecv)
-    SGTELIB::Matrix * _Zvs;
+    SGTELIB::Matrix * _Zvs; 
     SGTELIB::Matrix * _Svs; // Cross-validation std on the training points
 
     // List of points used to build the model
@@ -84,7 +84,7 @@ namespace SGTELIB {
 
     // psize_max : Larger value of psize that led to a success
     // in the previous parameter optimization.
-    double _psize_max;
+    double _psize_max; 
 
     // Output stream
     std::ofstream _out;
@@ -113,14 +113,14 @@ namespace SGTELIB {
     // predict model (private):
     virtual void predict_private ( const SGTELIB::Matrix & XXs,
                                          SGTELIB::Matrix * ZZs,
-                                         SGTELIB::Matrix * std,
+                                         SGTELIB::Matrix * std, 
                                          SGTELIB::Matrix * ei ,
-                                         SGTELIB::Matrix * cdf );
-
+                                         SGTELIB::Matrix * cdf ); 
+ 
     virtual void predict_private ( const SGTELIB::Matrix & XXs,
-                                         SGTELIB::Matrix * ZZs) = 0;
+                                         SGTELIB::Matrix * ZZs) = 0; 
 
-    // Display private
+    // Display private 
     virtual void display_private ( std::ostream & out ) const = 0;
 
     // get matrices (these matrices are unscaled before being returned)
@@ -171,12 +171,12 @@ namespace SGTELIB {
     // predict:
     void predict ( const SGTELIB::Matrix & XX ,
                          SGTELIB::Matrix * ZZ , // nb : ZZ is a ptr
-                         SGTELIB::Matrix * std,
-                         SGTELIB::Matrix * ei ,
-                         SGTELIB::Matrix * cdf);
+                         SGTELIB::Matrix * std, 
+                         SGTELIB::Matrix * ei , 
+                         SGTELIB::Matrix * cdf); 
 
     void predict ( const SGTELIB::Matrix & XX ,
-                         SGTELIB::Matrix * ZZ );
+                         SGTELIB::Matrix * ZZ ); 
 
     // Compute unscaled data
     const SGTELIB::Matrix get_matrix_Zh (void);
@@ -213,3 +213,4 @@ namespace SGTELIB {
 }
 
 #endif
+

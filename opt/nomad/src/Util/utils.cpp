@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -113,6 +114,30 @@ void NOMAD::toupper(std::list<std::string> &ls)
         NOMAD::toupper(*it);
     }
 }
+
+
+/*-----------------------------------------------------------------*/
+/*                             NOMAD::trim                         */
+/*-----------------------------------------------------------------*/
+void NOMAD::trim(std::string &s)
+{
+    // Trim extra spaces at the beginning
+    size_t space_index = s.find(' ');
+    while (s.size() > 0 && 0 == space_index)
+    {
+        s.replace(0, 1, "");
+        space_index = s.find(' ');
+    }
+
+    // Trim extra spaces at the end
+    size_t space_rindex = s.rfind(' ');
+    while (s.size() > 0 && s.size()-1 == space_rindex)
+    {
+        s.replace(space_rindex, 1, "");
+        space_rindex = s.rfind(' ');
+    }
+}
+
 
 /*-----------------------------------------------------------------*/
 /*                             NOMAD::atoi                         */
@@ -239,8 +264,8 @@ std::string NOMAD::enumStr(NOMAD::SuccessType success)
 
 // Convert a string to index range
 bool NOMAD::stringToIndexRange(const std::string & s           ,
-                               size_t            & i           ,
-                               size_t            & j           ,
+                               int               & i           ,
+                               int               & j           ,
                                bool               check_order   )
 {
     if ( s.empty() )
@@ -289,8 +314,10 @@ bool NOMAD::stringToIndexRange(const std::string & s           ,
         for ( k = 0 ; k < n1 ; ++k )
             if (!isdigit(s1[k]))
                 return false;
-        if ( ! atost ( s1 , i ) )
+        size_t ist = (size_t)i;
+        if ( ! atost ( s1 , ist ) )
             return false;
+        i = (int)ist;
         if ( n1 == s.size() )
         {
             j = i;
@@ -310,8 +337,12 @@ bool NOMAD::stringToIndexRange(const std::string & s           ,
         if ( !isdigit(s2[k]) )
             return false;
 
-    if ( ! atost ( s1, i ) || ! atost ( s2 , j ) )
+    size_t ist = (size_t)i;
+    size_t jst = (size_t)j;
+    if ( ! atost ( s1, ist ) || ! atost ( s2 , jst ) )
         return false;
+    i = (int)ist;
+    j = (int)jst;
 
     return !check_order || i <= j;
 }

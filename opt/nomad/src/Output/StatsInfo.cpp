@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -75,10 +76,13 @@ NOMAD::StatsInfo::StatsInfo()
     _meshIndex(),
     _meshSize(),
     _frameSize(),
+    _frameCenter(),
+    _direction(),
     _lap(0),
-    _sgte(0),
-    _totalSgte(0),
+    _modelEval(0),
+    _totalModelEval(0),
     _sol(),
+    _surrogateEval(0),
     _threadAlgoNum(0),
     _threadNum(0),
     _relativeSuccess(false),
@@ -89,16 +93,18 @@ NOMAD::StatsInfo::StatsInfo()
 }
 
 
-bool NOMAD::StatsInfo::alwaysDisplay(const bool displayInfeasible, const bool displayUnsuccessful) const
+bool NOMAD::StatsInfo::alwaysDisplay(const bool displayInfeasible,
+                                     const bool displayUnsuccessful,
+                                     const bool forStatsFile) const
 {
     bool doDisplay = false;
     if (!_obj.isDefined())
     {
         doDisplay = false;
     }
-    else if (_bbe <= 1)
+    else if (_bbe <= 1 && !forStatsFile)
     {
-        // Always display X0 evaluation
+        // Always display X0 evaluation to standard output
         doDisplay = true;
     }
     else if (displayInfeasible || (_consH.isDefined() && _consH == 0.0))
@@ -210,17 +216,29 @@ NOMAD::DisplayStatsType NOMAD::StatsInfo::stringToDisplayStatsType(const std::st
     {
         ret = NOMAD::DisplayStatsType::DS_FRAME_SIZE;
     }
+    else if (s == "FRAME_CENTER")
+    {
+        ret = NOMAD::DisplayStatsType::DS_FRAME_CENTER;
+    }
+    else if (s == "DIRECTION")
+    {
+        ret = NOMAD::DisplayStatsType::DS_DIRECTION;
+    }
     else if (s == "LAP")
     {
         ret = NOMAD::DisplayStatsType::DS_LAP;
     }
-    else if (s == "SGTE")
+    else if (s == "MODEL_EVAL")
     {
-        ret = NOMAD::DisplayStatsType::DS_SGTE;
+        ret = NOMAD::DisplayStatsType::DS_MODEL_EVAL;
     }
     else if (s == "SOL")
     {
         ret = NOMAD::DisplayStatsType::DS_SOL;
+    }
+    else if (s == "SURROGATE_EVAL")
+    {
+        ret = NOMAD::DisplayStatsType::DS_SURROGATE_EVAL;
     }
     else if (s == "THREAD_ALGO")
     {
@@ -238,9 +256,9 @@ NOMAD::DisplayStatsType NOMAD::StatsInfo::stringToDisplayStatsType(const std::st
     {
         ret = NOMAD::DisplayStatsType::DS_SUCCESS_TYPE;
     }
-    else if (s == "TOTAL_SGTE")
+    else if (s == "TOTAL_MODEL_EVAL")
     {
-        ret = NOMAD::DisplayStatsType::DS_TOTAL_SGTE;
+        ret = NOMAD::DisplayStatsType::DS_TOTAL_MODEL_EVAL;
     }
     else
     {
@@ -302,12 +320,16 @@ std::string NOMAD::StatsInfo::displayStatsTypeToString(const NOMAD::DisplayStats
             return "DELTA_M";
         case NOMAD::DisplayStatsType::DS_FRAME_SIZE:
             return "FRAME_SIZE";
+        case NOMAD::DisplayStatsType::DS_FRAME_CENTER:
+            return "FRAME_CENTER";
+        case NOMAD::DisplayStatsType::DS_DIRECTION:
+            return "DIRECTION";
         case NOMAD::DisplayStatsType::DS_DELTA_F:
             return "DELTA_F";
         case NOMAD::DisplayStatsType::DS_LAP:
             return "LAP";
-        case NOMAD::DisplayStatsType::DS_SGTE:
-            return "SGTE";
+        case NOMAD::DisplayStatsType::DS_MODEL_EVAL:
+            return "MODEL_EVAL";
         case NOMAD::DisplayStatsType::DS_SOL:
             return "SOL";
         case NOMAD::DisplayStatsType::DS_THREAD_ALGO:
@@ -318,8 +340,10 @@ std::string NOMAD::StatsInfo::displayStatsTypeToString(const NOMAD::DisplayStats
             return "GEN_STEP";
         case NOMAD::DisplayStatsType::DS_SUCCESS_TYPE:
             return "SUCCESS_TYPE";
-        case NOMAD::DisplayStatsType::DS_TOTAL_SGTE:
-            return "TOTAL_SGTE";
+        case NOMAD::DisplayStatsType::DS_SURROGATE_EVAL:
+            return "SURROGATE_EVAL";
+        case NOMAD::DisplayStatsType::DS_TOTAL_MODEL_EVAL:
+            return "TOTAL_MODEL_EVAL";
         case NOMAD::DisplayStatsType::DS_USER:
             return "USER";
         case NOMAD::DisplayStatsType::DS_UNDEFINED:
@@ -481,19 +505,31 @@ std::string NOMAD::StatsInfo::display(const NOMAD::DisplayStatsTypeList& format,
         {
             out += _frameSize.display(solFormat);
         }
+        else if (NOMAD::DisplayStatsType::DS_FRAME_CENTER == statsType)
+        {
+            out += _frameCenter.display(solFormat);
+        }
+        else if (NOMAD::DisplayStatsType::DS_DIRECTION == statsType)
+        {
+            out += _direction.display(solFormat);
+        }
         else if (NOMAD::DisplayStatsType::DS_LAP == statsType)
         {
             out += NOMAD::itos(_lap);
         }
-        else if (NOMAD::DisplayStatsType::DS_SGTE == statsType)
+        else if (NOMAD::DisplayStatsType::DS_MODEL_EVAL == statsType)
         {
-            out += NOMAD::itos(_sgte);
+            out += NOMAD::itos(_modelEval);
         }
         else if (NOMAD::DisplayStatsType::DS_SOL == statsType)
         {
             // Here, use displayNoPar() to have the same output as NOMAD 3
             // (no additional parenthesis).
             out += _sol.displayNoPar(solFormat);
+        }
+        else if (NOMAD::DisplayStatsType::DS_SURROGATE_EVAL == statsType)
+        {
+            out += NOMAD::itos(_surrogateEval);
         }
         else if (NOMAD::DisplayStatsType::DS_THREAD_ALGO == statsType)
         {
@@ -511,9 +547,9 @@ std::string NOMAD::StatsInfo::display(const NOMAD::DisplayStatsTypeList& format,
         {
             out += NOMAD::enumStr(_success);
         }
-        else if (NOMAD::DisplayStatsType::DS_TOTAL_SGTE == statsType)
+        else if (NOMAD::DisplayStatsType::DS_TOTAL_MODEL_EVAL == statsType)
         {
-            out += NOMAD::itos(_totalSgte);
+            out += NOMAD::itos(_totalModelEval);
         }
         else if (NOMAD::DisplayStatsType::DS_USER == statsType)
         {
@@ -577,3 +613,5 @@ std::string NOMAD::StatsInfo::displayHeader(const NOMAD::DisplayStatsTypeList& h
 
     return out;
 }
+
+

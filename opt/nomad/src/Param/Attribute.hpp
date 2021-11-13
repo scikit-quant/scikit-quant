@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -51,8 +52,8 @@
 //  Copyright (c) 2017 GERAD. All rights reserved.
 //
 
-#ifndef __NOMAD400_ABSTRACTATTRIBUTE__
-#define __NOMAD400_ABSTRACTATTRIBUTE__
+#ifndef __NOMAD_4_0_ABSTRACTATTRIBUTE__
+#define __NOMAD_4_0_ABSTRACTATTRIBUTE__
 
 #include "../Util/defines.hpp"
 
@@ -65,8 +66,7 @@
  A Nomad parameter has a name, some help and info, some  keywords and some additional flags :
  - Attribute::_uniqueEntry, a flag for a parameter that cannot appear more than once in a file.
  - Attribute::_algoCompatibilityCheck, a flag for a parameter that can be used to check if two sets of parameters can produce the same run.
- - Attribute::_restartAttribute, a flag for a parameter that can be changed when doing a restart. \n
-
+ - Attribute::_restartAttribute, a flag for a parameter that can be changed when doing a restart.
  */
 class Attribute {
 public:
@@ -78,6 +78,7 @@ public:
     virtual bool isForAlgoCompatibilityCheck() { return _algoCompatibilityCheck; }
     virtual bool isRestartAttribute() { return _restartAttribute; }
     virtual bool getParamFromUniqueEntry() { return _uniqueEntry; }
+    virtual bool isInternal() { return _internal; }
 
     void setShortInfo(const std::string& s) { _shortInfo = s; }
     void setHelpInfo(const std::string& s) { _helpInfo = s; }
@@ -105,8 +106,11 @@ public:
           _keywords(Keywords),
           _algoCompatibilityCheck(algoCompatibilityCheck),
           _restartAttribute(restartAttribute),
-          _uniqueEntry(uniqueEntry)
-    {}
+          _uniqueEntry(uniqueEntry),
+          _internal(false)
+    { if (Keywords.find("internal") != std::string::npos)
+        _internal=true ;
+    }
 
     Attribute (const std::string& Name, bool algoCompatibilityCheck,
                bool restartAttribute, bool uniqueEntry,
@@ -116,7 +120,8 @@ public:
           _helpInfo(HelpInfo),
           _algoCompatibilityCheck(algoCompatibilityCheck),
           _restartAttribute(restartAttribute),
-          _uniqueEntry(uniqueEntry)
+          _uniqueEntry(uniqueEntry),
+          _internal(false)
     {}
 
     Attribute (const std::string& Name, bool algoCompatibilityCheck,
@@ -125,14 +130,16 @@ public:
           _shortInfo(ShortInfo),
           _algoCompatibilityCheck(algoCompatibilityCheck),
           _restartAttribute(restartAttribute),
-          _uniqueEntry(uniqueEntry)
+          _uniqueEntry(uniqueEntry),
+          _internal(false)
     {}
 
     Attribute(const std::string& Name)
         : _name(Name),
         _algoCompatibilityCheck(false),
         _restartAttribute(false),
-        _uniqueEntry(true)
+        _uniqueEntry(true),
+        _internal(false)
     {}
 
     virtual void display( std::ostream& os , bool flagShortInfo = true ) const
@@ -153,7 +160,7 @@ protected:
     bool        _algoCompatibilityCheck; ///< Flag for parameter that can be used to check if two sets of parameters can produce the same run.
     bool        _restartAttribute; ///< Flag for parameter that can be changed when doing a restart
     bool        _uniqueEntry; ///< Flag for a parameter that cannot appear more than once in a file
-
+    bool        _internal; ///< Flag for interanl parameter
 };
 
 
@@ -163,6 +170,6 @@ inline std::ostream & operator << ( std::ostream & os, const Attribute & att)
     return os;
 }
 
-#include "../nomad_nsend.hpp"
 
-#endif  // __NOMAD400_ABSTRACTATTRIBUTE__
+#include "../nomad_nsend.hpp"
+#endif  // __NOMAD_4_0_ABSTRACTATTRIBUTE__

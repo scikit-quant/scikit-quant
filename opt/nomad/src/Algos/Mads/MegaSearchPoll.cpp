@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -44,8 +45,6 @@
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
 
-#include "../../config.hpp"
-
 #include "../../Algos/EvcInterface.hpp"
 #include "../../Algos/Mads/MegaSearchPoll.hpp"
 #include "../../Algos/Mads/MadsMegaIteration.hpp"
@@ -55,7 +54,7 @@
 
 void NOMAD::MegaSearchPoll::init()
 {
-    _name = "MegaSearchPoll";
+    setStepType(NOMAD::StepType::MEGA_SEARCH_POLL);
     verifyParentNotNull();
 
     auto megaIter = dynamic_cast<const NOMAD::MadsMegaIteration*>( _megaIterAncestor );
@@ -67,24 +66,19 @@ void NOMAD::MegaSearchPoll::init()
 }
 
 
-const std::shared_ptr<NOMAD::MadsIteration> NOMAD::MegaSearchPoll::getIterForPoint(const NOMAD::EvalPoint& point) const
-{
-    return _iterForPoint[point];
-}
-
-
 void NOMAD::MegaSearchPoll::startImp()
 {
-
     // Generate trial points using poll and search and merge them
     generateTrialPoints();
-
 }
 
 
 bool NOMAD::MegaSearchPoll::runImp()
 {
     bool foundBetter = false;
+    // Ensure no max lap for MegaSearchPoll. Also reset counter before evaluation.
+    NOMAD::EvcInterface::getEvaluatorControl()->setLapMaxBbEval(NOMAD::INF_SIZE_T);
+    NOMAD::EvcInterface::getEvaluatorControl()->resetLapBbEval();
 
     if ( ! _stopReasons->checkTerminate() )
     {
@@ -100,7 +94,7 @@ bool NOMAD::MegaSearchPoll::runImp()
 
 void NOMAD::MegaSearchPoll::endImp()
 {
-    postProcessing(NOMAD::EvcInterface::getEvaluatorControl()->getEvalType());
+    postProcessing();
 }
 
 
@@ -109,57 +103,39 @@ void NOMAD::MegaSearchPoll::generateTrialPoints()
 {
     verifyGenerateAllPointsBeforeEval(NOMAD_PRETTY_FUNCTION, true);
     OUTPUT_INFO_START
-    AddOutputInfo("Generate points for " + _name, true, false);
+    AddOutputInfo("Generate points for " + getName(), true, false);
     OUTPUT_INFO_END
 
     NOMAD::EvalPointSet trialPoints;
 
-    // Generate points for all frame centers, all meshes, all Search and Poll strategies.
-    for (size_t i = 0; i < _megaIterAncestor->getNbIterations() ; i++)
+    // Generate trial points for Search (all enabled search methods) and Poll.
+    // Note: Search and Poll generateTrialPoints() methods both
+    // take care of verifying that the generated are on mesh, and also
+    // update the "PointFrom" with the frame center.
+    NOMAD::Search search(this);
+    search.generateTrialPoints();
+    auto trialPointsSearch = search.getTrialPoints();
+
+    NOMAD::Poll poll(this);
+    poll.generateTrialPoints();
+    auto trialPointsPoll = poll.getTrialPoints();
+
+    // Merge two sets and remove duplicates
+    // Naive implementation. Easier to understand - I could not make std::merge,
+    // std::unique or std::set_union work fine.
+    // Caveat: Multiple EvalPoints copy.
+    for (auto point : trialPointsSearch)
     {
-        // downcast from Iteration to MadsIteration
-        const std::shared_ptr<NOMAD::MadsIteration> & iter = std::dynamic_pointer_cast<NOMAD::MadsIteration> ( _megaIterAncestor->getIter(i));
-
-        if ( iter == nullptr )
-            throw NOMAD::Exception(__FILE__, __LINE__, "Cannot convert to MadsIteration shared pointer");
-
-        // Generate trial points for Search (all enabled search methods) and Poll.
-        // Note: Search and Poll generateTrialPoints() methods both
-        // take care of verifying that the generated are on mesh, and also
-        // update the "PointFrom" with the Iteration frame center.
-        NOMAD::Search search(iter.get() );
-        search.generateTrialPoints();
-        auto trialPointsSearch = search.getTrialPoints() ;
-
-        NOMAD::Poll poll(iter.get() );
-        poll.generateTrialPoints();
-        auto trialPointsPoll = poll.getTrialPoints();
-
-        // Merge two sets and remove duplicates
-        // Naive implementation. Easier to understand - I could not make std::merge,
-        // std::unique or std::set_union work fine.
-        // Caveat: Multiple EvalPoints copy.
-        for (auto point : trialPointsSearch)
-        {
-            insertTrialPoint( point );
-            // Remember which iteration generated these points
-            auto pointIterPair = std::pair<NOMAD::EvalPoint, std::shared_ptr<NOMAD::MadsIteration>>(point, std::make_shared<NOMAD::MadsIteration>(*iter));
-            _iterForPoint.insert(pointIterPair);
-        }
-        for (auto point : trialPointsPoll)
-        {
-            insertTrialPoint( point );
-
-            // Remember which iteration generated these points
-            auto pointIterPair = std::pair<NOMAD::EvalPoint, std::shared_ptr<NOMAD::MadsIteration>>(point, std::make_shared<NOMAD::MadsIteration>(*iter));
-            _iterForPoint.insert(pointIterPair);
-        }
-
+        insertTrialPoint(point);
+    }
+    for (auto point : trialPointsPoll)
+    {
+        insertTrialPoint(point);
     }
 
     OUTPUT_INFO_START
     AddOutputInfo("Generated " + NOMAD::itos(getTrialPointsCount()) + " points");
-    AddOutputInfo("Generate points for " + _name, false, true);
+    AddOutputInfo("Generate points for " + getName(), false, true);
     OUTPUT_INFO_END
 
 }

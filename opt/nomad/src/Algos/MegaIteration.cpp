@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -53,10 +54,8 @@ NOMAD::MegaIteration::MegaIteration(const Step* parentStep,
                               std::shared_ptr<Barrier> barrier,
                               SuccessType success)
   : Step(parentStep),
-    _iterList(),
     _barrier(barrier),
     _k(k),
-    _nbIterRun(0),
     _megaIterationSuccess(success)
 {
     if (nullptr == _barrier)
@@ -70,27 +69,20 @@ NOMAD::MegaIteration::MegaIteration(const Step* parentStep,
 
 void NOMAD::MegaIteration::init()
 {
-    _name = getAlgoName() + "MegaIteration " + std::to_string(_k);
+    setStepType(NOMAD::StepType::MEGA_ITERATION);
     verifyParentNotNull();
+}
+
+
+std::string NOMAD::MegaIteration::getName() const
+{
+    return getAlgoName() + NOMAD::stepTypeToString(_stepType) + " " + std::to_string(_k);
 }
 
 
 size_t NOMAD::MegaIteration::getNextK() const
 {
-    size_t nextK;
-    if (_nbIterRun > 0)
-    {
-        // Next MegaIteration number will start where the Iterations ended.
-        nextK = _k + _nbIterRun;
-    }
-    else
-    {
-        // Must increment MegaIteration number, cannot have
-        // twice the same number.
-        nextK = _k + 1;
-    }
-
-    return nextK;
+    return _k + 1;
 }
 
 
@@ -105,8 +97,6 @@ void NOMAD::MegaIteration::endImp()
             _stopReasons->set(NOMAD::BaseStopType::USER_STOPPED);
         }
     }
-
-    _iterList.clear();
 }
 
 

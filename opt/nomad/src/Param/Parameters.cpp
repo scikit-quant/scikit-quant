@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -47,13 +48,13 @@
 #include "../Param/Parameters.hpp"
 #include "../Type/BBInputType.hpp"
 #include "../Type/BBOutputType.hpp"
+#include "../Type/DirectionType.hpp"
+#include "../Type/EvalSortType.hpp"
+#include "../Type/EvalType.hpp"
 #include "../Type/LHSearchType.hpp"
 #include "../Type/SgtelibModelFeasibilityType.hpp"
 #include "../Type/SgtelibModelFormulationType.hpp"
-#include "../Type/EvalType.hpp"
-#include "../Type/DirectionType.hpp"
 #include "../Util/fileutils.hpp"
-
 #ifdef _WIN32
 #include <io.h>    // For _access
 #define access _access
@@ -136,10 +137,16 @@ void NOMAD::Parameters::copyParameters(const Parameters& params)
             auto value = params.getAttributeValue<NOMAD::EvalType>(paramName);
             setAttributeValue(paramName, value );
         }
-        // DirectionType
-        else if (paramType == typeid(NOMAD::DirectionType).name())
+        // EvalSortType
+        else if (paramType == typeid(NOMAD::EvalSortType).name())
         {
-            auto value = params.getAttributeValue<NOMAD::DirectionType>(paramName);
+            auto value = params.getAttributeValue<NOMAD::EvalSortType>(paramName);
+            setAttributeValue(paramName, value );
+        }
+        // DirectionTypeList
+        else if (paramType == typeid(NOMAD::DirectionTypeList).name())
+        {
+            auto value = params.getAttributeValue<NOMAD::DirectionTypeList>(paramName);
             setAttributeValue(paramName, value );
         }
         // DOUBLE
@@ -194,6 +201,18 @@ const NOMAD::AttributeSet NOMAD::Parameters::getAttributes() const
 bool NOMAD::Parameters::toBeChecked() const
 {
     return _toBeChecked;
+}
+
+
+std::vector<std::string> NOMAD::Parameters::getAttributeNames() const
+{
+    std::vector<std::string> names;
+    for (auto att : _attributes)
+    {
+        names.push_back(att->getName());
+    }
+
+    return names;
 }
 
 
@@ -379,13 +398,23 @@ bool NOMAD::Parameters::isAlgoCompatible(const NOMAD::Parameters *p)
                     isCompatible = false;
                 }
             }
-            // DirectionType
-            else if ( paramType == typeid(NOMAD::DirectionType).name() )
+            // EvalSortType
+            else if ( paramType == typeid(NOMAD::EvalSortType).name() )
             {
-                if ( getAttributeValueProtected<NOMAD::DirectionType>(paramName,false) != p->getAttributeValueProtected<NOMAD::DirectionType>(paramName,false) )
+                if ( getAttributeValueProtected<NOMAD::EvalSortType>(paramName,false) != p->getAttributeValueProtected<NOMAD::EvalSortType>(paramName,false) )
                 {
-                    sdebug += NOMAD::directionTypeToString(getAttributeValueProtected<NOMAD::DirectionType>(paramName,false)) + "\n";
-                    sdebug += NOMAD::directionTypeToString(p->getAttributeValueProtected<NOMAD::DirectionType>(paramName,false));
+                    sdebug += NOMAD::evalSortTypeToString(getAttributeValueProtected<NOMAD::EvalSortType>(paramName,false)) + "\n";
+                    sdebug += NOMAD::evalSortTypeToString(p->getAttributeValueProtected<NOMAD::EvalSortType>(paramName,false));
+                    isCompatible = false;
+                }
+            }
+            // DirectionTypeList
+            else if ( paramType == typeid(NOMAD::DirectionTypeList).name() )
+            {
+                if ( getAttributeValueProtected<NOMAD::DirectionTypeList>(paramName,false) != p->getAttributeValueProtected<NOMAD::DirectionTypeList>(paramName,false) )
+                {
+                    sdebug += NOMAD::directionTypeListToString(getAttributeValueProtected<NOMAD::DirectionTypeList>(paramName,false)) + "\n";
+                    sdebug += NOMAD::directionTypeListToString(p->getAttributeValueProtected<NOMAD::DirectionTypeList>(paramName,false));
                     isCompatible = false;
                 }
             }
@@ -577,8 +606,12 @@ void NOMAD::Parameters::readParamLine(const std::string &line,
 /*----------------------------------------*/
 /*          read parameter entries        */
 /*----------------------------------------*/
-void NOMAD::Parameters::readEntries(const bool overwrite)
+void NOMAD::Parameters::readEntries(const bool overwrite, std::string problemDir)
 {
+    if (problemDir.empty())
+    {
+        problemDir = std::string(".") + NOMAD::DIR_SEP;
+    }
 
     // parameters will have to be checked:
     _toBeChecked = true;
@@ -627,6 +660,7 @@ void NOMAD::Parameters::readEntries(const bool overwrite)
         paramName = att->getName();
         auto paramType = getAttributeType(paramName);
         bool paramFromUniqueEntry = att->getParamFromUniqueEntry();
+        bool internal = att->isInternal();
 
         // Dimension already set
         if (paramName == "DIMENSION")
@@ -637,6 +671,13 @@ void NOMAD::Parameters::readEntries(const bool overwrite)
         pe = _paramEntries.find(paramName);
         while (pe)
         {
+            // Test if internal
+            if (internal)
+            {
+                err = "Internal parameter: " + paramName + " at line #" + std::to_string(pe->getLine()) + " cannot be set in a parameter file! ";
+                throw NOMAD::Exception(__FILE__,__LINE__, err);
+            }
+
             // Test if multiple entries
             if (paramFromUniqueEntry && !pe->isUnique() && !overwrite)
             {
@@ -715,11 +756,29 @@ void NOMAD::Parameters::readEntries(const bool overwrite)
                 checkFormat1(pe);
                 setAttributeValue(paramName, NOMAD::stringToEvalType(pe->getAllValues()));
             }
-            // DirectionType
-            else if (paramType == typeid(NOMAD::DirectionType).name())
+            // EvalSortType
+            else if (paramType == typeid(NOMAD::EvalSortType).name())
             {
                 checkFormat1(pe);
-                setAttributeValue(paramName, NOMAD::stringToDirectionType(pe->getAllValues()));
+                setAttributeValue(paramName, NOMAD::stringToEvalSortType(pe->getAllValues()));
+            }
+            // DirectionTypeList
+            else if (paramType == typeid(NOMAD::DirectionTypeList).name())
+            {
+                checkFormat1(pe);
+
+                auto dirTypeList = getAttributeValueProtected<NOMAD::DirectionTypeList>(paramName, false);
+                if (isAttributeDefaultValue<NOMAD::DirectionTypeList>(paramName))
+                {
+                    dirTypeList.clear();
+                }
+                auto newDirType = NOMAD::stringToDirectionType(pe->getAllValues());
+                if (dirTypeList.end() == std::find(dirTypeList.begin(), dirTypeList.end(), newDirType))
+                {
+                    dirTypeList.push_back(newDirType);
+                }
+
+                setAttributeValue(paramName, dirTypeList);
             }
             // DOUBLE
             else if (paramType == typeid(NOMAD::Double).name())
@@ -770,26 +829,40 @@ void NOMAD::Parameters::readEntries(const bool overwrite)
                 auto aopRef = getAttributeValueProtected<NOMAD::ArrayOfPoint>(paramName, false);
                 NOMAD::ArrayOfPoint aop = aopRef;
 
-                NOMAD::Point updatePoint(n);
-                size_t pointIndex = readValuesForArrayOfPoint(*pe, updatePoint);
-                // If the aop at this index is already set, update it.
-                // Else, create it.
-                if (pointIndex < aop.size())
+                if (1 == pe->getValues().size())
                 {
-                    auto pointToUpdate = aop[pointIndex];
-                    for (size_t index = 0; index < n; index++)
+                    // Consider we have a file and read points in this file.
+                    std::string pointFile = *pe->getValues().begin();
+                    NOMAD::completeFileName(pointFile, problemDir);
+                    auto aopNew = readPointValuesFromFile(pointFile);
+                    for (auto newPoint: aopNew)
                     {
-                        if (updatePoint[index].isDefined())
-                        {
-                            pointToUpdate[index] = updatePoint[index];
-                        }
+                        aop.push_back(newPoint);
                     }
-                    aop[pointIndex] = pointToUpdate;
                 }
                 else
                 {
-                    aop.resize(pointIndex+1);
-                    aop[pointIndex] = updatePoint;
+                    NOMAD::Point updatePoint(n);
+                    size_t pointIndex = readValuesForArrayOfPoint(*pe, updatePoint);
+                    // If the aop at this index is already set, update it.
+                    // Else, create it.
+                    if (pointIndex < aop.size())
+                    {
+                        auto pointToUpdate = aop[pointIndex];
+                        for (size_t index = 0; index < n; index++)
+                        {
+                            if (updatePoint[index].isDefined())
+                            {
+                                pointToUpdate[index] = updatePoint[index];
+                            }
+                        }
+                        aop[pointIndex] = pointToUpdate;
+                    }
+                    else
+                    {
+                        aop.resize(pointIndex+1);
+                        aop[pointIndex] = updatePoint;
+                    }
                 }
 
                 setAttributeValue(paramName, aop);
@@ -998,17 +1071,36 @@ size_t NOMAD::Parameters::readValuesForArrayOfPoint(const NOMAD::ParameterEntry 
     return index;
 }
 
+
+NOMAD::ArrayOfPoint NOMAD::Parameters::readPointValuesFromFile(const std::string& pointFile)
+{
+    if (!NOMAD::checkReadFile(pointFile))
+    {
+        std::string err = "File does not exist or is not readable: " + pointFile;
+        throw NOMAD::Exception(__FILE__, __LINE__, err);
+    }
+
+    const size_t n = getAttributeValueProtected<size_t>("DIMENSION", false);
+    NOMAD::ArrayOfPoint aop;
+    NOMAD::Point point(n);  // Empty point used to pass the dimension
+    aop.push_back(point);
+    NOMAD::read<NOMAD::ArrayOfPoint>(aop, pointFile);  // Calls ArrayOfPoint::operator>>
+
+    return aop;
+}
+
+
 size_t NOMAD::Parameters::readValuesForVariableGroup(const NOMAD::ParameterEntry &pe,
                                                      NOMAD::VariableGroup &vg )
 {
-    size_t i;
+    int i;
 
     std::list<std::string>::const_iterator it , end;
     std::pair<NOMAD::VariableGroup::iterator,bool> ret;
     // just one variable index (can be '*' or a range of indices 'i-j'):
     if ( pe.getNbValues() == 1 )
     {
-        size_t j, k;
+        int j, k;
         it = pe.getValues().begin();
         if ( !NOMAD::stringToIndexRange ( *it , i , j ) )
         {
@@ -1035,12 +1127,14 @@ size_t NOMAD::Parameters::readValuesForVariableGroup(const NOMAD::ParameterEntry
         end = pe.getValues().end();
         for ( it = pe.getValues().begin() ; it != end ; ++it )
         {
-            if ( !NOMAD::atost ( *it , i ) )
+            size_t ist = (size_t)i;
+            if ( !NOMAD::atost ( *it , ist ) )
             {
                     std::string err = "Invalid format for index list: ";
                     err += pe.getName() + " at line " + std::to_string(pe.getLine());
                     throw NOMAD::Exception(__FILE__,__LINE__, err);
             }
+            i = (int)ist;
             ret = vg.insert(i);
             if (!ret.second)
             {
@@ -1086,7 +1180,7 @@ void NOMAD::Parameters::displayHelp(const std::string & helpSubject , bool devHe
 {
     // Search is performed on touppered strings
 
-    // Display help as Basic, Advanced or Developper
+    // Display help as Basic, Advanced or Developer
     // Separate Basic and Advanced into sections
     std::ostringstream oss;
     for(const auto &att: _attributes)
@@ -1105,16 +1199,16 @@ void NOMAD::Parameters::displayHelp(const std::string & helpSubject , bool devHe
             || keywords.find(helpSubject)  != std::string::npos
             || helpInfo.find(helpSubject)  != std::string::npos )
         {
-            if ( !devHelp || (keywords.find("DEVELOPPER") != std::string::npos) )
+            if ( !devHelp || (keywords.find("DEVELOPER") != std::string::npos) )
             {
-                std::string typeOfHelp = (devHelp) ? "(Developper)":"(Basic)";
+                std::string typeOfHelp = (devHelp) ? "(Developer)":"(Basic)";
                 typeOfHelp = ( keywords.find("ADVANCED")!= std::string::npos )? "(Advanced)":typeOfHelp;
 
                 oss << att->getName() << " {" ;
                 oss << att->getHelpInfo() << std::endl;
                 oss << "}" << std::endl;
 
-                if ( typeOfHelp == "(Basic)" || typeOfHelp == "(Developper)" )
+                if ( typeOfHelp == "(Basic)" || typeOfHelp == "(Developer)" )
                 {
                     ossBasic << oss.str() << std::endl;
                 }
@@ -1150,8 +1244,8 @@ void NOMAD::Parameters::registerAttributes( const std::vector<NOMAD::AttributeDe
 {
 
 
-    // Developpers can provide new attributes type -> add "else if" below.
-    // Developpers MUST ALSO ADD the corresponding type in isAlgoCompatible
+    // Developers can provide new attributes type -> add "else if" below.
+    // Developers MUST ALSO ADD the corresponding type in isAlgoCompatible
 
     for ( auto &att : attributeDef )
     {
@@ -1339,12 +1433,22 @@ void NOMAD::Parameters::registerAttributes( const std::vector<NOMAD::AttributeDe
                               algoCompatibilityCheck, restartAttribute, uniqueEntry,
                               att._shortInfo , att._helpInfo, att._keywords );
         }
-        // DirectionType
-        else if (   att._type== "NOMAD::DirectionType"
-                 || att._type== "DirectionType")
+        // EvalSortType
+        else if (   att._type== "NOMAD::EvalSortType"
+                 || att._type== "EvalSortType")
         {
             registerAttribute( att._name,
-                              NOMAD::stringToDirectionType(att._defaultValue),
+                              NOMAD::stringToEvalSortType(att._defaultValue),
+                              algoCompatibilityCheck, restartAttribute, uniqueEntry,
+                              att._shortInfo , att._helpInfo, att._keywords );
+        }
+        // DirectionTypeList
+        else if (   att._type== "NOMAD::DirectionTypeList"
+                 || att._type== "DirectionTypeList")
+        {
+            NOMAD::DirectionTypeList dirTypeList { NOMAD::stringToDirectionType(att._defaultValue) };
+            registerAttribute( att._name,
+                              dirTypeList,
                               algoCompatibilityCheck, restartAttribute, uniqueEntry,
                               att._shortInfo , att._helpInfo, att._keywords );
         }

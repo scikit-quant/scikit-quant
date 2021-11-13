@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -51,17 +52,17 @@
  \see    ComputeSuccessType.cpp
  */
 
-#ifndef __NOMAD400_COMPUTESUCCESSTYPE__
-#define __NOMAD400_COMPUTESUCCESSTYPE__
-
-#include "../config.hpp"
+#ifndef __NOMAD_4_0_COMPUTESUCCESSTYPE__
+#define __NOMAD_4_0_COMPUTESUCCESSTYPE__
 
 #include "../Eval/EvalPoint.hpp"
+#include "../nomad_platform.hpp"
+
 
 #include "../nomad_nsbegin.hpp"
 /// Definition for compute success type function.
 /**
- A function of this type compares two EvalPoints, and returns the SuccessType resulting from the comparison. The function is a member of ComputeSuccessType class and set using ComputeSuccessType::setComputeSuccessTypeFunction. \n For example, computing success type is changed when doing PhaseOne, or optimizing a surrogate instead of blackbox.
+ A function of this type compares two EvalPoints, and returns the SuccessType resulting from the comparison. The function is a member of ComputeSuccessType class and set using ComputeSuccessType::setComputeSuccessTypeFunction. \n For example, computing success type is changed when optimizing a model instead of blackbox.
 */
 typedef std::function<SuccessType(const EvalPointPtr &p1,
                                   const EvalPointPtr &p2,
@@ -76,25 +77,11 @@ private:
 
 public:
 
-    /// Constructor 1
-    //ComputeSuccessType(ComputeSuccessFunction computeSuccessFunction defaultComputeSuccessType)
-    explicit ComputeSuccessType(const ComputeSuccessFunction& computeSuccessFunction)
-      : _computeSuccessType(computeSuccessFunction)
-    {}
-
-    /// Constructor 2
-    explicit ComputeSuccessType(const EvalType& evalType)
+    /// Constructor
+    explicit ComputeSuccessType(const EvalType& evalType, const ComputeType& computeType)
     {
-        setDefaultComputeSuccessTypeFunction(evalType);
+        setComputeSuccessTypeFunction(evalType, computeType);
     }
-
-    void setComputeSuccessTypeFunction(const ComputeSuccessFunction &computeSuccessFunction)
-    {
-        _computeSuccessType = computeSuccessFunction;
-    }
-
-    /// Set default function for comparing EvalPoints, depending if the evaluation is surrogate or blackbox
-    void setDefaultComputeSuccessTypeFunction(const EvalType& evalType);
 
     /// Function call operator
     /**
@@ -119,29 +106,44 @@ public:
                                                  const EvalPointPtr& evalPoint2,
                                                  const Double& hMax = INF);
 
-    /// Function to compute success type when in PhaseOne.
-    /**
-     \param evalPoint   First eval queue point -- \b IN.
-     \param xInf        Second eval queue point -- \b IN.
-     \param hMax        Max acceptable infeasibility to keep point in barrier -- \b IN.
-     \return            Success type.
-     */
-    static SuccessType computeSuccessTypePhaseOne(const EvalPointPtr& evalPoint,
-                                                  const EvalPointPtr& xInf,
-                                                  const Double& NOMAD_UNUSED(hMax));
-
-    /// Function to compute success type for a surrogate evaluation.
+    /// Function to compute success type for a model evaluation.
     /**
      \param evalPoint1  First eval queue point -- \b IN.
      \param evalPoint2  Second eval queue point -- \b IN.
-     \param hMax                Max acceptable infeasibility to keep point in barrier   -- \b IN.
-     \return             Success type.
+     \param hMax        Max acceptable infeasibility to keep point in barrier   -- \b IN.
+     \return            Success type.
      */
-    static SuccessType computeSuccessTypeSgte(const EvalPointPtr& evalPoint1,
+    static SuccessType computeSuccessTypeModel(const EvalPointPtr& evalPoint1,
                                               const EvalPointPtr& evalPoint2,
                                               const Double& hMax = INF);
+
+    /// Similar to defaultComputeSuccessType, but using SURROGATE for EvalType
+    static SuccessType computeSuccessTypeSurrogate(const EvalPointPtr& evalPoint1,
+                                                 const EvalPointPtr& evalPoint2,
+                                                 const Double& hMax = INF);
+
+    /// Function to compute success type in phase one.
+    /**
+     \param evalPoint1  First eval queue point -- \b IN.
+     \param evalPoint2  Second eval queue point -- \b IN.
+     \param hMax        Unused
+     \return            Success type.
+     */
+    static SuccessType computeSuccessTypePhaseOne(const EvalPointPtr& evalPoint1,
+                                              const EvalPointPtr& evalPoint2,
+                                              const Double& NOMAD_UNUSED(hMax));
+
+    /// Similar to computeSuccessTypePhaseOne, but using SURROGATE for EvalType
+    static SuccessType computeSuccessTypePhaseOneSurrogate(const EvalPointPtr& evalPoint1,
+                                              const EvalPointPtr& evalPoint2,
+                                              const Double& NOMAD_UNUSED(hMax));
+
+private:
+    /// Helper for Constructor.
+    /// Set default function for comparing EvalPoints, depending if the evaluation is model or blackbox
+    void setComputeSuccessTypeFunction(const EvalType& evalType, const ComputeType& computeType);
 
 };
 #include "../nomad_nsend.hpp"
 
-#endif // __NOMAD400_COMPUTESUCCESSTYPE__
+#endif // __NOMAD_4_0_COMPUTESUCCESSTYPE__

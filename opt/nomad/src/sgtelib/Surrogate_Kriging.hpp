@@ -2,7 +2,7 @@
 /*  sgtelib - A surrogate model library for derivative-free optimization               */
 /*  Version 2.0.2                                                                      */
 /*                                                                                     */
-/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */
+/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */ 
 /*                           Bastien Talgorn - McGill University, Montreal             */
 /*                                                                                     */
 /*  Author: Bastien Talgorn                                                            */
@@ -58,7 +58,7 @@ namespace SGTELIB {
     /*--------------------------------------*/
     /*          Building methods            */
     /*--------------------------------------*/
-    const SGTELIB::Matrix compute_covariance_matrix ( const SGTELIB::Matrix & XXs );
+    const SGTELIB::Matrix compute_covariance_matrix ( const SGTELIB::Matrix & XXs ); 
 
     /*--------------------------------------*/
     /*          Build model                 */
@@ -71,13 +71,13 @@ namespace SGTELIB {
 
     /*--------------------------------------*/
     /*          predict                     */
-    /*--------------------------------------*/
+    /*--------------------------------------*/ 
     virtual void predict_private ( const SGTELIB::Matrix & XXs,
                                          SGTELIB::Matrix * ZZs) override;
 
     virtual void predict_private ( const SGTELIB::Matrix & XXs,
                                          SGTELIB::Matrix * ZZs,
-                                         SGTELIB::Matrix * std,
+                                         SGTELIB::Matrix * std, 
                                          SGTELIB::Matrix * ei ,
                                          SGTELIB::Matrix * cdf ) override;
 
@@ -92,7 +92,7 @@ namespace SGTELIB {
     /*--------------------------------------*/
     /*          Constructor                 */
     /*--------------------------------------*/
-    Surrogate_Kriging ( SGTELIB::TrainingSet & trainingset ,
+    Surrogate_Kriging ( SGTELIB::TrainingSet & trainingset ,   
                         SGTELIB::Surrogate_Parameters param) ;
 
     /*--------------------------------------*/

@@ -2,7 +2,7 @@
 /*  sgtelib - A surrogate model library for derivative-free optimization               */
 /*  Version 2.0.2                                                                      */
 /*                                                                                     */
-/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */
+/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */ 
 /*                           Bastien Talgorn - McGill University, Montreal             */
 /*                                                                                     */
 /*  Author: Bastien Talgorn                                                            */
@@ -57,9 +57,9 @@ void SGTELIB::Surrogate_PRS_EDGE::display_private ( std::ostream & out ) const {
 /*               build                  */
 /*--------------------------------------*/
 bool SGTELIB::Surrogate_PRS_EDGE::build_private ( void ) {
-
-  const int pvar = _trainingset.get_pvar();
-  const int nvar = _trainingset.get_nvar();
+  
+  const int pvar = _trainingset.get_pvar(); 
+  const int nvar = _trainingset.get_nvar(); 
 
   // Get the number of basis functions.
   _q = Surrogate_PRS::get_nb_PRS_monomes(nvar,_param.get_degree())+nvar;
@@ -74,21 +74,24 @@ bool SGTELIB::Surrogate_PRS_EDGE::build_private ( void ) {
   // DESIGN MATRIX H
   _H = compute_design_matrix ( _M , get_matrix_Xs() );
 
-  return compute_alpha();
+  return compute_alpha();   
 }//
+
+
+
 
 
 /*-------------------------------------------------*/
 /*          Compute PRS_EDGE design matrix          */
 /*-------------------------------------------------*/
-const SGTELIB::Matrix SGTELIB::Surrogate_PRS_EDGE::compute_design_matrix ( const SGTELIB::Matrix& Monomes,
+const SGTELIB::Matrix SGTELIB::Surrogate_PRS_EDGE::compute_design_matrix ( const SGTELIB::Matrix& Monomes, 
                                                                            const SGTELIB::Matrix & Xs ) {
 
   // Call the standard design matrix
   const SGTELIB::Matrix H_prs = SGTELIB::Surrogate_PRS::compute_design_matrix ( Monomes, Xs );
   // Add the edge basis functions
-  const int p = Xs.get_nb_rows();
-  const int n = Xs.get_nb_cols();
+  const int p = Xs.get_nb_rows(); 
+  const int n = Xs.get_nb_cols(); 
   const int nvar = _trainingset.get_nvar();
 
   // Add the special basis function (xi==0)
@@ -100,7 +103,7 @@ const SGTELIB::Matrix SGTELIB::Surrogate_PRS_EDGE::compute_design_matrix ( const
   jj=0;
   for (j=0 ; j<n ; j++){
     if (_trainingset.get_X_nbdiff(j)>1){
-      xs0 = _trainingset.X_scale( 0.0 , j );
+      xs0 = _trainingset.X_scale( 0.0 , j ); 
       for (i=0 ; i<p ; i++){
         v = (double) (Xs.get(i,j)==xs0);
         H_edge.set(i,jj,v);
@@ -114,3 +117,18 @@ const SGTELIB::Matrix SGTELIB::Surrogate_PRS_EDGE::compute_design_matrix ( const
   return H;
 
 }//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

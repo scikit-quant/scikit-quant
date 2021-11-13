@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -59,6 +60,29 @@ NOMAD::Direction& NOMAD::Direction::operator=(const NOMAD::Direction& dir)
     NOMAD::ArrayOfDouble::operator=(dir);
     return *this;
 }
+
+/*-----------------------------------------*/
+/* Operators for addition and substraction */
+/*-----------------------------------------*/
+const NOMAD::Direction& NOMAD::Direction::operator+=(const Direction& dir1)
+{
+    for (size_t i = 0; i < size(); i++)
+    {
+        _array[i] += dir1[i];
+    }
+    return *this;
+}
+
+
+const NOMAD::Direction& NOMAD::Direction::operator-=(const Direction& dir1)
+{
+    for (size_t i = 0; i < size(); i++)
+    {
+        _array[i] -= dir1[i];
+    }
+    return *this;
+}
+
 
 /*------------------------------------------------------*/
 /* Squared Norm of this direction, viewed as a vector.  */
@@ -157,6 +181,35 @@ const NOMAD::Double NOMAD::Direction::cos(const NOMAD::Direction& dir1,
     return cos;
 }
 
+/*-----------------------------------------------------------*/
+/*      computation of the angle with another direction      */
+/*-----------------------------------------------------------*/
+const NOMAD::Double NOMAD::Direction::angle(const NOMAD::Direction& dir1,
+                                            const NOMAD::Direction& dir2)
+{
+    if (dir1.size() != dir2.size())
+    {
+        return NOMAD::Double();
+    }
+
+    NOMAD::Double innerProduct = 0.0, norm1 = 0.0, norm2 = 0.0;
+
+    for (size_t i = 0; i < dir1.size(); i++)
+    {
+        norm1        += dir1[i] * dir1[i];
+        norm2        += dir2[i] * dir2[i];
+        innerProduct += dir1[i] * dir2[i];
+    }
+
+    if (norm1 == 0.0 || norm2 == 0.0)
+    {
+        return NOMAD::Double();
+    }
+
+    return std::acos((innerProduct / (norm1.sqrt() * norm2.sqrt())).todouble());
+}
+
+
 /*--------------------------------------------------*/
 /*  Compute a random direction on a unit N-Sphere   */
 /*  See http://en.wikipedia.org/wiki/N-sphere       */
@@ -218,6 +271,18 @@ void NOMAD::Direction::householder(const NOMAD::Direction &dir,
             }
         }
     }
+}
+
+
+NOMAD::Direction NOMAD::operator-(const Direction &dir)
+{
+    size_t size = dir.size();
+    NOMAD::Direction negDir(size);
+    for (size_t i = 0; i < size; i++)
+    {
+        negDir[i] = -dir[i];
+    }
+    return negDir;
 }
 
 

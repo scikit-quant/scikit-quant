@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -51,8 +52,8 @@
  \see    EvaluatorControl.cpp
  */
 
-#ifndef __NOMAD400_EVALUATORCONTROL__
-#define __NOMAD400_EVALUATORCONTROL__
+#ifndef __NOMAD_4_0_EVALUATORCONTROL__
+#define __NOMAD_4_0_EVALUATORCONTROL__
 
 #include "../Eval/Barrier.hpp"
 #include "../Eval/ComparePriority.hpp"
@@ -135,8 +136,11 @@ private:
      */
     std::atomic<size_t> _infBBEval;
 
-    /// The total number of sgte evaluations. Used for stats exclusively.
-    std::atomic<size_t> _totalSgteEval;
+    /// The number of static surrogate evaluations performed
+    std::atomic<size_t> _surrogateEval;
+
+    /// The total number of quad or modellib model evaluations. Used for stats exclusively.
+    std::atomic<size_t> _totalModelEval;
 
     /// The number of block evaluations performed
     /**
@@ -179,6 +183,11 @@ private:
      */
     std::atomic<size_t> _nbPhaseOneSuccess;
 
+    /**
+     The VNS Mads search neighborhood parameter
+     */
+    std::atomic<size_t> _VNSMadsNeighParameter;
+
     bool _allDoneWithEval;     ///< All evaluations done. The queue can be destroyed.
 
 #ifdef TIME_STATS
@@ -207,7 +216,8 @@ public:
         _bbEvalNotOk(0),
         _feasBBEval(0),
         _infBBEval(0),
-        _totalSgteEval(0),
+        _surrogateEval(0),
+        _totalModelEval(0),
         _blockEval(0),
         _indexSuccBlockEval(0),
         _indexBestFeasEval(0),
@@ -215,6 +225,7 @@ public:
         _nbEvalSentToEvaluator(0),
         _nbRelativeSuccess(0),
         _nbPhaseOneSuccess(0),
+        _VNSMadsNeighParameter(0),
         _allDoneWithEval(false)
 #ifdef TIME_STATS
         ,_evalTime(0.0)
@@ -255,9 +266,15 @@ public:
     /// Get the number of feasible blackbox evaluations.
     size_t getFeasBbEval() const { return _feasBBEval; }
 
-    size_t getSgteEval(const int mainThreadNum = -1) const;
-    void resetSgteEval(const int mainThreadNum = -1);
-    size_t getTotalSgteEval() const { return _totalSgteEval; }
+    /// Get the number of infeasible blackbox evaluations.
+    size_t getInfeasBbEval() const { return _infBBEval; }
+
+    /// Get the number of surrogate evaluations.
+    size_t getSurrogateEval() const { return _surrogateEval; }
+
+    size_t getModelEval(const int mainThreadNum = -1) const;
+    void resetModelEval(const int mainThreadNum = -1);
+    size_t getTotalModelEval() const { return _totalModelEval; }
 
     size_t getBbEvalInSubproblem(const int mainThreadNum = -1) const;
     void resetBbEvalInSubproblem(const int mainThreadNum = -1);
@@ -273,7 +290,7 @@ public:
         - blackbox evaluations (EvaluatorControl::_bbEval),
         - blackbox evaluations for which countEval returned \c false
         - cache hits.
-       Not including sgte evaluations (EvaluatorControl::_sgteEval).
+       Not including quad and sgtelib model evaluations (EvaluatorControl::_modelEval).
 
      \note Member EvaluatorControl:: holds only the first two values.
      Cache hits are added in this method.
@@ -291,6 +308,10 @@ public:
     void setLapMaxBbEval(const size_t maxBbEval);
     void resetLapBbEval();
     size_t getLapBbEval(const int threadNum = -1) const;
+
+    size_t getVNSMadsNeighParameter() const { return _VNSMadsNeighParameter; }
+    void resetVNSMadsNeighParameter() { _VNSMadsNeighParameter = 0; }
+    void incrementVNSMadsNeighParameter() { _VNSMadsNeighParameter++ ; }
 
     size_t getNbPhaseOneSuccess() const {return  _nbPhaseOneSuccess; }
     size_t getNbRelativeSuccess() const {return  _nbRelativeSuccess; }
@@ -313,10 +334,15 @@ public:
     void setBestIncumbent(const int mainThreadNum, const std::shared_ptr<EvalPoint>& bestIncumbent);
     const std::shared_ptr<EvalPoint>& getBestIncumbent(const int mainThreadNum) const;
 
-    void setComputeSuccessTypeFunction(const ComputeSuccessFunction& computeSuccessFunction);
     void setUserCompMethod(const std::shared_ptr<ComparePriorityMethod>& compMethod) { _userCompMethod = compMethod; }
 
-    void setLastSuccessfulDir(const std::shared_ptr<Direction>& dir);
+    void setComputeType(const ComputeType& computeType);
+    const ComputeType& getComputeType(const int mainThreadNum = -1) const;
+
+    void setLastSuccessfulFeasDir(const std::shared_ptr<Direction>& feasDir);
+    void setLastSuccessfulInfDir(const std::shared_ptr<Direction>& infDir);
+    const std::shared_ptr<Direction>& getLastSuccessfulFeasDir() const;
+    const std::shared_ptr<Direction>& getLastSuccessfulInfDir() const;
 
     void setStopReason(const int mainThreadNum, const EvalMainThreadStopType& s);
     const StopReason<EvalMainThreadStopType>& getStopReason(const int mainThreadNum) const;
@@ -353,6 +379,8 @@ public:
     EvalType getEvalType(const int mainThreadNum = -1) const;
     size_t getMaxBbEvalInSubproblem(const int mainThreadNum = -1) const;
     void setMaxBbEvalInSubproblem(const size_t maxBbEval);
+    bool getSurrogateOptimization(const int mainThreadNum = -1) const;
+    void setSurrogateOptimization(const bool surrogateOptimization);
 
     /*---------------*/
     /* Other methods */
@@ -369,7 +397,7 @@ public:
      We are done adding points.
      If doSort is \c true, the points in the queue are sorted using ComparePriority.
      */
-    void unlockQueue(const bool doSort = true);
+    void unlockQueue(const bool doSort = true, const size_t keepN = INF_SIZE_T, const StepType& removeStepType = StepType::UNDEFINED);
 
     /// Add a single point to the queue
     /**
@@ -406,7 +434,7 @@ public:
 
     /// Continuous evaluation - running on all threads simultaneously.
     /**
-     * Stop reasons may be controled by parameters MAX_BB_EVAL, MAX_EVAL, OPPORTUNISTIC_EVAL. \n
+     * Stop reasons may be controled by parameters MAX_BB_EVAL, MAX_EVAL, EVAL_OPPORTUNISTIC. \n
      * If strategy is opportunistic, stop as soon as a successful point is found. \n
      \return    The success type of the evaluations.
      */
@@ -475,7 +503,7 @@ public:
     /// Did we reach one of the evaluation parameters: MAX_EVAL, MAX_BB_EVAL, MAX_BLOCK_EVAL ?
     bool reachedMaxEval() const;
 
-    /// Did we reach Max LAP, MAX_SGTE_EVAL (temporary max evals)?
+    /// Did we reach Max LAP, MODEL_MAX_EVAL (temporary max evals)?
     /**
      * \param mainThreadNum Number of the main thread to update if a stop condition is reached. -1 means use current thread.
      */
@@ -512,8 +540,18 @@ private:
                         const bool evalOk,
                         const Double& hMax);
 
+    /// Helper for EvalType: BB OR (SURROGATE and EVAL_AS_SURROGATE)
+    bool evalTypeAsBB(const EvalType& evalType, const int mainThreadNum) const;
+    /// Helper for EvalType: BB OR SURROGATE. MODEL does not count for some counters.
+    bool evalTypeCounts(const EvalType& evalType) const;
+
     /// Sort the queue with respect to the selected sort strategy. Called by unlockQueue().
     void sort();
+
+    /// Helper for unlockQueue(), to validate if a point may be removed from the queue after sort.
+    bool canErase(const EvalQueuePointPtr &evalQueuePoint,
+                  const int threadNum,
+                  const StepType& removeStepType) const;
 
     /// Did we reach a stop condition (for a main thread)?
     /**
@@ -525,13 +563,12 @@ private:
     void displayDebugWaitingInfo(time_t &lastDisplayed) const;
 
     /// Stats Output
-    void AddStatsInfo(const BlockForEval& block) const;
+    void addStatsInfo(const BlockForEval& block) const;
 
     /// History and Solution file output
-    void AddDirectToFileInfo(EvalQueuePointPtr evalQueuePoint) const;
-
+    void addDirectToFileInfo(EvalQueuePointPtr evalQueuePoint) const;
 };
 
 #include "../nomad_nsend.hpp"
 
-#endif // __NOMAD400_EVALUATORCONTROL__
+#endif // __NOMAD_4_0_EVALUATORCONTROL__

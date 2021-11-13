@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -72,7 +73,7 @@ std::istream& NOMAD::operator>>(std::istream& in, NOMAD::ArrayOfDouble& coords)
     {
         in >> coords[k];
     }
-    if (in.fail())
+    if (in.fail() && !in.eof())
     {
         std::string err = "ArrayOfDouble: bad input for operator>>";
         throw NOMAD::Exception(__FILE__, __LINE__, err);
@@ -94,6 +95,24 @@ NOMAD::ArrayOfDouble::ArrayOfDouble(size_t n, const NOMAD::Double& d)
         if (d.isDefined())
         {
             std::fill (_array, _array + _n, d);
+        }
+    }
+    else
+    {
+        _n = 0;
+    }
+}
+
+NOMAD::ArrayOfDouble::ArrayOfDouble(const std::vector<double> & v)
+  : _n(v.size()),
+    _array(nullptr)
+{
+    if (_n > 0)
+    {
+        _array = new NOMAD::Double[_n];
+        for (size_t k = 0; k < _n; k++)
+        {
+            _array[k] = v[k];
         }
     }
     else
@@ -226,9 +245,7 @@ NOMAD::Double& NOMAD::ArrayOfDouble::operator[](size_t i) const
 /*                        snap to bounds                     */
 /*-----------------------------------------------------------*/
 void NOMAD::ArrayOfDouble::snapToBounds(const NOMAD::ArrayOfDouble &lowerBound,
-                                        const NOMAD::ArrayOfDouble &upperBound,
-                                        const NOMAD::ArrayOfDouble &frameCenter,
-                                        const NOMAD::ArrayOfDouble &deltaMeshSize)
+                                        const NOMAD::ArrayOfDouble &upperBound)
 {
     size_t n = size();
 
@@ -249,57 +266,15 @@ void NOMAD::ArrayOfDouble::snapToBounds(const NOMAD::ArrayOfDouble &lowerBound,
         throw NOMAD::Exception(__FILE__, __LINE__, err);
     }
 
-    if (lowerBound.isDefined() || upperBound.isDefined())
+    for (size_t i = 0; i < n; ++i)
     {
-        for (size_t i = 0; i < n; ++i)
+        if (lowerBound.isDefined() && lowerBound[i].isDefined() && _array[i] < lowerBound[i])
         {
-            if (lowerBound[i].isDefined() && _array[i] < lowerBound[i])
-            {
-                if (deltaMeshSize.isDefined() && deltaMeshSize[i].isDefined() && deltaMeshSize[i] > 0)
-                {
-                    NOMAD::Double arrayPreviousValue = _array[i]; // for debug info
-                    _array[i] = frameCenter[i] + (lowerBound[i] - frameCenter[i]).nextMult(deltaMeshSize[i]);
-                    if (_array[i] < lowerBound[i])
-                    {
-                        //_array[i] += deltaMeshSize[i];
-                        std::cerr << "Warning: snapToBounds: Error snapping " << arrayPreviousValue << " to lower bound " << lowerBound[i] << " - frameCenter = " << frameCenter[i] << ", deltaMeshSize = " << deltaMeshSize[i] << ": it gave " << _array[i] << " which is still lower than " << lowerBound[i] << std::endl;
-                    }
-                }
-                else
-                {
-                    _array[i] = lowerBound[i];
-                }
-                continue;
-            }
-            if (upperBound[i].isDefined() && _array[i] > upperBound[i])
-            {
-                if (deltaMeshSize.isDefined() && deltaMeshSize[i].isDefined() && deltaMeshSize[i] > 0)
-                {
-                    _array[i] = frameCenter[i] + (upperBound[i] - frameCenter[i]).nextMult(deltaMeshSize[i]);
-                    if (_array[i] > upperBound[i])
-                    {
-                        _array[i] -= deltaMeshSize[i];
-                    }
-                }
-                else
-                {
-                    _array[i] = upperBound[i];
-                }
-                continue;
-            }
-            // Sanity checks
-            if (lowerBound[i].isDefined() && _array[i] < lowerBound[i])
-            {
-                std::string err = "Error: snapToBounds: Could not snap value " + _array[i].tostring();
-                err += " within lower bound " + lowerBound[i].tostring();
-                std::cerr << err << std::endl;
-            }
-            if (upperBound[i].isDefined() && _array[i] > upperBound[i])
-            {
-                std::string err = "Error: snapToBounds: Could not snap value " + _array[i].tostring();
-                err += " within upper bound " + upperBound[i].tostring();
-                std::cerr << err << std::endl;
-            }
+            _array[i] = lowerBound[i]; // True snap, ignore mesh
+        }
+        if (upperBound.isDefined() && upperBound[i].isDefined() && upperBound[i] < _array[i])
+        {
+            _array[i] = upperBound[i]; // True snap, ignore mesh
         }
     }
 }
@@ -425,7 +400,7 @@ void NOMAD::ArrayOfDouble::readValuesAsArray(const NOMAD::ArrayOfString& strDoub
         // Ex. 2-4 -> { 2, 3, 4 }
         std::vector<int> indexRange;
         bool firstValueProcessed = false;
-        if (d.atof(strDouble[0]) && d.isInteger() && d < _n)
+        if (d.atof(strDouble[0]) && d.isInteger() && d < (double)_n)
         {
             // First value is a valid index.
             indexRange.push_back(d.round());
@@ -439,10 +414,10 @@ void NOMAD::ArrayOfDouble::readValuesAsArray(const NOMAD::ArrayOfString& strDoub
                 // First value is an index range.
                 std::string firstIndexStr = strDouble[0].substr(0, hyphenIndex);
                 std::string lastIndexStr  = strDouble[0].substr(hyphenIndex+1, strDouble[0].size());
-                if (d.atof(firstIndexStr) && d.isInteger() && d < _n)
+                if (d.atof(firstIndexStr) && d.isInteger() && d < (double)_n)
                 {
                     NOMAD::Double dLast;
-                    if (dLast.atof(lastIndexStr) && dLast.isInteger() && dLast < _n)
+                    if (dLast.atof(lastIndexStr) && dLast.isInteger() && dLast < (double)_n)
                     {
                         // Push indices until dLast is reached.
                         for (int index = d.round(); index <= dLast; index++)
@@ -543,6 +518,20 @@ const NOMAD::ArrayOfDouble & NOMAD::ArrayOfDouble::operator *= ( const NOMAD::Do
 
 
 /*----------------------------------------------------------*/
+/*                    scalar division                       */
+/*----------------------------------------------------------*/
+const NOMAD::ArrayOfDouble & NOMAD::ArrayOfDouble::operator /= ( const NOMAD::Double & d )
+{
+    NOMAD::Double * p = _array;
+    for (size_t k = 0 ; k < _n ; ++k , ++p)
+    {
+        *p /= d;
+    }
+
+    return *this;
+}
+
+/*----------------------------------------------------------*/
 /*                   addition of two arrays                 */
 /*----------------------------------------------------------*/
 const NOMAD::ArrayOfDouble NOMAD::ArrayOfDouble::operator+(const NOMAD::ArrayOfDouble& p) const
@@ -585,6 +574,21 @@ const NOMAD::ArrayOfDouble NOMAD::ArrayOfDouble::operator-(const NOMAD::ArrayOfD
     }
 
     return tmp;
+}
+
+bool NOMAD::ArrayOfDouble::roundToPrecision(const NOMAD::ArrayOfDouble & precision)
+{
+    bool modif = false;
+
+    for (size_t i = 0; i < _n; i++)
+    {
+        if (_array[i].roundToPrecision(precision[i]))
+        {
+            modif = true;
+        }
+    }
+    return modif;
+
 }
 
 

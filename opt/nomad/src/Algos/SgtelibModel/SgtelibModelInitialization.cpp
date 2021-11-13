@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -54,7 +55,7 @@
 
 void NOMAD::SgtelibModelInitialization::init()
 {
-    _name = NOMAD::Initialization::getName();
+    setStepType(NOMAD::StepType::INITIALIZATION);
     verifyParentNotNull();
 }
 
@@ -191,7 +192,7 @@ bool NOMAD::SgtelibModelInitialization::eval_x0s()
         }
         NOMAD::EvalPoint evalPoint_x0(x0);
         cacheInterface.find(x0, evalPoint_x0, NOMAD::EvalType::BB);
-        // To evaluate X0, use blackbox, not sgte.
+        // To evaluate X0, use blackbox, not sgtelib model.
         if (evalPoint_x0.isEvalOk(NOMAD::EvalType::BB))
         {
             // evalOk is true if at least one evaluation is Ok
@@ -208,12 +209,14 @@ bool NOMAD::SgtelibModelInitialization::eval_x0s()
     {
         // Construct barrier using x0s
         auto hMax = _runParams->getAttributeValue<NOMAD::Double>("H_MAX_0");
-        _barrier = std::make_shared<NOMAD::Barrier>(hMax, NOMAD::SubproblemManager::getSubFixedVariable(this), evc->getEvalType(), evalPointList);
+        _barrier = std::make_shared<NOMAD::Barrier>(hMax,
+                                NOMAD::SubproblemManager::getInstance()->getSubFixedVariable(this),
+                                evc->getEvalType(), evc->getComputeType(), evalPointList);
     }
     else
     {
-        auto sgteStopReason = NOMAD::AlgoStopReasons<NOMAD::ModelStopType>::get(_stopReasons);
-        sgteStopReason->set(NOMAD::ModelStopType::X0_FAIL);
+        auto sgtelibModelStopReason = NOMAD::AlgoStopReasons<NOMAD::ModelStopType>::get(_stopReasons);
+        sgtelibModelStopReason->set(NOMAD::ModelStopType::X0_FAIL);
     }
 
     NOMAD::OutputQueue::Flush();

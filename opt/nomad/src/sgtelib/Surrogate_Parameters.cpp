@@ -2,7 +2,7 @@
 /*  sgtelib - A surrogate model library for derivative-free optimization               */
 /*  Version 2.0.2                                                                      */
 /*                                                                                     */
-/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */
+/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */ 
 /*                           Bastien Talgorn - McGill University, Montreal             */
 /*                                                                                     */
 /*  Author: Bastien Talgorn                                                            */
@@ -24,8 +24,6 @@
 /*-------------------------------------------------------------------------------------*/
 
 #include "Surrogate_Parameters.hpp"
-#include <math.h>
-
 using namespace SGTELIB;
 /*---------------------------------------------------------------*/
 /*         constructor                                           */
@@ -59,12 +57,14 @@ SGTELIB::Surrogate_Parameters::~Surrogate_Parameters ( void ) {
 }//
 
 
+
+
 /*----------------------------------------*/
-/*   Extract the model type from a string */
+/*   Extract the model type from a string */            
 /*----------------------------------------*/
 SGTELIB::model_t SGTELIB::Surrogate_Parameters::read_model_type ( const std::string & model_description){
   std::string s;
-  std::istringstream in_line (model_description);
+  std::istringstream in_line (model_description);	
   while ( in_line >> s ){
     s = SGTELIB::toupper(s);
     if (streqi(s,"TYPE")){
@@ -82,7 +82,7 @@ SGTELIB::model_t SGTELIB::Surrogate_Parameters::read_model_type ( const std::str
 /* Convert the param name provided by user into a standard param name */
 /*--------------------------------------------------------------------*/
 std::string SGTELIB::Surrogate_Parameters::to_standard_field_name (const std::string& field){
-
+  
   if ( streqi(field,"TYPE") )           return "TYPE";
   if ( streqi(field,"TYPE_MODEL") )     return "TYPE";
   if ( streqi(field,"MODEL_TYPE") )     return "TYPE";
@@ -144,14 +144,14 @@ std::string SGTELIB::Surrogate_Parameters::to_standard_field_name (const std::st
 }
 
 /*----------------------------*/
-/*   Read model definition    */
+/*   Read model definition    */            
 /*----------------------------*/
 void SGTELIB::Surrogate_Parameters::read_string (const std::string & model_description){
 
   std::string field;
   std::string content;
   bool content_is_optim;
-  std::istringstream in_line (model_description);
+  std::istringstream in_line (model_description);	
   const bool display = false;
   if (display){
     std::cout << "Model description: " << model_description << "\n";
@@ -165,7 +165,7 @@ void SGTELIB::Surrogate_Parameters::read_string (const std::string & model_descr
     field = to_standard_field_name(field);
     if (display){
       std::cout << " (" << field << ")\n";
-    }
+    }   
     // Check if this field is authorized for this type of model.
     if ( ! authorized_field(field) ){
       std::cout << "model_description: " << model_description << "\n";
@@ -174,7 +174,7 @@ void SGTELIB::Surrogate_Parameters::read_string (const std::string & model_descr
     if (display){
       std::cout << "CONTENT: " << content << "\n";
     }
-    // Read the content
+    // Read the content 
     if ( !(in_line >> content) )
       throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"Missing content for field \""+field+"\"" );
 
@@ -209,7 +209,7 @@ void SGTELIB::Surrogate_Parameters::read_string (const std::string & model_descr
     }
     else if (streqi(field,"KERNEL_TYPE")){
       if (content_is_optim)
-        // _kernel_type = default value
+        // _kernel_type = default value        
         _kernel_type_status = SGTELIB::STATUS_OPTIM;
       else{
         _kernel_type = SGTELIB::str_to_kernel_type(content);
@@ -245,7 +245,7 @@ void SGTELIB::Surrogate_Parameters::read_string (const std::string & model_descr
     }
     else if ( streqi(field,"WEIGHT_TYPE") ){
       _weight_type = str_to_weight_type(content);
-      if (content_is_optim)
+      if (content_is_optim) 
         _weight_status = SGTELIB::STATUS_OPTIM;
       // Note, the weight_type can be one of the following:
       // - WTA1
@@ -294,33 +294,33 @@ bool SGTELIB::Surrogate_Parameters::authorized_field ( const std::string & field
 
   switch (_type) {
     case SGTELIB::LINEAR:
-    case SGTELIB::TGP:
-    case SGTELIB::SVN:
+    case SGTELIB::TGP: 
+    case SGTELIB::SVN: 
       throw SGTELIB::Exception ( __FILE__ , __LINE__ , "Not implemented yet! " );
 
     case SGTELIB::CN:
       if (streqi(field,"DISTANCE_TYPE")) return true;
       break;
 
-    case SGTELIB::KRIGING:
+    case SGTELIB::KRIGING: 
       if (streqi(field,"RIDGE"))         return true;
       if (streqi(field,"DISTANCE_TYPE")) return true;
       break;
 
-    case SGTELIB::PRS:
-    case SGTELIB::PRS_EDGE:
-    case SGTELIB::PRS_CAT:
+    case SGTELIB::PRS: 
+    case SGTELIB::PRS_EDGE: 
+    case SGTELIB::PRS_CAT: 
       if (streqi(field,"DEGREE")) return true;
       if (streqi(field,"RIDGE")) return true;
       break;
 
-    case SGTELIB::KS:
+    case SGTELIB::KS: 
       if (streqi(field,"KERNEL_TYPE")) return true;
       if (streqi(field,"KERNEL_COEF")) return true;
       if (streqi(field,"DISTANCE_TYPE")) return true;
       break;
 
-    case SGTELIB::RBF:
+    case SGTELIB::RBF: 
       if (streqi(field,"KERNEL_TYPE")) return true;
       if (streqi(field,"KERNEL_COEF")) return true;
       if (streqi(field,"DISTANCE_TYPE")) return true;
@@ -336,9 +336,9 @@ bool SGTELIB::Surrogate_Parameters::authorized_field ( const std::string & field
       if (streqi(field,"KERNEL_COEF")) return true;
       if (streqi(field,"PRESET")) return true;
       if (streqi(field,"DISTANCE_TYPE")) return true;
-      break;
+      break; 
 
-    case SGTELIB::ENSEMBLE:
+    case SGTELIB::ENSEMBLE: 
       if (streqi(field,"WEIGHT_TYPE")) return true;
       if (streqi(field,"PRESET")) return true;
       if (streqi(field,"DISTANCE_TYPE")) return true;
@@ -386,41 +386,41 @@ bool SGTELIB::Surrogate_Parameters::authorized_optim ( const std::string & field
 void SGTELIB::Surrogate_Parameters::check ( void ) {
   switch (_type) {
     case SGTELIB::LINEAR:
-    case SGTELIB::TGP:
-    case SGTELIB::SVN:
+    case SGTELIB::TGP: 
+    case SGTELIB::SVN: 
       throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"Not implemented yet!" );
 
 
-    case SGTELIB::PRS:
-    case SGTELIB::PRS_EDGE:
-    case SGTELIB::PRS_CAT:
+    case SGTELIB::PRS: 
+    case SGTELIB::PRS_EDGE: 
+    case SGTELIB::PRS_CAT: 
       if (_degree < 0 )
         throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"degree must be >= 0" );
       if (_ridge<0)
         throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"ridge must be >= 0" );
       break;
 
-    case SGTELIB::KRIGING:
+    case SGTELIB::KRIGING: 
       if (!SGTELIB::kernel_is_decreasing(_kernel_type))
         throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"kernel_type must be decreasing" );
       break;
 
 
-    case SGTELIB::KS:
+    case SGTELIB::KS: 
       if (_kernel_coef <= 0)
         throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"kernel_coef must be > 0" );
       if (!SGTELIB::kernel_is_decreasing(_kernel_type))
         throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"kernel_type must be decreasing" );
       break;
 
-    case SGTELIB::RBF:
-      if (_kernel_coef <= 0)
+    case SGTELIB::RBF: 
+      if (_kernel_coef <= 0) 
         throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"kernel_coef must be > 0" );
       if (_ridge<0)
         throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"ridge must be >= 0" );
       if ( ( ! kernel_has_parameter(_kernel_type)) && (_kernel_type_status==SGTELIB::STATUS_FIXED) ){
         // If the kernel_type is fixed by the user, and this type of kernel does not
-        // require a kernel_coefficient, then the kernel_coefficient is arbitrarily set to 1
+        // require a kernel_coefficient, then the kernel_coefficient is arbitrarily set to 1 
         // and its status is set to "fixed". See the class Kernel to see which kernel type requires
         // a coefficient or not.
         _kernel_coef = 1;
@@ -428,19 +428,19 @@ void SGTELIB::Surrogate_Parameters::check ( void ) {
       }
       break;
 
-    case SGTELIB::LOWESS:
+    case SGTELIB::LOWESS: 
       if ( (_degree < 0) || (_degree > 2) )
         throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"degree for LOWESS model must be 0, 1 or 2" );
       if (_ridge<0)
         throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"ridge must be >= 0" );
-      // The default preset for LOWESS models is DGN.
+      // The default preset for LOWESS models is DGN. 
       // The preset defines how the weight of each data point is computed.
-      // D : w_i = phi(distance_i), where distance_i is the distance between the prediction point
+      // D : w_i = phi(distance_i), where distance_i is the distance between the prediction point 
       //           and the data point x_i.
       // DEN : w_i = phi(distance_i/dq_i), where dq_i is the distance between the prediction point
       //             and the q^th closest data point, and dq_i is computed with empirical method.
       // DGN : w_i = phi(distance_i/dq_i), where dq_i is computed with gamma method.
-      // RE : w_i = phi(rank_i), where rank_i is the rank of x_i in terms of distance
+      // RE : w_i = phi(rank_i), where rank_i is the rank of x_i in terms of distance 
       //            to the prediction point, and the rank_i is computed with empirical method.
       // RG : w_i = phi(rank_i), where the rank is computed with gamma method.
       // REN : w_i = same as RE but the ranks are normalized in [0,1]
@@ -460,13 +460,13 @@ void SGTELIB::Surrogate_Parameters::check ( void ) {
         throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"kernel_type must be decreasing" );
       break;
 
-    case SGTELIB::ENSEMBLE:
+    case SGTELIB::ENSEMBLE: 
       break;
 
-    case SGTELIB::CN:
+    case SGTELIB::CN: 
       break;
 
-    default:
+    default: 
       throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"Undefined type" );
   }
 
@@ -492,42 +492,42 @@ void SGTELIB::Surrogate_Parameters::display ( std::ostream & out ) const {
 
   switch (_type) {
 
-    case SGTELIB::SVN:
+    case SGTELIB::SVN: 
       throw SGTELIB::Exception ( __FILE__ , __LINE__ ,
         "Not implemented yet!" );
 
-    case SGTELIB::CN:
+    case SGTELIB::CN: 
       out << "Distance_type: " << distance_type_to_str(_distance_type) << std::endl;
       break;
 
-    case SGTELIB::KRIGING:
+    case SGTELIB::KRIGING: 
       out << "Covariance coefs: " << "\n";
       out << "Ridge: " << _ridge << std::endl;
       _covariance_coef.display(out);
       break;
 
-    case SGTELIB::PRS:
-    case SGTELIB::PRS_EDGE:
-    case SGTELIB::PRS_CAT:
+    case SGTELIB::PRS: 
+    case SGTELIB::PRS_EDGE: 
+    case SGTELIB::PRS_CAT: 
       out << "Degree: " << _degree << std::endl;
       out << "Ridge: " << _ridge << std::endl;
       out << "Distance_type: " << distance_type_to_str(_distance_type) << std::endl;
       break;
 
-    case SGTELIB::KS:
+    case SGTELIB::KS: 
       out << "Kernel type: " << _kernel_type << std::endl;
       out << "Kernel coef: " << _kernel_coef << std::endl;
       out << "Distance_type: " << distance_type_to_str(_distance_type) << std::endl;
       break;
 
-    case SGTELIB::RBF:
+    case SGTELIB::RBF: 
       out << "Kernel type: " << _kernel_type << std::endl;
       out << "Kernel coef: " << _kernel_coef << std::endl;
       out << "Distance_type: " << distance_type_to_str(_distance_type) << std::endl;
       out << "ridge: " << _ridge << std::endl;
       break;
 
-    case SGTELIB::LOWESS:
+    case SGTELIB::LOWESS: 
       out << "Kernel coef: " << _kernel_coef << std::endl;
       out << "Distance_type: " << distance_type_to_str(_distance_type) << std::endl;
       out << "degree: " << _degree << std::endl;
@@ -535,13 +535,13 @@ void SGTELIB::Surrogate_Parameters::display ( std::ostream & out ) const {
       out << "Preset: " << _preset << std::endl;
       break;
 
-    case SGTELIB::ENSEMBLE:
+    case SGTELIB::ENSEMBLE: 
       out << "Metric type: " << metric_type_to_str(_metric_type) << std::endl;
       out << "Weight type: " << weight_type_to_str(_weight_type) << std::endl;
       out << "Preset: " << _preset << std::endl;
       break;
 
-    default:
+    default: 
       throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"Undefined type" );
   }
 }//
@@ -559,18 +559,18 @@ void SGTELIB::Surrogate_Parameters::set_defaults ( void ) {
   _weight_status = SGTELIB::STATUS_MODEL_DEFINED;
   _ridge = 0.001;
   _kernel_coef = 1;
-  _kernel_type = SGTELIB::KERNEL_D1;
+  _kernel_type = SGTELIB::KERNEL_D1; 
   _covariance_coef = SGTELIB::Matrix("COVARIANCE_COEF",0,0);
   _weight = SGTELIB::Matrix("WEIGHT",0,0);
 
 
   switch (_type) {
     case SGTELIB::LINEAR:
-    case SGTELIB::TGP:
-    case SGTELIB::SVN:
+    case SGTELIB::TGP: 
+    case SGTELIB::SVN: 
       throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"Not implemented yet!" );
 
-    case SGTELIB::KRIGING:
+    case SGTELIB::KRIGING: 
       _distance_type = SGTELIB::DISTANCE_NORM2;
       _distance_type_status = SGTELIB::STATUS_FIXED;
       _ridge = 1e-16;
@@ -586,17 +586,17 @@ void SGTELIB::Surrogate_Parameters::set_defaults ( void ) {
       _covariance_coef_status = SGTELIB::STATUS_OPTIM;
       break;
 
-    case SGTELIB::PRS:
-    case SGTELIB::PRS_EDGE:
-    case SGTELIB::PRS_CAT:
+    case SGTELIB::PRS: 
+    case SGTELIB::PRS_EDGE: 
+    case SGTELIB::PRS_CAT: 
       _degree = 2;
       _degree_status = SGTELIB::STATUS_FIXED;
       _ridge = 0.001;
       _ridge_status = SGTELIB::STATUS_FIXED;
       break;
 
-    case SGTELIB::KS:
-      _kernel_type = SGTELIB::KERNEL_D1;
+    case SGTELIB::KS: 
+      _kernel_type = SGTELIB::KERNEL_D1; 
       _kernel_type_status = SGTELIB::STATUS_FIXED;
       _kernel_coef = 5;
       _kernel_coef_status = SGTELIB::STATUS_OPTIM;
@@ -604,7 +604,7 @@ void SGTELIB::Surrogate_Parameters::set_defaults ( void ) {
       _distance_type_status = SGTELIB::STATUS_FIXED;
       break;
 
-    case SGTELIB::RBF:
+    case SGTELIB::RBF: 
       _kernel_type = SGTELIB::KERNEL_I2;
       _kernel_type_status = SGTELIB::STATUS_FIXED;
       _kernel_coef = 1;
@@ -616,7 +616,7 @@ void SGTELIB::Surrogate_Parameters::set_defaults ( void ) {
       _preset = "I";
       break;
 
-    case SGTELIB::LOWESS:
+    case SGTELIB::LOWESS: 
       _kernel_coef = 1.0;
       _kernel_coef_status = SGTELIB::STATUS_OPTIM;
       _kernel_type = SGTELIB::KERNEL_D1;
@@ -630,8 +630,8 @@ void SGTELIB::Surrogate_Parameters::set_defaults ( void ) {
       _preset = "DGN";
       break;
 
-    case SGTELIB::ENSEMBLE:
-      _weight_type = WEIGHT_SELECT;
+    case SGTELIB::ENSEMBLE: 
+      _weight_type = WEIGHT_SELECT; 
       _weight_status = SGTELIB::STATUS_MODEL_DEFINED;
       _preset = "DEFAULT";
       break;
@@ -639,7 +639,7 @@ void SGTELIB::Surrogate_Parameters::set_defaults ( void ) {
     case SGTELIB::CN:
       break;
 
-    default:
+    default: 
       throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"Undefined type" );
   }
 
@@ -657,33 +657,33 @@ std::string SGTELIB::Surrogate_Parameters::get_string ( void ) const {
 
   switch (_type) {
     case SGTELIB::LINEAR:
-    case SGTELIB::TGP:
+    case SGTELIB::TGP: 
 
-    case SGTELIB::SVN:
+    case SGTELIB::SVN: 
       throw SGTELIB::Exception ( __FILE__ , __LINE__ , "Not implemented yet!" );
 
-    case SGTELIB::KRIGING:
+    case SGTELIB::KRIGING: 
       s += " DISTANCE_TYPE " + distance_type_to_str(_distance_type);
       break;
 
-    case SGTELIB::CN:
+    case SGTELIB::CN: 
       s += " DISTANCE_TYPE " + distance_type_to_str(_distance_type);
       break;
 
-    case SGTELIB::PRS:
-    case SGTELIB::PRS_EDGE:
-    case SGTELIB::PRS_CAT:
+    case SGTELIB::PRS: 
+    case SGTELIB::PRS_EDGE: 
+    case SGTELIB::PRS_CAT: 
       s += " DEGREE " + itos(_degree);
       s += " RIDGE " + dtos(_ridge);
       break;
 
-    case SGTELIB::KS:
+    case SGTELIB::KS: 
       s += " KERNEL_TYPE " + kernel_type_to_str(_kernel_type);
       s += " KERNEL_SHAPE " + dtos(_kernel_coef);
       s += " DISTANCE_TYPE " + distance_type_to_str(_distance_type);
       break;
 
-    case SGTELIB::RBF:
+    case SGTELIB::RBF: 
       s += " PRESET " + _preset;
       s += " KERNEL_TYPE " + kernel_type_to_str(_kernel_type);
       s += " KERNEL_SHAPE " + dtos(_kernel_coef);
@@ -691,7 +691,7 @@ std::string SGTELIB::Surrogate_Parameters::get_string ( void ) const {
       s += " RIDGE " + dtos(_ridge);
       break;
 
-    case SGTELIB::LOWESS:
+    case SGTELIB::LOWESS: 
       s += " DEGREE " + itos(_degree);
       s += " KERNEL_TYPE " + kernel_type_to_str(_kernel_type);
       s += " KERNEL_SHAPE " + dtos(_kernel_coef);
@@ -699,14 +699,14 @@ std::string SGTELIB::Surrogate_Parameters::get_string ( void ) const {
       s += " RIDGE " + dtos(_ridge);
       break;
 
-    case SGTELIB::ENSEMBLE:
+    case SGTELIB::ENSEMBLE: 
       s += " METRIC_TYPE " + metric_type_to_str(_metric_type);
       s += " WEIGHT_TYPE " + weight_type_to_str(_weight_type);
       s += " PRESET " + _preset;
       s += " DISTANCE_TYPE " + distance_type_to_str(_distance_type);
       break;
 
-    default:
+    default: 
       throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"Undefined type" );
   }
   return s;
@@ -722,11 +722,11 @@ std::string SGTELIB::Surrogate_Parameters::get_short_string ( void ) const {
 
   switch (_type) {
     case SGTELIB::LINEAR:
-    case SGTELIB::TGP:
-    case SGTELIB::SVN:
+    case SGTELIB::TGP: 
+    case SGTELIB::SVN: 
       throw SGTELIB::Exception ( __FILE__ , __LINE__ , "Not implemented yet!" );
 
-    case SGTELIB::KRIGING:
+    case SGTELIB::KRIGING: 
       if (_kernel_type != SGTELIB::KERNEL_D1){
         s += " " + kernel_type_to_str(_kernel_type);
       }
@@ -735,14 +735,14 @@ std::string SGTELIB::Surrogate_Parameters::get_short_string ( void ) const {
       }
       break;
 
-    case SGTELIB::PRS:
-    case SGTELIB::PRS_EDGE:
-    case SGTELIB::PRS_CAT:
+    case SGTELIB::PRS: 
+    case SGTELIB::PRS_EDGE: 
+    case SGTELIB::PRS_CAT: 
       s += " " + itos(_degree);
       if (_ridge>0) s+= " R "+dtos(_ridge);
       break;
 
-    case SGTELIB::KS:
+    case SGTELIB::KS: 
       s += " " + dtos(_kernel_coef);
       if (_kernel_type != SGTELIB::KERNEL_D1){
         s += " " + kernel_type_to_str(_kernel_type);
@@ -752,13 +752,13 @@ std::string SGTELIB::Surrogate_Parameters::get_short_string ( void ) const {
       }
       break;
 
-    case SGTELIB::CN:
+    case SGTELIB::CN: 
       if (_distance_type != SGTELIB::DISTANCE_NORM2){
         s += " " + distance_type_to_str(_distance_type);
       }
       break;
 
-    case SGTELIB::RBF:
+    case SGTELIB::RBF: 
       s += " " + dtos(_kernel_coef);
       if (_kernel_type != SGTELIB::KERNEL_D1){
         s += " " + kernel_type_to_str(_kernel_type);
@@ -771,7 +771,7 @@ std::string SGTELIB::Surrogate_Parameters::get_short_string ( void ) const {
       break;
 
 
-    case SGTELIB::LOWESS:
+    case SGTELIB::LOWESS: 
       s += " " + dtos(_kernel_coef);
       if (_distance_type != SGTELIB::DISTANCE_NORM2){
         s += " " + distance_type_to_str(_distance_type);
@@ -784,17 +784,20 @@ std::string SGTELIB::Surrogate_Parameters::get_short_string ( void ) const {
       s += " "+_preset;
       break;
 
-    case SGTELIB::ENSEMBLE:
+    case SGTELIB::ENSEMBLE: 
       s += " " + metric_type_to_str(_metric_type) + " " + weight_type_to_str(_weight_type);
       if (!streqi(_preset,"DEFAULT")) s += " "+_preset;
       break;
 
-    default:
+    default: 
       throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"Undefined type" );
   }
   return s;
 
 }//
+
+
+
 
 
 /*------------------------------------------------------------*/
@@ -852,7 +855,7 @@ void SGTELIB::Surrogate_Parameters::set_x ( const SGTELIB::Matrix& X ){
       for (int j=0 ; j<_covariance_coef.get_nb_cols() ; j++){
         _covariance_coef.set(0,j,X.get(k++));
       }
-    }
+    } 
 
     if (_weight_status == SGTELIB::STATUS_OPTIM){
       // For each BBO
@@ -863,7 +866,7 @@ void SGTELIB::Surrogate_Parameters::set_x ( const SGTELIB::Matrix& X ){
         }
       }
       _weight.normalize_cols();
-    }
+    } 
 
     if ( k != _nb_parameter_optimization ){
       std::cout << "k=" << k << "\n";
@@ -1040,7 +1043,7 @@ void SGTELIB::Surrogate_Parameters::get_x_bounds ( SGTELIB::Matrix * LB ,
           break;
       }
     }
-
+    
     if (error){
       throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"Error in definition of LB, UB or domain!" );
     }
@@ -1114,17 +1117,18 @@ bool SGTELIB::Surrogate_Parameters::check_x ( void ){
       error = true;
       std::cout << "Covariance_coef should have only one row.\n";
     }
-
+    
     if (error){
       throw SGTELIB::Exception ( __FILE__ , __LINE__ ,"Invalid X!" );
     }
 
     delete LB;
     delete UB;
-    delete [] domain;
+    delete [] domain; 
 
     return ( !  error);
 }//
+
 
 
 /*------------------------------------*/
@@ -1163,7 +1167,7 @@ void SGTELIB::Surrogate_Parameters::display_x ( std::ostream & out ){
     }
 
     out << "}\n";
-
+  
 }//
 
 
@@ -1172,9 +1176,9 @@ void SGTELIB::Surrogate_Parameters::display_x ( std::ostream & out ){
 /*----------------------------------------------*/
 double SGTELIB::Surrogate_Parameters::get_x_penalty ( void ){
   double pen = 0;
-
+  
   if (_degree_status        == SGTELIB::STATUS_OPTIM) pen += _degree;
-  if (_ridge_status         == SGTELIB::STATUS_OPTIM) pen += log(_ridge);
+  if (_ridge_status         == SGTELIB::STATUS_OPTIM) pen += log(_ridge); 
   if (_kernel_coef_status   == SGTELIB::STATUS_OPTIM) pen += log(_kernel_coef);
   if (_distance_type_status == SGTELIB::STATUS_OPTIM){
     switch (_distance_type){
@@ -1194,8 +1198,8 @@ double SGTELIB::Surrogate_Parameters::get_x_penalty ( void ){
   if (_covariance_coef_status == SGTELIB::STATUS_OPTIM){
     int v = _covariance_coef.get_nb_cols()/2;
     int ip=0;
-    for (int i=0 ; i<v ; i++){
-      // Exponent (the larger, the smoother)
+    for (int i=0 ; i<v ; i++){ 
+      // Exponent (the larger, the smoother) 
       pen -= _covariance_coef.get(ip++);
       // Factor (the smaller, the smoother)
       pen += log( _covariance_coef.get(ip++) );
@@ -1217,12 +1221,16 @@ double SGTELIB::Surrogate_Parameters::get_x_penalty ( void ){
 }
 
 
+
+
+
+
 /*-------------------------------------------------*/
 /*  update the dimension of _covariance_parameter  */
 /*  for Kriging models                             */
 /*-------------------------------------------------*/
-// The matrix containing the covariance coefficients, for Kriging models,
-// is initialized with 2 components (factor and exponent).
+// The matrix containing the covariance coefficients, for Kriging models, 
+// is initialized with 2 components (factor and exponent). 
 // In sgtelib 2.0.1, the factor and exponent are the same for all input variables.
 // However, it would be possible to use a different value of factor and exponent
 // for each variable (which is the case in most Kriging implementation).
@@ -1230,7 +1238,7 @@ double SGTELIB::Surrogate_Parameters::get_x_penalty ( void ){
 // and the instance Surrogate_Parameters is not able to retrieve the dimension of
 // the input space from either the training set or the model. The following method allows
 // the model to tell to the Surrogate_Parameters what must be the dimension of
-// the set of covariance coefficients.
+// the set of covariance coefficients. 
 // This function is not used for now, but might be used in future versions of sgtelib.
 void SGTELIB::Surrogate_Parameters::update_covariance_coef ( const int v ){
   // The input value v must be equal to 1 or to the number of variables.
@@ -1260,3 +1268,7 @@ void SGTELIB::Surrogate_Parameters::update_covariance_coef ( const int v ){
   // Add columns to _covariance_coef
   for (int i=0 ; i<v-v0 ; i++) _covariance_coef.add_cols(Add);
 }//
+
+
+
+

@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -53,10 +54,6 @@
 /*-------------------------*/
 void NOMAD::EvcMainThreadInfo::init()
 {
-    if (nullptr != _evaluator)
-    {
-        _computeSuccessType.setDefaultComputeSuccessTypeFunction(_evaluator->getEvalType());
-    }
 }
 
 
@@ -64,10 +61,6 @@ std::shared_ptr<NOMAD::Evaluator> NOMAD::EvcMainThreadInfo::setEvaluator(std::sh
 {
     auto previousEvaluator = _evaluator;
     _evaluator = evaluator;
-    if (nullptr != _evaluator)
-    {
-        _computeSuccessType.setDefaultComputeSuccessTypeFunction(_evaluator->getEvalType());
-    }
 
     return previousEvaluator;
 }
@@ -108,9 +101,9 @@ bool NOMAD::EvcMainThreadInfo::getOpportunisticEval() const
     {
         try
         {
-            return _evalContParams->getAttributeValue<bool>("OPPORTUNISTIC_EVAL");
+            return _evalContParams->getAttributeValue<bool>("EVAL_OPPORTUNISTIC");
         }
-        catch (NOMAD::ParameterToBeChecked & /* e */)
+        catch (NOMAD::ParameterToBeChecked&)
         {
             // Exception due to parameters being in process of checkAndComply().
             // While will loop - Retry
@@ -121,7 +114,7 @@ bool NOMAD::EvcMainThreadInfo::getOpportunisticEval() const
 
 void NOMAD::EvcMainThreadInfo::setOpportunisticEval(const bool opportunisticEval)
 {
-    _evalContParams->setAttributeValue("OPPORTUNISTIC_EVAL", opportunisticEval);
+    _evalContParams->setAttributeValue("EVAL_OPPORTUNISTIC", opportunisticEval);
     _evalContParams->checkAndComply();
 }
 
@@ -132,9 +125,9 @@ bool NOMAD::EvcMainThreadInfo::getUseCache() const
     {
         try
         {
-            return _evalContParams->getAttributeValue<bool>("USE_CACHE");
+            return _evalContParams->getAttributeValue<bool>("EVAL_USE_CACHE");
         }
-        catch (NOMAD::ParameterToBeChecked & /* e */)
+        catch (NOMAD::ParameterToBeChecked&)
         {
             // Exception due to parameters being in process of checkAndComply().
             // While will loop - Retry
@@ -145,7 +138,7 @@ bool NOMAD::EvcMainThreadInfo::getUseCache() const
 
 void NOMAD::EvcMainThreadInfo::setUseCache(const bool useCache)
 {
-    _evalContParams->setAttributeValue("USE_CACHE", useCache);
+    _evalContParams->setAttributeValue("EVAL_USE_CACHE", useCache);
     _evalContParams->checkAndComply();
 }
 
@@ -156,9 +149,9 @@ size_t NOMAD::EvcMainThreadInfo::getMaxBbEvalInSubproblem() const
     {
         try
         {
-            return _evalContParams->getAttributeValue<size_t>("MAX_BB_EVAL_IN_SUBPROBLEM");
+            return _evalContParams->getAttributeValue<size_t>("SUBPROBLEM_MAX_BB_EVAL");
         }
-        catch (NOMAD::ParameterToBeChecked & /* e */)
+        catch (NOMAD::ParameterToBeChecked&)
         {
             // Exception due to parameters being in process of checkAndComply().
             // While will loop - Retry
@@ -169,7 +162,31 @@ size_t NOMAD::EvcMainThreadInfo::getMaxBbEvalInSubproblem() const
 
 void NOMAD::EvcMainThreadInfo::setMaxBbEvalInSubproblem(const size_t maxBbEval)
 {
-    _evalContParams->setAttributeValue("MAX_BB_EVAL_IN_SUBPROBLEM", maxBbEval);
+    _evalContParams->setAttributeValue("SUBPROBLEM_MAX_BB_EVAL", maxBbEval);
+    _evalContParams->checkAndComply();
+}
+
+
+bool NOMAD::EvcMainThreadInfo::getSurrogateOptimization() const
+{
+    while (true)
+    {
+        try
+        {
+            return _evalContParams->getAttributeValue<bool>("EVAL_SURROGATE_OPTIMIZATION");
+        }
+        catch (NOMAD::ParameterToBeChecked&)
+        {
+            // Exception due to parameters being in process of checkAndComply().
+            // While will loop - Retry
+        }
+    }
+}
+
+
+void NOMAD::EvcMainThreadInfo::setSurrogateOptimization(const bool surrogateOptimization)
+{
+    _evalContParams->setAttributeValue("EVAL_SURROGATE_OPTIMIZATION", surrogateOptimization);
     _evalContParams->checkAndComply();
 }
 
@@ -184,10 +201,10 @@ void NOMAD::EvcMainThreadInfo::resetLapBbEval()
 }
 
 
-void NOMAD::EvcMainThreadInfo::resetSgteEval()
+void NOMAD::EvcMainThreadInfo::resetModelEval()
 {
-    _sgteEval = 0;
-    if (NOMAD::EvalMainThreadStopType::MAX_SGTE_EVAL_REACHED == _stopReason.get())
+    _modelEval = 0;
+    if (NOMAD::EvalMainThreadStopType::MAX_MODEL_EVAL_REACHED == _stopReason.get())
     {
         _stopReason.set(NOMAD::EvalMainThreadStopType::STARTED);
     }
@@ -212,7 +229,8 @@ const std::shared_ptr<NOMAD::EvalPoint>& NOMAD::EvcMainThreadInfo::getBestIncumb
 
 void NOMAD::EvcMainThreadInfo::setBestIncumbent(const std::shared_ptr<NOMAD::EvalPoint>& bestIncumbent)
 {
-    if (_computeSuccessType(bestIncumbent, _bestIncumbent) >= NOMAD::SuccessType::PARTIAL_SUCCESS)
+    NOMAD::ComputeSuccessType computeSuccess(_evaluator->getEvalType(), _computeType);
+    if (computeSuccess(bestIncumbent, _bestIncumbent) >= NOMAD::SuccessType::PARTIAL_SUCCESS)
     {
         _bestIncumbent = bestIncumbent;
     }
@@ -237,7 +255,7 @@ std::vector<NOMAD::EvalPoint> NOMAD::EvcMainThreadInfo::retrieveAllEvaluatedPoin
             warningShown = true;
         }
         OUTPUT_INFO_END
-        microsleep(10);
+        usleep(10);
     }
 
     allEvaluatedPoints.insert(allEvaluatedPoints.end(),

@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -43,8 +44,8 @@
 /*                                                                                 */
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
-#ifndef __NOMAD400_QUAD_MODEL_ITERATION__
-#define __NOMAD400_QUAD_MODEL_ITERATION__
+#ifndef __NOMAD_4_0_QUAD_MODEL_ITERATION__
+#define __NOMAD_4_0_QUAD_MODEL_ITERATION__
 
 #include "../../Algos/Iteration.hpp"
 #include "../../Algos/MeshBase.hpp"
@@ -78,10 +79,10 @@ private:
 public:
     /// Constructor
     /**
-     \param parentStep       The parent of this step -- \b IN.
-     \param frameCenter    The frame center -- \b IN.
-     \param k                              The iteration number -- \b IN.
-     \param madsMesh            Mads Mesh for trial point projection (can be null) -- \b IN.
+     \param parentStep      The parent of this step -- \b IN.
+     \param frameCenter     The frame center -- \b IN.
+     \param k               The iteration number -- \b IN.
+     \param madsMesh        Mads Mesh for trial point projection (can be null) -- \b IN.
      */
     explicit QuadModelIteration(const Step *parentStep,
                                 const std::shared_ptr<EvalPoint> &frameCenter,
@@ -111,8 +112,8 @@ public:
     /// Access to the training set
     const std::shared_ptr<SGTELIB::TrainingSet> getTrainingSet() const { return _trainingSet; }
 
-    /// Reimplement to have access to the frame center (can be undefined)
-    const std::shared_ptr<EvalPoint> getFrameCenter() const override { return _frameCenter ; }
+    /// Access to the frame center (can be undefined)
+    const std::shared_ptr<EvalPoint> getFrameCenter() const { return _frameCenter ; }
 
     /// Reimplement to have access to the mesh (can be null)
     const std::shared_ptr<MeshBase> getMesh() const override { return _madsMesh; }
@@ -132,4 +133,4 @@ protected:
 
 #include "../../nomad_nsend.hpp"
 
-#endif // __NOMAD400_QUAD_MODEL_ITERATION__
+#endif // __NOMAD_4_0_QUAD_MODEL_ITERATION__

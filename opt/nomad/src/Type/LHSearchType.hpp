@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -52,8 +53,8 @@
  */
 
 
-#ifndef __NOMAD400_LH_SEARCH_TYPE__
-#define __NOMAD400_LH_SEARCH_TYPE__
+#ifndef __NOMAD_4_0_LH_SEARCH_TYPE__
+#define __NOMAD_4_0_LH_SEARCH_TYPE__
 
 #include <string>
 #include <sstream>
@@ -92,12 +93,22 @@ public:
      \return The number of points for initial LH search.
      */
     size_t getNbInitial() const { return _lhsearch0; }
+    void setNbInitial(const size_t lhsearch0)
+    {
+        _lhsearch0 = lhsearch0; 
+        _enable = (_lhsearch0 != 0 || _lhsearch1 != 0);
+    }
 
     /// Number of secondary LH search points at each iteration
     /**
      \return The number of points for secondary LH searches.
      */
     size_t getNbIteration() const { return _lhsearch1; }
+    void setNbIteration(const size_t lhsearch1)
+    {
+        _lhsearch1 = lhsearch1;
+        _enable = (_lhsearch0 != 0 || _lhsearch1 != 0);
+    }
 
     /// Comparison operator \c ==.
     /**
@@ -116,6 +127,7 @@ public:
      */
     bool operator!= (const LHSearchType &lhst ) const { return !(*this == lhst); }
 
+
 };
 
 
@@ -129,4 +141,4 @@ inline std::ostream& operator<<(std::ostream& os, const LHSearchType &lhsearch)
 
 #include "../nomad_nsend.hpp"
 
-#endif  // __NOMAD400_LH_SEARCH_TYPE__
+#endif  // __NOMAD_4_0_LH_SEARCH_TYPE__

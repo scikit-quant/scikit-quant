@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -43,8 +44,8 @@
 /*                                                                                 */
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
-#ifndef __NOMAD400_POLL__
-#define __NOMAD400_POLL__
+#ifndef __NOMAD_4_0_POLL__
+#define __NOMAD_4_0_POLL__
 
 #include <set>
 
@@ -60,10 +61,10 @@
 class Poll: public Step, public IterationUtils
 {
 private:
-    std::shared_ptr<PollMethodBase> _pollMethod; ///< Unlike for search, a single Poll method is executed
+    std::vector<std::shared_ptr<PollMethodBase>> _pollMethods;  ///< Unlike for Search, Poll methods generate all their points and only then they are evaluated.
 #ifdef TIME_STATS
-    static double  _pollTime;        ///< Total time spent running the poll
-    static double  _pollEvalTime;    ///< Total time spent evaluating poll points
+    DLL_ALGO_API static double  _pollTime;      ///< Total time spent running the poll
+    DLL_ALGO_API static double  _pollEvalTime;  ///< Total time spent evaluating poll points
 #endif // TIME_STATS
 
 
@@ -74,7 +75,8 @@ public:
      */
     explicit Poll(const Step* parentStep)
       : Step(parentStep),
-        IterationUtils(parentStep)
+        IterationUtils(parentStep),
+        _pollMethods()
     {
         init();
     }
@@ -87,7 +89,13 @@ public:
         - snaping points (and directions) to bounds.
         - projecting points on mesh.
      */
-    void generateTrialPoints() override ;
+    void generateTrialPoints() override;
+
+    /// Generate N+1th point for ORTHO N+1 methods
+    /**
+      The trial point is obtained from the evaluations of the first N points.
+      */
+    void generateTrialPointsNPlus1(const NOMAD::EvalPointSet& inputTrialPoints);
 
 #ifdef TIME_STATS
     /// Time stats
@@ -120,8 +128,14 @@ private:
      */
     virtual void    endImp() override ;
 
+    /// Helper for start: get lists of Primary and Secondary Polls
+    void computePrimarySecondaryPollCenters(std::vector<EvalPoint> &primaryCenters, std::vector<EvalPoint> &secondaryCenters) const;
+
+    /// Helper for start: create poll methods
+    std::vector<std::shared_ptr<PollMethodBase>> createPollMethods(const bool isPrimary, const EvalPoint& frameCenter) const;
+
 };
 
 #include "../../nomad_nsend.hpp"
 
-#endif // __NOMAD400_POLL__
+#endif // __NOMAD_4_0_POLL__

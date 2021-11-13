@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -53,15 +54,38 @@
 
 
 // Constructor
-NOMAD::LHS::LHS(size_t n,
-                size_t p,
-                NOMAD::ArrayOfDouble lowerBound,
-                NOMAD::ArrayOfDouble upperBound)
+NOMAD::LHS::LHS(const size_t n,
+                const size_t p,
+                const NOMAD::ArrayOfDouble& lowerBound,
+                const NOMAD::ArrayOfDouble& upperBound,
+                const NOMAD::Point& frameCenter,
+                const NOMAD::ArrayOfDouble& deltaFrameSize,
+                const NOMAD::Double& scaleFactor)
 :   _n(n),
     _p(p),
     _lowerBound(lowerBound),
     _upperBound(upperBound)
 {
+    // Update undefined values of lower and upper bounds to use values based
+    // on deltaFrameSize.
+    // Based on the code in NOMAD 3, but slightly different.
+    // Do not use INF values for bounds, that will generate points with huge
+    // values. It is not elegant.
+    if (frameCenter.isComplete() && deltaFrameSize.isComplete() && scaleFactor.isDefined())
+    {
+        for (size_t i = 0; i < n; i++)
+        {
+            if (!_lowerBound[i].isDefined())
+            {
+                _lowerBound[i] = frameCenter[i] - 10.0 * deltaFrameSize[i] * scaleFactor;
+            }
+            if (!_upperBound[i].isDefined())
+            {
+                _upperBound[i] = frameCenter[i] + 10.0 * deltaFrameSize[i] * scaleFactor;
+            }
+        }
+    }
+
     if (!_lowerBound.isComplete())
     {
         std::string s = "LHS Lower bound needs to be completely defined. Values given: ";
@@ -97,13 +121,13 @@ std::vector<NOMAD::Point> NOMAD::LHS::Sample() const
     // 1 - Sample construction
     for (size_t j = 0; j < _p; j++)
     {
-        Point point(_n);
+        NOMAD::Point point(_n);
         for (size_t i = 0; i < _n; i++)
         {
             NOMAD::Double r_ij = RNG::rand(0,1);
             NOMAD::Double l_i = _lowerBound[i];
-            NOMAD::Double Pi_ij( Pi[i][j] );
-            NOMAD::Double pdouble( _p );
+            NOMAD::Double Pi_ij( (double)Pi[i][j] );
+            NOMAD::Double pdouble( (double)_p );
             NOMAD::Double u_i( _upperBound[i] );
 
             NOMAD::Double x_ij = l_i + (Pi_ij - r_ij) / pdouble * (u_i - l_i);

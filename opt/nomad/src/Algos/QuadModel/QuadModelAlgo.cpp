@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -55,7 +56,7 @@
 
 void NOMAD::QuadModelAlgo::init()
 {
-    setName("QuadModel");
+    setStepType(NOMAD::StepType::ALGORITHM_QUAD_MODEL);
     verifyParentNotNull();
 
     // Instantiate quad model initialization class
@@ -95,7 +96,10 @@ bool NOMAD::QuadModelAlgo::runImp()
         if (nullptr == barrier)
         {
             auto hMax = _runParams->getAttributeValue<NOMAD::Double>("H_MAX_0");
-            barrier = std::make_shared<NOMAD::Barrier>(hMax, NOMAD::SubproblemManager::getSubFixedVariable(this), NOMAD::EvalType::BB);
+            barrier = std::make_shared<NOMAD::Barrier>(hMax,
+                                                       NOMAD::SubproblemManager::getInstance()->getSubFixedVariable(this),
+                                                       NOMAD::EvalType::BB,
+                                                       NOMAD::EvcInterface::getEvaluatorControl()->getComputeType());
         }
 
         NOMAD::SuccessType megaIterSuccessType = NOMAD::SuccessType::NOT_EVALUATED;
@@ -123,7 +127,7 @@ bool NOMAD::QuadModelAlgo::runImp()
 
         // member _megaIteration is used for hot restart (read and write)
         // Update it here.
-        _megaIteration = std::make_shared<NOMAD::QuadModelMegaIteration>(this, k++, barrier, megaIterSuccessType);
+        _megaIteration = std::make_shared<NOMAD::QuadModelMegaIteration>(this, k, barrier, megaIterSuccessType);
 
     }
 

@@ -2,7 +2,7 @@
 /*  sgtelib - A surrogate model library for derivative-free optimization               */
 /*  Version 2.0.2                                                                      */
 /*                                                                                     */
-/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */
+/*  Copyright (C) 2012-2017  Sebastien Le Digabel - Ecole Polytechnique, Montreal      */ 
 /*                           Bastien Talgorn - McGill University, Montreal             */
 /*                                                                                     */
 /*  Author: Bastien Talgorn                                                            */
@@ -36,9 +36,9 @@ namespace SGTELIB {
   class Surrogate_KS : public SGTELIB::Surrogate {
 
   private:
-
+  
     virtual bool build_private (void) override;
-
+ 
     virtual void predict_private ( const SGTELIB::Matrix & XXs,
                                          SGTELIB::Matrix * ZZs) override;
 
@@ -49,7 +49,7 @@ namespace SGTELIB {
   public:
 
     // Constructor
-    Surrogate_KS ( SGTELIB::TrainingSet & trainingset ,
+    Surrogate_KS ( SGTELIB::TrainingSet & trainingset ,   
                    SGTELIB::Surrogate_Parameters param) ;
 
     // destructor:
@@ -61,3 +61,4 @@ namespace SGTELIB {
 }
 
 #endif
+

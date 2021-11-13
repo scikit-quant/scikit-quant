@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -50,6 +51,7 @@
 #include "../Algos/Iteration.hpp"
 #include "../Algos/MegaIteration.hpp"
 #include "../Algos/Step.hpp"
+#include "../Cache/CacheBase.hpp"
 #include "../Output/OutputQueue.hpp"
 
 /*-----------------------------------*/
@@ -87,7 +89,7 @@ void NOMAD::Step::userInterrupt(int signalValue)
     }
 
     // Set this stop reason to be tested by EvaluatorControl
-    NOMAD::AllStopReasons::set( NOMAD::BaseStopType::CTRL_C );
+    NOMAD::AllStopReasons::set(NOMAD::BaseStopType::HOT_RESTART);
 
     NOMAD::Step::_userInterrupt = true;
 }
@@ -186,7 +188,7 @@ void NOMAD::Step::AddOutputInfo(const std::string& s, bool isBlockStart, bool is
 {
     // NB. Set the output level as LEVEL_INFO by default.
     OUTPUT_INFO_START
-    NOMAD::OutputInfo outputInfo(_name, s, NOMAD::OutputLevel::LEVEL_INFO, isBlockStart, isBlockEnd);
+    NOMAD::OutputInfo outputInfo(getName(), s, NOMAD::OutputLevel::LEVEL_INFO, isBlockStart, isBlockEnd);
     NOMAD::OutputQueue::Add(std::move(outputInfo));
     OUTPUT_INFO_END
 }
@@ -196,7 +198,7 @@ void NOMAD::Step::AddOutputInfo(const std::string& s, NOMAD::OutputLevel outputL
 {
     if (NOMAD::OutputQueue::GoodLevel(outputLevel))
     {
-        NOMAD::OutputInfo outputInfo(_name, s, outputLevel);
+        NOMAD::OutputInfo outputInfo(getName(), s, outputLevel);
         NOMAD::OutputQueue::Add(std::move(outputInfo));
     }
 }
@@ -261,6 +263,13 @@ bool NOMAD::Step::run()
 }
 
 
+void NOMAD::Step::observe(const std::vector<NOMAD::EvalPoint>& evalPointList)
+{
+    // Should not be called if it is not reimplemented.
+    throw NOMAD::StepException(__FILE__,__LINE__,"Observe is not implemented in step " + getName(), this);
+}
+
+
 void NOMAD::Step::defaultStart()
 {
     // Test shared_ptr here because MainStep has no stopReason
@@ -285,7 +294,7 @@ void NOMAD::Step::verifyParentNotNull()
 {
     if (nullptr == _parentStep)
     {
-        std::string err = "Parent step for \"" + _name + "\" should not be NULL";
+        std::string err = "Parent step for \"" + getName() + "\" should not be NULL";
         throw NOMAD::Exception(__FILE__, __LINE__, err);
     }
 }
@@ -293,12 +302,12 @@ void NOMAD::Step::verifyParentNotNull()
 
 void NOMAD::Step::verifyGenerateAllPointsBeforeEval(const std::string& method, const bool expected) const
 {
-    bool actual = _runParams->getAttributeValue<bool>("GENERATE_ALL_POINTS_BEFORE_EVAL");
+    bool actual = _runParams->getAttributeValue<bool>("MEGA_SEARCH_POLL");
 
     if (expected != actual)
     {
         std::string err = "Error: " + method + " should only be called if ";
-        err += " parameter GENERATE_ALL_POINTS_BEFORE_EVAL is ";
+        err += " parameter MEGA_SEARCH_POLL is ";
         err += (expected ? "true" : "false");
         throw NOMAD::StepException(__FILE__,__LINE__,err, this);
     }
@@ -328,20 +337,22 @@ const NOMAD::Algorithm* NOMAD::Step::getRootAlgorithm() const
 }
 
 
+const NOMAD::Algorithm* NOMAD::Step::getFirstAlgorithm() const
+{
+    auto algo = isAnAlgorithm() ? dynamic_cast<const NOMAD::Algorithm*>(this)
+                                : getParentOfType<NOMAD::Algorithm*>();
+
+    return algo;
+}
+
+
 std::string NOMAD::Step::getAlgoName() const
 {
     std::string s = "";
-    if (isAnAlgorithm())
+    auto algo = getFirstAlgorithm();
+    if (nullptr != algo)
     {
-        s = getName();
-    }
-    else
-    {
-        auto algo = getParentOfType<NOMAD::Algorithm*>();
-        if (nullptr != algo)
-        {
-            s = algo->getName();
-        }
+        s = algo->getName();
     }
 
     // Append a space for easiness of use
@@ -351,39 +362,6 @@ std::string NOMAD::Step::getAlgoName() const
     }
 
     return s;
-}
-
-
-std::string NOMAD::Step::getAlgoComment() const
-{
-    std::string algoComment;
-    auto rootAlgo = getRootAlgorithm();
-    if (nullptr != rootAlgo)
-    {
-        algoComment = rootAlgo->getAlgoComment();
-    }
-
-    return algoComment;
-}
-
-
-void NOMAD::Step::setAlgoComment(const std::string& algoComment, const bool force)
-{
-    auto rootAlgo = const_cast<NOMAD::Algorithm*>(getRootAlgorithm());
-    if (nullptr != rootAlgo)
-    {
-        rootAlgo->setAlgoComment(algoComment, force);
-    }
-}
-
-
-void NOMAD::Step::resetPreviousAlgoComment(const bool force)
-{
-    auto rootAlgo = const_cast<NOMAD::Algorithm*>(getRootAlgorithm());
-    if (nullptr != rootAlgo)
-    {
-        rootAlgo->resetPreviousAlgoComment(force);
-    }
 }
 
 
@@ -398,20 +376,6 @@ const std::shared_ptr<NOMAD::MeshBase> NOMAD::Step::getIterationMesh() const
         mesh = iteration->getMesh();
     }
     return mesh;
-}
-
-
-// Get the frame center from the iteration ancestor.
-const std::shared_ptr<NOMAD::EvalPoint> NOMAD::Step::getIterationFrameCenter() const
-{
-    std::shared_ptr<NOMAD::EvalPoint> frameCenter = nullptr;
-    const NOMAD::Iteration* iteration = getParentOfType<NOMAD::Iteration*>();
-
-    if (nullptr != iteration)
-    {
-        frameCenter = iteration->getFrameCenter();
-    }
-    return frameCenter;
 }
 
 
@@ -448,8 +412,81 @@ const std::shared_ptr<NOMAD::Barrier> NOMAD::Step::getMegaIterationBarrier() con
 }
 
 
+bool NOMAD::Step::solHasFeas() const
+{
+    bool hasFeas = NOMAD::CacheBase::getInstance()->hasFeas(NOMAD::EvalType::BB);
+
+    if (!hasFeas)
+    {
+        // No feasible point in cache, but possibly in MegaIteration ancestor's barrier.
+        auto barrier = getMegaIterationBarrier();
+        if (nullptr != barrier)
+        {
+            for (auto xFeas : barrier->getAllXFeas())
+            {
+                if (xFeas.isEvalOk(NOMAD::EvalType::BB) && xFeas.isFeasible(NOMAD::EvalType::BB, NOMAD::ComputeType::STANDARD))
+                {
+                    hasFeas = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    return hasFeas;
+}
+
+
+bool NOMAD::Step::hasPhaseOneSolution() const
+{
+    bool hasPhaseOneSol = false;
+
+    // A phase one solution has a PHASE_ONE Eval with f = 0.
+    std::vector<NOMAD::EvalPoint> evalPointList;
+    NOMAD::CacheBase::getInstance()->find(NOMAD::EvalPoint::isPhaseOneSolution, evalPointList);
+
+    // Points have to verify hMax.
+    auto barrier = getMegaIterationBarrier();
+    NOMAD::Double hMax = (nullptr != barrier) ? barrier->getHMax() : _runParams->getAttributeValue<NOMAD::Double>("H_MAX_0");
+    for (auto evalPoint : evalPointList)
+    {
+        NOMAD::Double h;
+        if (NOMAD::EvalStatusType::EVAL_OK == evalPoint.getEvalStatus(NOMAD::EvalType::BB))
+        {
+            h = evalPoint.getH(NOMAD::EvalType::BB, NOMAD::ComputeType::STANDARD);
+        }
+        if (h.isDefined() && h <= hMax)
+        {
+            hasPhaseOneSol = true;
+            break;
+        }
+    }
+
+    if (!hasPhaseOneSol)
+    {
+        // No feasible point in cache, but possibly in MegaIteration ancestor's barrier.
+        if (nullptr != barrier)
+        {
+            auto xFeas = barrier->getFirstXFeas();
+            if (nullptr != xFeas && NOMAD::EvalStatusType::EVAL_OK == xFeas->getEvalStatus(NOMAD::EvalType::BB))
+            {
+                NOMAD::Double h = xFeas->getH(NOMAD::EvalType::BB, NOMAD::ComputeType::STANDARD);
+                hasPhaseOneSol = NOMAD::EvalPoint::isPhaseOneSolution(*xFeas) && (h <= hMax);
+            }
+        }
+    }
+
+    return hasPhaseOneSol;
+}
+
+
 void NOMAD::Step::hotRestartOnUserInterrupt()
 {
+    if (   !_stopReasons->testIf(NOMAD::BaseStopType::HOT_RESTART)
+        && _stopReasons->checkTerminate())
+    {
+        return;
+    }
     hotRestartBeginHelper();
 
     hotRestartEndHelper();
@@ -462,7 +499,7 @@ void NOMAD::Step::hotRestartBeginHelper()
         && !_runParams->getAttributeValue<bool>("HOT_RESTART_ON_USER_INTERRUPT"))
     {
         setUserTerminate();
-        _stopReasons->set( NOMAD::BaseStopType::CTRL_C);
+        _stopReasons->set(NOMAD::BaseStopType::CTRL_C);
     }
 }
 
@@ -502,7 +539,7 @@ void NOMAD::Step::debugShowCallStack() const
 
     // Show the steps in order, this is why we created the stack.
     std::cout << "Call stack:" << std::endl;
-    // NOTE: Using "i < stepNameStack.size()" as condition for loop, 
+    // NOTE: Using "i < stepNameStack.size()" as condition for loop,
     // since i is a size_t (it is always >= 0).
     for (size_t i = stepNameStack.size()-1; i < stepNameStack.size(); i--)
     {

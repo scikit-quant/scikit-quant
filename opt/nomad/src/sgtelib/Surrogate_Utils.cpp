@@ -27,20 +27,19 @@
 
 #include <string>
 #include <sstream>
-#include <math.h>
 
 
 /*-------------------------------*/
 /*     string comparison         */
 /*-------------------------------*/
 bool SGTELIB::streq  ( const std::string & s1 , const std::string & s2 ){
-  return !std::strcmp(s1.c_str(),s2.c_str());
+  return !std::strcmp(s1.c_str(),s2.c_str()); 
 }//
 
 bool SGTELIB::streqi ( const std::string & s1 , const std::string & s2 ){
   const std::string s1u = SGTELIB::toupper(s1);
   const std::string s2u = SGTELIB::toupper(s2);
-  return !std::strcmp(SGTELIB::toupper(s1).c_str(),s2u.c_str());
+  return !std::strcmp(SGTELIB::toupper(s1).c_str(),s2u.c_str()); 
 }//
 
 // Check if s is in S.
@@ -69,7 +68,7 @@ std::string SGTELIB::deblank ( const std::string & s_input ){
   while ( (i>0) && (s.at(i-1)==' ') ) {
     s.erase(i-1,1);
     i--;
-  }
+  }  
   // Remove double spaces
   i=1;
   while (i+2<s.length()){
@@ -84,12 +83,14 @@ std::string SGTELIB::deblank ( const std::string & s_input ){
 }//
 
 
+
+
 /*-------------------------------*/
 /*  test if a file is existing   */
 /*-------------------------------*/
 bool SGTELIB::exists (const std::string & file) {
-  struct stat buffer;
-  return (stat (file.c_str(), &buffer) == 0);
+  struct stat buffer;   
+  return (stat (file.c_str(), &buffer) == 0); 
 }//
 
 
@@ -211,14 +212,14 @@ std::string SGTELIB::btos (bool b ) {
 /*------------------------------------------*/
 double SGTELIB::stod ( const std::string & s ){
 /*------------------------------------------*/
-  double d = atof(s.c_str());
+  double d = atof(s.c_str()); 
   return d;
 }//
 
 /*------------------------------------------*/
 int SGTELIB::stoi ( const std::string & s ){
 /*------------------------------------------*/
-  int d = atoi(s.c_str());
+  int d = atoi(s.c_str()); 
   return d;
 }//
 
@@ -402,16 +403,18 @@ SGTELIB::distance_t SGTELIB::int_to_distance_type ( const int i ) {
       "int_to_distance_type: invalid integer "+itos(i) );
   }
   switch ( i ){
-    case 0: return SGTELIB::DISTANCE_NORM2;
-    case 1: return SGTELIB::DISTANCE_NORM1;
-    case 2: return SGTELIB::DISTANCE_NORMINF;
-    case 3: return SGTELIB::DISTANCE_NORM2_IS0;
-    case 4: return SGTELIB::DISTANCE_NORM2_CAT;
+    case 0: return SGTELIB::DISTANCE_NORM2; 
+    case 1: return SGTELIB::DISTANCE_NORM1; 
+    case 2: return SGTELIB::DISTANCE_NORMINF; 
+    case 3: return SGTELIB::DISTANCE_NORM2_IS0; 
+    case 4: return SGTELIB::DISTANCE_NORM2_CAT; 
     default:
       throw SGTELIB::Exception ( __FILE__ , __LINE__ ,
         "int_to_kernel_type: invalid integer "+itos(i) );
   }
 }//
+
+
 
 
 /*----------------------------------------------*/
@@ -448,7 +451,7 @@ double SGTELIB::normcdf ( double x , double mu , double sigma ) {
   if (sigma<-EPSILON){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ ,
              "Surrogate_Utils::normpdf: sigma is <0" );
-  }
+  } 
   // Apply lower bound to sigma
   if (APPROX_CDF){
     sigma = std::max(sigma,EPSILON);
@@ -481,7 +484,7 @@ double SGTELIB::normpdf ( double x , double mu , double sigma ) {
   if (sigma<EPSILON){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ ,
              "Surrogate_Utils::normpdf: sigma is NULL" );
-  }
+  } 
   return normpdf( (x-mu)/sigma )/sigma;
 }//
 
@@ -493,7 +496,7 @@ double SGTELIB::normei ( double fh , double sh , double f_min ) {
   if (sh<-EPSILON){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ ,
              "Surrogate_Utils::normei: sigma is <0" );
-  }
+  } 
   // Apply lower bound to sigma
   if (APPROX_CDF){
     sh = std::max(sh,EPSILON);
@@ -520,7 +523,7 @@ double SGTELIB::gammacdf(double x, double a, double b){
   if ( (a<=0) || (b<=0) ){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ ,
              "Surrogate_Utils::gammacdf: a or b is <0" );
-  }
+  }  
   if (x<EPSILON) return 0.0;
 
   return lower_incomplete_gamma(x/b,a);
@@ -535,11 +538,11 @@ double SGTELIB::gammacdfinv(double f, double a, double b){
   if ( (a<=0) || (b<=0) ){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ ,
              "Surrogate_Utils::gammacdfinv: a or b is <=0" );
-  }
+  }  
   if ( (f<0) || (f>1) ){
     throw SGTELIB::Exception ( __FILE__ , __LINE__ ,
              "Surrogate_Utils::gammacdfinv: f<0 or f>1" );
-  }
+  }  
   if (f==1.0) return INF;
   if (f==0.0) return 0;
 
@@ -592,7 +595,7 @@ double SGTELIB::lower_incomplete_gamma ( const double x, double p ){
     v += dv;
   }
   return v*f;
-
+    
 }//
 
 /*----------------------------------------*/

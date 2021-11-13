@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -43,8 +44,8 @@
 /*                                                                                 */
 /*  You can find information on the NOMAD software at www.gerad.ca/nomad           */
 /*---------------------------------------------------------------------------------*/
-#ifndef __NOMAD400_SEARCH__
-#define __NOMAD400_SEARCH__
+#ifndef __NOMAD_4_0_SEARCH__
+#define __NOMAD_4_0_SEARCH__
 
 #include "../../Algos/Mads/SearchMethodBase.hpp"
 
@@ -56,8 +57,8 @@ class Search final : public Step , public IterationUtils
 private:
     std::vector<std::shared_ptr<SearchMethodBase>> _searchMethods;
 #ifdef TIME_STATS
-    static std::vector<double>  _searchTime;        ///< Total time spent running each search
-    static std::vector<double>  _searchEvalTime;    ///< Total time spent evaluating search points
+    DLL_ALGO_API static std::vector<double> _searchTime;        ///< Total time spent running each search
+    DLL_ALGO_API static std::vector<double> _searchEvalTime;    ///< Total time spent evaluating search points
 #endif // TIME_STATS
 
 public:
@@ -77,7 +78,7 @@ public:
 
     /**
      - Generate new points to evaluate. Use all enabled search methods.
-     - To be used only when parameter GENERATE_ALL_POINTS_BEFORE_EVAL is true.
+     - To be used only when parameter MEGA_SEARCH_POLL is true.
      */
     void generateTrialPoints() override;
 
@@ -93,7 +94,7 @@ private:
 
     /// Implementation of the start task.
     /**
-     Just perform a sanity check on GENERATE_ALL_POINTS_BEFORE_EVAL that must be false.
+     Just perform a sanity check on MEGA_SEARCH_POLL that must be false.
      */
     virtual void startImp() override;
 
@@ -118,4 +119,5 @@ private:
 
 #include "../../nomad_nsend.hpp"
 
-#endif // __NOMAD400_SEARCH__
+#endif // __NOMAD_4_0_SEARCH__
+

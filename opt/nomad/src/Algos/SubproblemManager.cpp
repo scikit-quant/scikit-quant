@@ -1,19 +1,20 @@
 /*---------------------------------------------------------------------------------*/
 /*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct Search -                */
 /*                                                                                 */
-/*  NOMAD - Version 4.0.0 has been created by                                      */
+/*  NOMAD - Version 4 has been created by                                          */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  The copyright of NOMAD - version 4.0.0 is owned by                             */
+/*  The copyright of NOMAD - version 4 is owned by                                 */
 /*                 Charles Audet               - Polytechnique Montreal            */
 /*                 Sebastien Le Digabel        - Polytechnique Montreal            */
 /*                 Viviane Rochon Montplaisir  - Polytechnique Montreal            */
 /*                 Christophe Tribes           - Polytechnique Montreal            */
 /*                                                                                 */
-/*  NOMAD v4 has been funded by Rio Tinto, Hydro-Québec, NSERC (Natural            */
-/*  Sciences and Engineering Research Council of Canada), InnovÉÉ (Innovation      */
-/*  en Énergie Électrique) and IVADO (The Institute for Data Valorization)         */
+/*  NOMAD 4 has been funded by Rio Tinto, Hydro-Québec, Huawei-Canada,             */
+/*  NSERC (Natural Sciences and Engineering Research Council of Canada),           */
+/*  InnovÉÉ (Innovation en Énergie Électrique) and IVADO (The Institute            */
+/*  for Data Valorization)                                                         */
 /*                                                                                 */
 /*  NOMAD v3 was created and developed by Charles Audet, Sebastien Le Digabel,     */
 /*  Christophe Tribes and Viviane Rochon Montplaisir and was funded by AFOSR       */
@@ -46,11 +47,13 @@
 
 #include "../Algos/SubproblemManager.hpp"
 
-// Initialize static variables
-std::map<const NOMAD::Algorithm*, const NOMAD::Subproblem> NOMAD::SubproblemManager::_map = std::map<const NOMAD::Algorithm*, const NOMAD::Subproblem>();
+// Initialize singleton
+std::unique_ptr<NOMAD::SubproblemManager> NOMAD::SubproblemManager::_single=nullptr;
+
+
 #ifdef _OPENMP
 omp_lock_t NOMAD::SubproblemManager::_mapLock;
-#endif // _OPENMP
+#endif
 
 void NOMAD::SubproblemManager::init()
 {
@@ -66,6 +69,7 @@ void NOMAD::SubproblemManager::destroy()
     omp_destroy_lock(&_mapLock);
 #endif // _OPENMP
 }
+
 
 
 void NOMAD::SubproblemManager::addSubproblem(const NOMAD::Algorithm* algo, const NOMAD::Subproblem& subproblem)
@@ -155,7 +159,7 @@ const NOMAD::Subproblem& NOMAD::SubproblemManager::getSubproblem(const NOMAD::St
 #endif // _OPENMP
         return sub;
     }
-    catch (const std::out_of_range& /* oor */)
+    catch (const std::out_of_range&)
     {
         std::cerr << "Error: Subproblem not found for Algorithm " << algo->getName() << std::endl;
     }
