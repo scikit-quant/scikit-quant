@@ -462,11 +462,7 @@ class Model(object):
 
         rng = np.random.default_rng(42)     # for reproducibility while debugging
         initial_amplitudes = np.array(-0.05+0.1*rng.random(size=npar))
-        if transform == 'bravyi-kitaev' and 3 < npar:
-          # TODO: figure out why some parameters rotate out of the [-1, 1] range for BK
-            bounds = np.array([(-2.0, 2.0)]*npar)
-        else:
-            bounds = np.array([(-1.0, 1.0)]*npar)
+        bounds = np.array([(-1.0, 1.0)]*npar)
 
         return initial_amplitudes, bounds
 
@@ -484,7 +480,7 @@ class Model(object):
         """
 
         try:
-            return self._precalc[transform][(n_electrons_up, n_electrons_down)]
+            return self._precalc[(n_electrons_up, n_electrons_down)]
         except KeyError:
             pass
 
@@ -493,29 +489,25 @@ class Model(object):
 
         return None
 
-small_model  = Model(2, 1, t=1.0, U=2.0, precalc={
-         'jordan-wigner' : {
-                             (1, 0) : np.array([-0.78536064,  0.89994575]),
-                             (0, 1) : np.array([-0.78536609, -0.25647772]),
-                             (1, 1) : np.array([-0.86866234,  0.18526051]),
-                           },
-         'bravyi-kitaev' : {
-                             (1, 0) : np.array([-0.7854,  0.53632]),
-                             (0, 1) : np.array([-0.7854, -0.50172]),
-                             (1, 1) : np.array([ 0.6416,  0.92986]),
-                           }
+small_model  = Model(2, 1, t=1.0, U=2.0,
+    precalc={
+        (1, 0) : np.array([-0.78536064,  0.89994575]),
+        (0, 1) : np.array([-0.78536609, -0.25647772]),
+        (1, 1) : np.array([-0.86866234,  0.18526051]),
     })
-medium_model = Model(2, 2, t=1.0, U=2.0, precalc={
-         'jordan-wigner' : {
-                             (1, 1) : np.array([-0.63056742, -0.6305499, -0.64510593,
-                                                 0.06781304,  0.0677381,  0.08487825,
-                                                -0.01482646,  0.0412383,  0.04128577]),
-                           },
-         'bravyi-kitaev' : {
-                             (1, 1) : np.array([ 0.95326314,  0.9611596,  1.00325162,
-                                                -0.17561077, -0.3415961, -0.12034448,
-                                                 1.76879298, 1.15557886,  1.56209456]),
-                           }
+
+medium_model = Model(2, 2, t=1.0, U=2.0,
+    precalc={
+        (1, 1) : np.array([ 0.22048886, 0.22048479,  0.27563475,
+                            0.22178354, 0.22177972,  0.24547588,
+                            0.6276739,  0.60108877,  0.60108406]),
+        (2, 2) : np.array([-0.81965099,  0.4858986 , -0.4858995,  0.76993761,
+                            0.10298091, -0.03832318, -0.03832113, 0.64542339,
+                            0.00399792, -0.00399722,  0.11716964, 0.32792626,
+                           -0.06136483,  0.06136485]),
+        (3, 3) : np.array([ 0.64501004, -0.6305074 , -0.63050858,
+                            0.08473441,  0.06774534,  0.06774663,
+                           -0.0411103 , -0.0411079 , -0.01508739])
     })
 
 
