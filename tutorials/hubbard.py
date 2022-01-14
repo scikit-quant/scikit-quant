@@ -98,11 +98,12 @@ class EnergyObjective:
         self._trotter_steps = trotter_steps
 
       # Create the simulator
-        self._expectation = qk_opflow.PauliExpectation()
         if shots <= 0 and noise_model is None:
             self._simulator = None
             self._meas_components = None
+            self._expectation = qk_opflow.MatrixExpectation()
         else:
+            self._expectation = qk_opflow.PauliExpectation()
             if noise_model is None:
                 backend = qk.Aer.get_backend('qasm_simulator')
             else:
@@ -272,8 +273,9 @@ class EnergyObjective:
       # calculate the energy from its components
         if self._simulator is None:
           # exact calculation
+            ev_mat = trotterized_ev_op.to_matrix()
             expect_op = self._expectation.convert(
-                            self._meas_op @ trotterized_ev_op @ self._state_in
+                            self._meas_op @  qk_opflow.MatrixOp(ev_mat) @ self._state_in
                         )
             energy = np.real(expect_op.eval())
 
