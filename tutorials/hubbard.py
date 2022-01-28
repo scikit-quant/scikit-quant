@@ -10,6 +10,10 @@ import uccsd_evolution
 import scipy.linalg as spla
 import warnings
 
+# allow large matrices from to_matrix() calls
+import qiskit.utils.algorithm_globals as qk_ag
+qk_ag.massive = True
+
 try:
     from hubbard_bqskit import BQSKit_Hubbard_Optimizer
 except ImportError:
@@ -21,6 +25,7 @@ __all__ = [
     'hamiltonian_qiskit',
     'small_model',
     'medium_model',
+    'large_model',
     'clear_circuit_cache',
     'get_cached_circuit',
 ]
@@ -453,16 +458,17 @@ class Model(object):
         if good:
             at_opt = self.optimal(n_electrons_up, n_electrons_down, transform)
             if at_opt is not None:
-                close = np.round(at_opt, npar <= 4 and 1 or 2)
+                close = np.round(at_opt, 1)
                 bounds = np.zeros((len(close), 2))
-                bounds[:,0] = np.subtract(close, 0.1)
-                bounds[:,1] = np.add(     close, 0.1)
+                bounds[:,0] = np.subtract(close, 0.2)
+                bounds[:,1] = np.add(     close, 0.2)
                 return close, bounds
 
         if npar <= 0:
             raise RuntimeError("not an optimizable configuration (%d parameters)" % npar)
 
         rng = np.random.default_rng(42)     # for reproducibility while debugging
+
         initial_amplitudes = np.array(-0.05+0.1*rng.random(size=npar))
         bounds = np.array([(-1.0, 1.0)]*npar)
 
@@ -500,9 +506,9 @@ small_model  = Model(2, 1, t=1.0, U=2.0,
 
 medium_model = Model(2, 2, t=1.0, U=2.0,
     precalc={
-        (1, 1) : np.array([ 0.22048886, 0.22048479,  0.27563475,
-                            0.22178354, 0.22177972,  0.24547588,
-                            0.6276739,  0.60108877,  0.60108406]),
+        (1, 1) : np.array([ 0.22048886,  0.22048479,  0.27563475,
+                            0.22178354,  0.22177972,  0.24547588,
+                            0.6276739 ,  0.60108877,  0.60108406]),
         (2, 2) : np.array([-0.81965099,  0.4858986 , -0.4858995,  0.76993761,
                             0.10298091, -0.03832318, -0.03832113, 0.64542339,
                             0.00399792, -0.00399722,  0.11716964, 0.32792626,
@@ -512,8 +518,38 @@ medium_model = Model(2, 2, t=1.0, U=2.0,
                            -0.0411103 , -0.0411079 , -0.01508739])
     })
 
+large_model = Model(3, 2, t=1.0, U=2.0,
+    precalc={
+        (1, 1) : np.array([ 0.13384179,  0.13445714,  0.1446175 ,  0.16050653,  0.16130275,
+                            0.13364081,  0.13282508,  0.13650198,  0.13960108,  0.14078738,
+                            0.32643849,  0.35181268,  0.34270857,  0.35643588,  0.35360598,
+                            0.35907086,  0.34189946,  0.33513164,  0.33339053,  0.3411722]),
+        (2, 2) : np.array([-4.57920644e-01, -4.61419403e-01, -6.57899318e-02,  7.93888419e-02,
+                           -8.65634971e-02,  9.87970428e-02, -8.13982943e-02,  8.24315581e-02,
+                            3.77627607e-02,  4.14194801e-02, -9.08931646e-02, -8.87684268e-02,
+                           -8.92688172e-02, -8.39407274e-02, -8.83753715e-02, -8.47307651e-02,
+                            5.96955318e-02, -8.92369938e-03, -1.07209493e-03, -8.30639064e-03,
+                            4.23285167e-04,  1.78879006e-02,  2.69528053e-04,  1.00087302e-05,
+                           -9.75233250e-03, -1.37037750e-03, -1.00443844e-02, -1.40741029e-04,
+                            2.14026225e-02,  2.36569587e-01, -2.60404901e-01,  3.06994869e-01,
+                           -2.60530286e-01,  3.03955480e-01,  3.02999992e-01, -2.59005011e-01,
+                            3.01388932e-01, -2.61784227e-01,  2.34998017e-01, -2.58743073e-01,
+                            3.00655017e-01,  3.02408882e-01, -2.56461354e-01,  2.35087039e-01]),
+        (3, 3) : np.array([-0.66699978, -0.25536666,  0.77907868,  0.18521605, -0.73275829,
+                            0.59235898,  0.2       , -0.72737572,  0.57299387,  0.0893265 ,
+                            0.03390347,  0.06890533, -0.00254022,  0.03280029,  0.05021135,
+                            0.08946359,  0.10889121,  0.10580759, -0.02570092, -0.05223403,
+                           -0.07183811,  0.02269466,  0.01530486,  0.00861826, -0.05007538,
+                            0.00736431,  0.02971546,  0.03081209, -0.00115368,  0.04648971,
+                           -0.04806533,  0.06553242,  0.06578076,  0.00609511,  0.05574523,
+                            0.02195071,  0.01922078,  0.06471269,  0.06555198,  0.00442612,
+                            0.01215996, -0.02131443,  0.06236088, -0.0710537 ,  0.01032675,
+                            0.05199316, -0.06420533,  0.13325282, -0.04225769,  0.11793895,
+                            0.02779596, -0.1808529 , -0.00113323,  0.06653841])
+    })
 
-def exact(hubbard_hamiltonian, n_electrons_up, n_electrons_down):
+
+def exact(hubbard_hamiltonian, n_electrons_up, n_electrons_down, return_state=False):
     """Return the exact solution for the given Hubbard Model Hamiltonian"""
 
     n_qubits = hubbard_hamiltonian.num_qubits
@@ -550,6 +586,10 @@ def exact(hubbard_hamiltonian, n_electrons_up, n_electrons_down):
         if not round(n_down, 3).is_integer() or not round(n_down) == n_electrons_down:
             continue
 
-        return float(np.real(v.T.dot(hm_matrix).dot(v)))
+        # energy = float(np.real(v.T.dot(hm_matrix).dot(v)))
+        energy = eigenvalues[i]
+        if return_state:
+            return energy, v
+        return energy
 
     raise RuntimeError('configuration %d up, %d down not found' % (n_electrons_up, n_electrons_down))
