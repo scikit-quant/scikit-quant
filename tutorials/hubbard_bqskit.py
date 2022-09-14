@@ -10,8 +10,7 @@ from bqskit.ir import Circuit
 from bqskit.ir.lang.qasm2.qasm2 import OPENQASM2Language
 from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost import HilbertSchmidtCost
-from qsearch.gates import CNOTGate
-from bqskit.passes import OptimizedLEAPPass
+from bqskit.ir.gates import CNOTGate
 from bqskit.passes.control import WhileLoopPass, ForEachBlockPass
 from bqskit.passes.control.predicates.count import GateCountPredicate
 from bqskit.passes.partitioning.cluster import ClusteringPartitioner
