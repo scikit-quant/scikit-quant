@@ -4,8 +4,10 @@ import numpy as np
 import openfermion as of
 import os
 import qiskit as qk
+import qiskit.converters as qk_cnv
 import qiskit.opflow as qk_opflow
 import qiskit.quantum_info as qk_qi
+import qiskit.transpiler as qk_tp
 import uccsd_evolution
 import scipy.linalg as spla
 import warnings
@@ -26,6 +28,7 @@ __all__ = [
     'small_model',
     'medium_model',
     'large_model',
+    'Xlarge_model',
     'clear_circuit_cache',
     'get_cached_circuit',
 ]
@@ -44,22 +47,17 @@ def get_cached_circuit():
    return _cached_circuit
 
 
-class EnergyObjective:
-    def __init__(self, hamiltonian, n_electrons_up, n_electrons_down,
-                 trotter_steps=2, noise_model=None, shots=-1,
-                 run_bqskit=False, save_evals=None):
+class _HamiltonianMixin:
+    """"Helper to abstract commonality of Hamiltonian-based Objective classes"""
+
+    def __init__(self, hamiltonian, n_electrons_up, n_electrons_down):
         """\
-        Create an energy estimater for the given Hamiltonian
+        Helper to abstract commonality of Hamiltonian-based Objective classes
 
         Args:
             hamiltonian(opflow): Hamiltonian operator
             n_electrons_up(int): number of spin-up electrons in the physical system
             n_electrons_down(int): number of spin-down electrons in the physical system
-            trotter_steps(int): number of Trotter time slices for the evolution
-            noise_model(NoiseModel): Qiskit noise model to apply
-            shots(int): number of shots to sample and average over
-            run_bqskit(bool): whether to run the bqskit stack on the evolution operator
-            save_evals(str): file name to store evaluations or None
         """
 
         self._hamiltonian = hamiltonian
@@ -96,17 +94,89 @@ class EnergyObjective:
 
         self._state_in = qk_opflow.CircuitStateFn(reg)
 
+
+class _UCCSDMixin:
+    """Helper to abstract commonality of Objective classes using UCCSD evolution"""
+
+    def npar(self):
+        """\
+        Number of independent parameters for the optimizer
+
+        Returns:
+           npar(int): number of parameters for the optimizer
+        """
+
+        return uccsd_evolution.singlet_paramsize(self._n_qubits, self._n_electrons)
+
+    def generate_evolution_op(self, packed_amplitudes, num_time_slices=0, trotter_mode='suzuki'):
+        """\
+        Construct the evolution operator
+
+        Returns:
+            evolution_op (opflow): (trotterized, optimized) evolution operator
+        """
+
+      # Build the state preparation evolution operator
+        if self._fermion_transform == 'bravyi-kitaev':
+            def bk_with_qubits(fop):
+                return of.transforms.bravyi_kitaev(fop, self._n_qubits)
+            fermion_transform = bk_with_qubits
+        elif self._fermion_transform == 'jordan-wigner':
+            fermion_transform = of.transforms.jordan_wigner
+
+        evolution_op = uccsd_evolution.singlet_evolution(
+                           packed_amplitudes, self._n_qubits, self._n_electrons,
+                           fermion_transform=fermion_transform)
+
+      # Trotterize the evolution operator flow to be able to construct a circuit (the
+      # choice of 2 slices was empirically determined; it may not fit all cases)
+        if 0 < num_time_slices:
+            trotterized_ev_op = qk_opflow.PauliTrotterEvolution(
+                trotter_mode=trotter_mode, reps=num_time_slices).convert(evolution_op)
+
+          # Run bqskit circuit optimizers as requested (only works on the trotterized
+          # evolution operator as the normal time evolution is not unitary)
+            if self.bqskit_opt is not None:
+                trotterized_ev_op = self.bqskit_opt.optimize_evolution(trotterized_ev_op)
+
+            evolution_op = trotterized_ev_op
+
+        return evolution_op
+
+
+class EnergyObjective(_HamiltonianMixin, _UCCSDMixin):
+    def __init__(self, hamiltonian, n_electrons_up, n_electrons_down,
+                 trotter_steps=1, trotter_mode='suzuki', noise_model=None, shots=-1,
+                 run_bqskit=False, save_evals=None):
+        """\
+        Create an energy estimater for the given Hamiltonian
+
+        Args:
+            hamiltonian(opflow): Hamiltonian operator
+            n_electrons_up(int): number of spin-up electrons in the physical system
+            n_electrons_down(int): number of spin-down electrons in the physical system
+            trotter_steps(int): number of Trotter time slices for the evolution
+            noise_model(NoiseModel): Qiskit noise model to apply
+            shots(int): number of shots to sample and average over
+            run_bqskit(bool): whether to run the bqskit stack on the evolution operator
+            save_evals(str): file name to store evaluations or None
+        """
+
+        super().__init__(hamiltonian, n_electrons_up, n_electrons_down)
+
       # Create an observable from the Hamiltonian
-        self._meas_op = qk_opflow.StateFn(self._hamiltonian, is_measurement=True)
+        meas_op = qk_opflow.StateFn(self._hamiltonian, is_measurement=True)
 
       # Number of Trotter steps to use in the evolution operator (see __call__)
         self._trotter_steps = trotter_steps
+        self._trotter_mode  = trotter_mode
 
       # Create the simulator
         if shots <= 0 and noise_model is None:
             self._simulator = None
             self._meas_components = None
             self._expectation = qk_opflow.MatrixExpectation()
+            self._meas_op = self._expectation.convert(meas_op)
         else:
             self._expectation = qk_opflow.PauliExpectation()
             if noise_model is None:
@@ -136,14 +206,19 @@ class EnergyObjective:
                   # if not simulating sampling, use the AerPauliExpectation, which computes
                   # the expectation value given the noise (effectively "infinite" sampling);
                   # it also passes a special "instruction" to the sampler to ignore shots
+                  # TODO: this approach negates measurement noise, which it shouldn't if there
+                  # is a bias! At least add a warning?
                      self._expectation = qk_opflow.AerPauliExpectation()
-                     shots = 2**20          # i.e. large enough not to contribute
+                     shots = 8192   # only matters if we care about (estimated) variance
+                     self._is_sampling = False
+                else:
+                     self._is_sampling = True
 
             self._simulator = qk_opflow.CircuitSampler(backend=backend)
             self._simulator.quantum_instance.run_config.shots = shots
 
           # split measurement components to prevent fake coherent errors
-            primitive = self._meas_op.primitive
+            primitive = meas_op.primitive
             try:
                 while 1: primitive = primitive.primitive
             except AttributeError:
@@ -151,8 +226,11 @@ class EnergyObjective:
 
             self._meas_components = list()
             for ops, coeff in primitive.to_list():
-                self._meas_components.append(qk_opflow.StateFn(
-                    qk_opflow.PauliOp(qk.quantum_info.Pauli(ops), coeff), is_measurement=True))
+                self._meas_components.append(self._expectation.convert(qk_opflow.StateFn(
+                     qk_opflow.PauliOp(qk.quantum_info.Pauli(ops), coeff), is_measurement=True)
+                ))
+
+            self._meas_op = self._expectation.convert(meas_op)
 
       # Flag to toggle running the BQSKit optimizer on the evolution operator (see __call__)
         self.bqskit_opt = BQSKit_Hubbard_Optimizer(run_bqskit=='full') if run_bqskit else None
@@ -166,53 +244,6 @@ class EnergyObjective:
                 pass
         else:
             self._save_evals = None
-
-    def npar(self):
-        """\
-        Number of independent parameters for the optimizer
-
-        Returns:
-           npar(int): number of parameters for the optimizer
-        """
-
-        return uccsd_evolution.singlet_paramsize(self._n_qubits, self._n_electrons)
-
-    def generate_evolution_op(self, packed_amplitudes):
-        """\
-        Construct the evolution operator
-
-        Returns:
-            trotterized_ev_op (opflow): (trotterized, optimized) evolution operator
-        """
-
-      # Build the state preparation evolution operator
-        if self._fermion_transform == 'bravyi-kitaev':
-            def bk_with_qubits(fop):
-                return of.transforms.bravyi_kitaev(fop, self._n_qubits)
-            fermion_transform = bk_with_qubits
-        elif self._fermion_transform == 'jordan-wigner':
-            fermion_transform = of.transforms.jordan_wigner
-
-        evolution_op = uccsd_evolution.singlet_evolution(
-                           packed_amplitudes, self._n_qubits, self._n_electrons,
-                           fermion_transform=fermion_transform)
-
-      # Trotterize the evolution operator flow to be able to construct a circuit (the
-      # choice of 2 slices was empirically determined; it may not fit all cases)
-        if 0 < self._trotter_steps:
-            num_time_slices = self._trotter_steps
-            trotterized_ev_op = qk_opflow.PauliTrotterEvolution(
-                trotter_mode='trotter', reps=num_time_slices).convert(evolution_op)
-
-          # Run bqskit circuit optimizers as requested (only works on the trotterized
-          # evolution operator as the normal time evolution is not unitary)
-            if self.bqskit_opt is not None:
-                trotterized_ev_op = self.bqskit_opt.optimize_evolution(trotterized_ev_op)
-
-        else:
-            trotterized_ev_op = evolution_op
-
-        return trotterized_ev_op
 
     def generate_circuit(self, packed_amplitudes):
         """\
@@ -234,15 +265,14 @@ class EnergyObjective:
         """
 
       # Build the state preparation evolution operator
-        trotterized_ev_op = self.generate_evolution_op(packed_amplitudes)
+        evolution_op = self.generate_evolution_op(
+            packed_amplitudes, self._trotter_steps, self._trotter_mode)
 
       # Combine with initializer and evolution
-        expect_op = self._expectation.convert(
-                            trotterized_ev_op @ self._state_in
-                    )
+        expect_op = self._expectation.convert(evolution_op @ self._state_in)
 
       # Convert to QuantumCircuit
-        circuit = (trotterized_ev_op @ self._state_in).to_circuit()
+        circuit = (evolution_op @ self._state_in).to_circuit()
 
         return circuit
 
@@ -265,23 +295,21 @@ class EnergyObjective:
       # Build the state preparation evolution operator
         global _cached_circuit
         if use_cached_circuit and _cached_circuit is not None:
-            trotterized_ev_op = _cached_circuit
+            evolution_op = _cached_circuit
         elif isinstance(use_cached_circuit, qk_opflow.operator_base.OperatorBase):
-            trotterized_ev_op = use_cached_circuit
+            evolution_op = use_cached_circuit
         else:
-            trotterized_ev_op = self.generate_evolution_op(packed_amplitudes)
+            evolution_op = self.generate_evolution_op(
+                packed_amplitudes, self._trotter_steps, self._trotter_mode)
             if use_cached_circuit:
-                _cached_circuit = trotterized_ev_op
+                _cached_circuit = evolution_op
 
       # Run full simulation. If there are no errors, take a short cut and evaluate
       # the hamiltonian directly. Otherwise, to prevent unrealistic coherent errors,
       # calculate the energy from its components
         if self._simulator is None:
           # exact calculation
-            ev_mat = trotterized_ev_op.to_matrix()
-            expect_op = self._expectation.convert(
-                            self._meas_op @  qk_opflow.MatrixOp(ev_mat) @ self._state_in
-                        )
+            expect_op = self._meas_op @ self._expectation.convert(evolution_op @ self._state_in)
             energy = np.real(expect_op.eval())
 
         else:
@@ -289,21 +317,86 @@ class EnergyObjective:
 
           # Note, sampling of the full hamiltonian would look like:
           #     sampled_op = self._simulator.convert(
-          #                      self._expectation.convert(
-          #                          self._meas_op @ trotterized_ev_op @ self._state_in
-          #                      )
+          #                      self._meas_op @ self._expectation.convert(evolution_op @ self._state_in)
           #                  )
           #     energy = np.real(sampled_op.eval())
 
-          # use measurement components to prevent fake coherent errors
-            energy = 0.
-            for meas_op in self._meas_components:
-                sampled_op = self._simulator.convert(
-                                 self._expectation.convert(
-                                     meas_op @ trotterized_ev_op @ self._state_in
+          # if not trotterized, use matrix multiplication to by-pass circuit generation
+          # (uses circuit synthesis instead); note that this will automatically ignore
+          # most gate errors (all of state prep, but the final gates before measurement
+          # will still see errors if supplied)
+            if self._trotter_steps <= 0:
+                ev_state_op = qk_opflow.StateFn(
+                                  evolution_op.to_matrix() @ self._state_in.to_matrix()
+                              )
+
+                energy = 0.
+                for meas_op in self._meas_components:
+                    sampled_op = self._simulator.convert(
+                                     self._expectation.convert(meas_op @ ev_state_op)
                                  )
-                             )
-                energy += np.real(sampled_op.eval())
+                    energy += np.real(sampled_op.eval())
+
+            else:
+              # to ensure that circuits are not unnecessarily transpiled, convert the state prep
+              # circuit external to the component measurement loop and modify the transpiled one
+              # through the simulator cache instead
+                ev_state_expect_op = self._expectation.convert(evolution_op @ self._state_in)
+                if self._is_sampling:
+                  # add a fake measurement to setup proper identities, registers, and labels
+                    ev_state_expect_op = self._meas_components[0] @ ev_state_expect_op
+                self._simulator.convert(ev_state_expect_op)         # ensures caching
+                clean_circuit = self._simulator._cached_ops[ev_state_expect_op.instance_id].transpiled_circ_cache[0]
+
+              # remove any existing final measuremens (note: remove_final_measurements()
+              # also wipes the classical register, but we want to keep the same identities)
+                clean_circuit_dag = qk_tp.passes.RemoveFinalMeasurements().run(
+                    qk_cnv.circuit_to_dag(clean_circuit)
+                )
+
+                clean_circuit.data.clear()
+                clean_circuit._parameter_table.clear()
+                for node in clean_circuit_dag.topological_op_nodes():
+                    inst = node.op.copy()
+                    clean_circuit.append(inst, node.qargs, node.cargs)
+
+              # simulate measurement components individually to prevent fake coherent errors
+                energy = 0.
+                for meas_op in self._meas_components:
+                  # fresh copy of circuit w/o measurement and update internal cache
+                    comp_circuit = clean_circuit.copy()
+                    self._simulator._cached_ops[ev_state_expect_op.instance_id].transpiled_circ_cache[0] = comp_circuit
+
+                  # add basis rotation for pauli measurement
+                    if self._is_sampling:
+                        meas_circ = meas_op.oplist[1].to_circuit()
+                    else:
+                        meas_circ = meas_op.to_circuit()
+
+                    meas_circ_transpiled = self._simulator.quantum_instance.transpile(meas_circ)[0]
+                    meas_dag = qk_cnv.circuit_to_dag(meas_circ_transpiled)
+                    for node in meas_dag.topological_op_nodes():
+                        inst = node.op.copy()
+                        comp_circuit.append(inst, node.qargs, node.cargs)
+
+                    if self._is_sampling:
+                      # re-add measurement on all qubits
+                        regs = range(comp_circuit.num_qubits)
+                        comp_circuit.measure(regs, regs)
+
+                  # simulate sampling
+                    sampled_op = self._simulator.convert(ev_state_expect_op)
+
+                  # update measurement of the composed op in Z basis and evalaute (note: this
+                  # isn't necessary when not using sampling, b/c there expval_measurement save
+                  # instructions are used as a short-cut (ie. no true measurement)
+                    if self._is_sampling:
+                        sampled_op.oplist[0] = meas_op.oplist[0]
+                        e_comp = np.real(sampled_op.eval())
+                    else:
+                        e_comp = np.real(sampled_op.coeff)
+
+                    energy += e_comp
 
         logger.info('objective: %.5f @ %s', energy, packed_amplitudes)
 
@@ -509,10 +602,11 @@ medium_model = Model(2, 2, t=1.0, U=2.0,
         (1, 1) : np.array([ 0.22048886,  0.22048479,  0.27563475,
                             0.22178354,  0.22177972,  0.24547588,
                             0.6276739 ,  0.60108877,  0.60108406]),
-        (2, 2) : np.array([-0.81965099,  0.4858986 , -0.4858995,  0.76993761,
-                            0.10298091, -0.03832318, -0.03832113, 0.64542339,
-                            0.00399792, -0.00399722,  0.11716964, 0.32792626,
-                           -0.06136483,  0.06136485]),
+        # NOT EXACT: expected energy: -2.82843; estimated energy: -2.80167
+        (2, 2) : np.array([-0.81623149,  0.50619641, -0.50619641,  0.77301132,
+                            0.09516998, -0.02684161, -0.02684161,  0.62112045,
+                            0.00958991, -0.00958991,  0.11871553,  0.31455152,
+                           -0.05975626,  0.05975626]),
         (3, 3) : np.array([ 0.64501004, -0.6305074 , -0.63050858,
                             0.08473441,  0.06774534,  0.06774663,
                            -0.0411103 , -0.0411079 , -0.01508739])
@@ -520,32 +614,43 @@ medium_model = Model(2, 2, t=1.0, U=2.0,
 
 large_model = Model(3, 2, t=1.0, U=2.0,
     precalc={
+        # NOT EXACT: expected energy: -5.73832; estimated energy: -5.73821
         (1, 1) : np.array([ 0.13384179,  0.13445714,  0.1446175 ,  0.16050653,  0.16130275,
-                            0.13364081,  0.13282508,  0.13650198,  0.13960108,  0.14078738,
-                            0.32643849,  0.35181268,  0.34270857,  0.35643588,  0.35360598,
-                            0.35907086,  0.34189946,  0.33513164,  0.33339053,  0.3411722]),
-        (2, 2) : np.array([-4.57920644e-01, -4.61419403e-01, -6.57899318e-02,  7.93888419e-02,
-                           -8.65634971e-02,  9.87970428e-02, -8.13982943e-02,  8.24315581e-02,
-                            3.77627607e-02,  4.14194801e-02, -9.08931646e-02, -8.87684268e-02,
-                           -8.92688172e-02, -8.39407274e-02, -8.83753715e-02, -8.47307651e-02,
-                            5.96955318e-02, -8.92369938e-03, -1.07209493e-03, -8.30639064e-03,
-                            4.23285167e-04,  1.78879006e-02,  2.69528053e-04,  1.00087302e-05,
-                           -9.75233250e-03, -1.37037750e-03, -1.00443844e-02, -1.40741029e-04,
-                            2.14026225e-02,  2.36569587e-01, -2.60404901e-01,  3.06994869e-01,
-                           -2.60530286e-01,  3.03955480e-01,  3.02999992e-01, -2.59005011e-01,
-                            3.01388932e-01, -2.61784227e-01,  2.34998017e-01, -2.58743073e-01,
-                            3.00655017e-01,  3.02408882e-01, -2.56461354e-01,  2.35087039e-01]),
-        (3, 3) : np.array([-0.66699978, -0.25536666,  0.77907868,  0.18521605, -0.73275829,
-                            0.59235898,  0.2       , -0.72737572,  0.57299387,  0.0893265 ,
-                            0.03390347,  0.06890533, -0.00254022,  0.03280029,  0.05021135,
-                            0.08946359,  0.10889121,  0.10580759, -0.02570092, -0.05223403,
-                           -0.07183811,  0.02269466,  0.01530486,  0.00861826, -0.05007538,
-                            0.00736431,  0.02971546,  0.03081209, -0.00115368,  0.04648971,
-                           -0.04806533,  0.06553242,  0.06578076,  0.00609511,  0.05574523,
-                            0.02195071,  0.01922078,  0.06471269,  0.06555198,  0.00442612,
-                            0.01215996, -0.02131443,  0.06236088, -0.0710537 ,  0.01032675,
-                            0.05199316, -0.06420533,  0.13325282, -0.04225769,  0.11793895,
-                            0.02779596, -0.1808529 , -0.00113323,  0.06653841])
+                            0.13364081,  0.13282508,  0.13400198,  0.13960108,  0.14078738,
+                            0.32643849,  0.35306268,  0.34270857,  0.35643588,  0.35360598,
+                            0.35907086,  0.34189946,  0.33513164,  0.33839053,  0.3411722 ]),
+        # NOT EXACT: expected energy: -6.96512; estimated energy: -6.92941
+        (2, 2) : np.array([-4.57618666e-01, -4.60210966e-01, -6.68070438e-02,  8.11321076e-02,
+                           -8.72111335e-02,  1.01019064e-01, -8.12262946e-02,  8.57985155e-02,
+                            3.77855655e-02,  4.13990182e-02, -9.03427696e-02, -8.82793404e-02,
+                           -8.88394842e-02, -8.36323553e-02, -8.88618169e-02, -8.51711646e-02,
+                            5.98370890e-02, -1.01284669e-02,  3.84319652e-04, -9.62643066e-03,
+                            1.71588760e-03,  1.67560074e-02,  1.49150366e-03,  1.30202997e-03,
+                           -1.07513203e-02, -1.13612283e-04, -1.13368834e-02,  1.08914699e-03,
+                            2.02466723e-02,  2.35564647e-01, -2.59168578e-01,  3.05688349e-01,
+                           -2.60582028e-01,  3.03753638e-01,  3.02190944e-01, -2.58150006e-01,
+                            3.01566029e-01, -2.62000601e-01,  2.34475238e-01, -2.59273412e-01,
+                            3.01265600e-01,  3.02953419e-01, -2.57205092e-01,  2.36737354e-01]),
+        # NOT EXACT: expected energy: -5.41236; estimated energy: -5.32028
+        (3, 3) : np.array([-6.14034847e-01, -3.00472091e-01,  7.96886541e-01,  2.11757320e-01,
+                           -7.28851379e-01,  5.73659148e-01,  3.00000000e-01, -7.33460389e-01,
+                            5.18964232e-01,  8.10895094e-02,  3.25343259e-02,  8.00411321e-02,
+                           -1.50358336e-03,  3.01151140e-02,  4.52784558e-02,  1.04087110e-01,
+                            9.38548711e-02,  9.60457709e-02, -2.39260383e-02, -6.87253661e-02,
+                           -7.17397404e-02,  1.92891317e-02,  1.84659973e-02,  3.65047627e-03,
+                           -5.25181049e-02, -1.70084693e-03,  4.36684551e-02,  2.34853066e-02,
+                           -4.95735015e-03,  5.72965036e-02, -4.92135209e-02,  5.61630189e-02,
+                            7.68860916e-02,  6.87811103e-03,  6.51061291e-02,  1.88336871e-02,
+                            1.69353484e-03,  7.76514006e-02,  7.97418384e-02,  3.68724061e-03,
+                            2.00531794e-02, -2.90192698e-02,  7.29525471e-02, -6.79313755e-02,
+                            1.09424195e-02,  6.25079035e-02, -7.22068547e-02,  1.24919168e-01,
+                           -3.75589784e-02,  1.12580231e-01,  2.65679265e-02, -1.78363742e-01,
+                            3.44719974e-04,  7.38796794e-02]),
+    })
+
+Xlarge_model = Model(4, 2, t=1.0, U=2.0,
+    precalc={
+
     })
 
 
