@@ -65,7 +65,7 @@ class BQSKit_Hubbard_Optimizer:
         if self._prev_template is not None:
             target_unitary = bqskit_circuit.get_unitary()
             self._prev_template.instantiate(target_unitary)
-            if self._prev_template.get_unitary().get_distance_from(target_unitary) < 1e-8:
+            if self._prev_template.get_unitary().get_distance_from(target_unitary, 1) < 1e-8:
                 print("BQSKit completed from template in %.2fs" % (time.time() - t))
                 qiskit_circuit = qk.QuantumCircuit.from_qasm_str(OPENQASM2Language().encode(self._prev_template))
                 return qk.opflow.primitive_ops.CircuitOp(qiskit_circuit)
