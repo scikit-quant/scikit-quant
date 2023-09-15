@@ -5,10 +5,10 @@ import numpy as np
 import scipy.linalg as spla
 
 from qiskit import Aer
-from qiskit.algorithms import VQE
-from qiskit.algorithms.optimizers import COBYLA, SPSA
+from qiskit_algorithms import VQE
+from qiskit_algorithms.optimizers import COBYLA, SPSA
 try:
-    from qiskit.algorithms.optimizers import IMFIL
+    from qiskit_algorithms.optimizers import IMFIL
 except ImportError:
     print("install scikit-quant to use IMFIL")
 from qiskit.circuit.library import RealAmplitudes

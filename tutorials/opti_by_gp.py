@@ -16,7 +16,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 try:
-    from qiskit.algorithms.optimizers import IMFIL
+    from qiskit_algorithms.optimizers import IMFIL
 except ImportError:
     print("install scikit-quant to use IMFIL")
 
