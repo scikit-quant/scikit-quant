@@ -69,7 +69,7 @@ def snobnan(fnan, f, near, inew):
             ind = near[l,:]
 
             # eliminate neighbors with function value NaN
-            ind1 = numpy.array([])
+            ind1 = numpy.array([], dtype=int)
             for i in range(len(ind)):
                  if (find(fnan == ind[i])).size > 0:
                      ind1 = numpy.concatenate((ind1, [i]), 0)
